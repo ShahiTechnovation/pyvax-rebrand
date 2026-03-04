@@ -1,10 +1,17 @@
-"""AgentWallet management for PyVax — encrypted keystores for autonomous agents."""
+"""AgentWallet management for PyVax v1.0.0 — encrypted keystores for autonomous agents.
+
+Supports:
+  - PBKDF2-encrypted keystores (Fernet AES-128)
+  - BIP39 mnemonic generation
+  - .env / environment variable fallback
+  - Private key validation
+"""
 
 import json
 import os
 import secrets
 from pathlib import Path
-from typing import Optional
+from typing import Optional, Tuple
 
 from cryptography.fernet import Fernet
 from cryptography.hazmat.primitives import hashes
@@ -37,6 +44,26 @@ class WalletManager:
         self._save_encrypted_key(private_key, password, keystore_file)
         return account.address
 
+    def create_wallet_with_mnemonic(
+        self, password: str, keystore_file: str = "pyvax_key.json"
+    ) -> Tuple[str, str]:
+        """
+        Generate a new AgentWallet with BIP39 mnemonic phrase.
+
+        Args:
+            password:      Encryption password
+            keystore_file: Output keystore path
+
+        Returns:
+            Tuple of (address, mnemonic_phrase)
+        """
+        account, mnemonic = Account.create_with_mnemonic()
+        private_key = account.key.hex()
+        if private_key.startswith("0x"):
+            private_key = private_key[2:]
+        self._save_encrypted_key(private_key, password, keystore_file)
+        return account.address, mnemonic
+
     def load_wallet(self, keystore_file: str, password: str) -> str:
         """
         Load a wallet address from an encrypted keystore.
@@ -65,7 +92,7 @@ class WalletManager:
         Returns:
             Private key as hex string (0x-prefixed)
         """
-        # 1. PRIVATE_KEY env var
+        # 1. Environment variables
         for env_key_name in ("PRIVATE_KEY", "PYVAX_PRIVATE_KEY"):
             env_key = os.getenv(env_key_name)
             if env_key:
@@ -138,16 +165,22 @@ class WalletManager:
         encrypted_key = f.encrypt(private_key.encode())
 
         keystore_data = {
-            "version": 2,
+            "version": 3,
             "tool": "pyvax",
+            "pyvax_version": "1.0.0",
             "encrypted_key": base64.b64encode(encrypted_key).decode(),
             "salt": base64.b64encode(salt).decode(),
+            "kdf": "pbkdf2-sha256",
+            "iterations": 100_000,
         }
 
         with open(keystore_file, "w") as fh:
             json.dump(keystore_data, fh, indent=2)
 
-        os.chmod(keystore_file, 0o600)
+        try:
+            os.chmod(keystore_file, 0o600)
+        except OSError:
+            pass  # Windows doesn't support Unix permissions
 
     def _load_encrypted_key(self, keystore_file: str, password: str) -> str:
         """Decrypt and return a private key from a PyVax keystore JSON file."""
@@ -191,9 +224,11 @@ class WalletManager:
                     with open(env_path, "r") as fh:
                         for line in fh:
                             line = line.strip()
+                            if line.startswith("#") or "=" not in line:
+                                continue
                             for key_name in keys_to_find:
                                 if line.startswith(f"{key_name}="):
-                                    value = line.split("=", 1)[1].strip("\"'")
+                                    value = line.split("=", 1)[1].strip("\"'").strip()
                                     if value:
                                         return value
                 except Exception:

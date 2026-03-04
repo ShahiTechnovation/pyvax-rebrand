@@ -1,0 +1,10 @@
+app
+avax_cli
+components
+content
+docker
+hooks
+lib
+node_modules
+public
+styles

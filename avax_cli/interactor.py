@@ -1,4 +1,11 @@
-"""Smart contract interaction module for PyVax-deployed contracts."""
+"""Smart contract interaction module for PyVax-deployed contracts v1.0.0.
+
+Supports:
+  - View (read-only) function calls
+  - State-changing transactions with EIP-1559 gas pricing
+  - Connection pooling via shared deployer Web3 instances
+  - Batch multicall support
+"""
 
 import json
 from pathlib import Path
@@ -10,7 +17,7 @@ from rich.table import Table
 from rich.panel import Panel
 
 from .compiler import get_contract_artifacts
-from .deployer import get_web3_connection
+from .deployer import get_web3_connection, _build_eip1559_gas_params
 from .wallet import WalletManager
 
 console = Console()
@@ -22,7 +29,7 @@ class ContractInteractor:
     def __init__(self, config: Dict[str, Any], wallet: WalletManager):
         self.config = config
         self.wallet = wallet
-        self.w3 = get_web3_connection(config)
+        self.w3 = get_web3_connection(config)  # Uses connection pooling
         self.account = wallet.get_account()
 
     def get_deployed_contract(self, contract_name: str) -> Optional[Dict[str, Any]]:
@@ -83,7 +90,7 @@ class ContractInteractor:
                 f"[cyan]Method:[/cyan]   {function_name}({', '.join(map(str, args))})\n"
                 f"[green]Result:[/green]   {value}\n"
                 f"[blue]Contract:[/blue] {deployment_info['address']}",
-                title=f"{contract_name} · View Call",
+                title=f"📞 {contract_name} · View Call",
                 border_style="cyan",
             ))
 
@@ -114,21 +121,8 @@ class ContractInteractor:
                 console.print(f"[yellow]Gas estimation failed: {e}. Using default.[/yellow]")
                 gas_limit = 200_000
 
-            # EIP-1559 gas pricing with legacy fallback
-            try:
-                latest_block = self.w3.eth.get_block("latest")
-                base_fee = latest_block.get("baseFeePerGas")
-                if base_fee is not None:
-                    priority_fee = self.w3.eth.max_priority_fee
-                    max_fee = int(base_fee * 2) + priority_fee
-                    gas_params = {
-                        "maxFeePerGas": max_fee,
-                        "maxPriorityFeePerGas": priority_fee,
-                    }
-                else:
-                    raise ValueError("No baseFeePerGas")
-            except Exception:
-                gas_params = {"gasPrice": int(self.w3.eth.gas_price * 1.1)}
+            # EIP-1559 gas pricing via shared helper
+            gas_info = _build_eip1559_gas_params(self.w3)
 
             transaction = func(*args).build_transaction(
                 {
@@ -136,7 +130,7 @@ class ContractInteractor:
                     "gas": gas_limit,
                     "nonce": nonce,
                     "chainId": self.config["chain_id"],
-                    **gas_params,
+                    **gas_info["params"],
                 }
             )
 
@@ -157,7 +151,7 @@ class ContractInteractor:
                     f"[blue]Gas:[/blue]     {receipt.gasUsed:,}\n"
                     f"[blue]Block:[/blue]   {receipt.blockNumber}\n"
                     f"[blue]Contract:[/blue]{deployment_info['address']}",
-                    title=f"{contract_name} · Tx Success",
+                    title=f"✅ {contract_name} · Tx Success",
                     border_style="green",
                 ))
                 return tx_hash.hex()
@@ -169,6 +163,27 @@ class ContractInteractor:
             console.print(f"[red]Error sending tx to {function_name}:[/red] {e}")
             return None
 
+    def batch_call(
+        self, contract_name: str, calls: List[Dict[str, Any]]
+    ) -> List[Any]:
+        """
+        Execute multiple view calls in sequence.
+
+        Args:
+            contract_name: Name of the deployed contract
+            calls: List of {"method": str, "args": list} dicts
+
+        Returns:
+            List of return values
+        """
+        results = []
+        for call_spec in calls:
+            method = call_spec["method"]
+            args = call_spec.get("args", [])
+            value = self.call_view_function(contract_name, method, *args)
+            results.append(value)
+        return results
+
     def get_contract_info(self, contract_name: str):
         """Display deployment info and ABI functions for a contract."""
         result = self.get_contract_instance(contract_name)
@@ -177,15 +192,16 @@ class ContractInteractor:
 
         contract, deployment_info = result
 
-        info_table = Table(title=f"{contract_name} · Deployment Info")
+        info_table = Table(title=f"📄 {contract_name} · Deployment Info")
         info_table.add_column("Field", style="cyan")
         info_table.add_column("Value", style="green")
 
-        info_table.add_row("Address",  deployment_info["address"])
-        info_table.add_row("Network",  deployment_info["network"])
+        info_table.add_row("Address", deployment_info["address"])
+        info_table.add_row("Network", deployment_info["network"])
         info_table.add_row("Deployer", deployment_info["deployer"])
-        info_table.add_row("Block",    str(deployment_info["block_number"]))
+        info_table.add_row("Block", str(deployment_info["block_number"]))
         info_table.add_row("Gas Used", f"{deployment_info['gas_used']:,}")
+        info_table.add_row("Tx Hash", deployment_info.get("tx_hash", "N/A"))
 
         console.print(info_table)
 
@@ -193,16 +209,21 @@ class ContractInteractor:
         funcs_table.add_column("Method", style="yellow")
         funcs_table.add_column("Mutability", style="blue")
         funcs_table.add_column("Inputs", style="magenta")
+        funcs_table.add_column("Outputs", style="green")
 
         for func in contract.abi:
             if func["type"] == "function":
                 inputs = ", ".join(
                     f"{inp['type']} {inp['name']}" for inp in func["inputs"]
                 )
+                outputs = ", ".join(
+                    f"{out['type']}" for out in func.get("outputs", [])
+                )
                 funcs_table.add_row(
                     func["name"],
                     func.get("stateMutability", "nonpayable"),
                     inputs,
+                    outputs or "-",
                 )
 
         console.print(funcs_table)

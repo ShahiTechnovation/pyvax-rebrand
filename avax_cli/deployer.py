@@ -1,7 +1,15 @@
-"""Smart contract deployment to Avalanche C-Chain via PyVax."""
+"""Smart contract deployment to Avalanche C-Chain via PyVax v1.0.0.
+
+Supports:
+  - EIP-1559 gas pricing with legacy fallback
+  - Snowtrace/Routescan contract verification
+  - deployments.json persistent registry
+  - Connection pooling (reusable Web3 instances)
+"""
 
 import json
 import time
+import requests
 from pathlib import Path
 from typing import Dict, List, Any, Optional
 
@@ -13,22 +21,39 @@ from .wallet import WalletManager
 
 console = Console()
 
+# Connection pool — reuse Web3 instances across deploy/interact
+_web3_connections: Dict[str, Web3] = {}
+
 
 def get_web3_connection(config: Dict[str, Any]) -> Web3:
     """
-    Create a Web3 connection to the configured Avalanche RPC endpoint.
+    Create or reuse a Web3 connection to the configured RPC endpoint.
 
     Args:
         config: Dict with keys: rpc_url, chain_id, network
 
     Returns:
-        Connected Web3 instance
+        Connected Web3 instance (cached per RPC URL)
     """
-    w3 = Web3(Web3.HTTPProvider(config["rpc_url"]))
+    rpc_url = config["rpc_url"]
+
+    # Reuse existing connection if healthy
+    if rpc_url in _web3_connections:
+        w3 = _web3_connections[rpc_url]
+        try:
+            if w3.is_connected():
+                return w3
+        except Exception:
+            pass  # Stale connection, recreate
+
+    w3 = Web3(Web3.HTTPProvider(
+        rpc_url,
+        request_kwargs={"timeout": 30},
+    ))
 
     if not w3.is_connected():
         raise ConnectionError(
-            f"[pyvax] Failed to connect to RPC: {config['rpc_url']}\n"
+            f"[pyvax] Failed to connect to RPC: {rpc_url}\n"
             f"Run 'pyvax doctor' to diagnose connectivity."
         )
 
@@ -43,7 +68,40 @@ def get_web3_connection(config: Dict[str, Any]) -> Web3:
     except Exception as e:
         console.print(f"[yellow]Warning:[/yellow] Could not verify chain ID: {e}")
 
+    _web3_connections[rpc_url] = w3
     return w3
+
+
+def _build_eip1559_gas_params(w3: Web3) -> Dict[str, Any]:
+    """Build EIP-1559 gas parameters with legacy fallback."""
+    try:
+        latest_block = w3.eth.get_block("latest")
+        base_fee = latest_block.get("baseFeePerGas")
+        if base_fee is not None:
+            priority_fee = w3.eth.max_priority_fee
+            max_fee = int(base_fee * 2) + priority_fee
+            console.print(
+                f"[blue]Gas: EIP-1559 (base={w3.from_wei(base_fee, 'gwei'):.2f} "
+                f"priority={w3.from_wei(priority_fee, 'gwei'):.2f} "
+                f"max={w3.from_wei(max_fee, 'gwei'):.2f} gwei)[/blue]"
+            )
+            return {
+                "params": {
+                    "maxFeePerGas": max_fee,
+                    "maxPriorityFeePerGas": priority_fee,
+                },
+                "effective_price": max_fee,
+            }
+        raise ValueError("No baseFeePerGas")
+    except Exception:
+        gas_price = int(w3.eth.gas_price * 1.1)
+        console.print(
+            f"[blue]Gas price (legacy): {w3.from_wei(gas_price, 'gwei'):.2f} gwei[/blue]"
+        )
+        return {
+            "params": {"gasPrice": gas_price},
+            "effective_price": gas_price,
+        }
 
 
 def estimate_gas(
@@ -69,13 +127,15 @@ def estimate_gas(
         bytecode=artifacts["bytecode"],
     )
 
+    gas_info = _build_eip1559_gas_params(w3)
+
     constructor_tx = contract.constructor(*constructor_args).build_transaction(
         {
             "from": account.address,
             "nonce": w3.eth.get_transaction_count(account.address),
             "gas": 0,
-            "gasPrice": w3.eth.gas_price,
             "chainId": config["chain_id"],
+            **gas_info["params"],
         }
     )
 
@@ -132,29 +192,7 @@ def deploy_contract(
         )
 
         # Gas pricing: EIP-1559 with legacy fallback
-        try:
-            latest_block = w3.eth.get_block("latest")
-            base_fee = latest_block.get("baseFeePerGas")
-            if base_fee is not None:
-                # EIP-1559 supported
-                priority_fee = w3.eth.max_priority_fee
-                max_fee = int(base_fee * 2) + priority_fee
-                gas_params = {
-                    "maxFeePerGas": max_fee,
-                    "maxPriorityFeePerGas": priority_fee,
-                }
-                effective_price = max_fee
-                console.print(f"[blue]Gas: EIP-1559 (base={w3.from_wei(base_fee, 'gwei'):.2f} "
-                              f"priority={w3.from_wei(priority_fee, 'gwei'):.2f} "
-                              f"max={w3.from_wei(max_fee, 'gwei'):.2f} gwei)[/blue]")
-            else:
-                raise ValueError("No baseFeePerGas")
-        except Exception:
-            # Fallback to legacy pricing
-            gas_price = int(w3.eth.gas_price * 1.1)
-            gas_params = {"gasPrice": gas_price}
-            effective_price = gas_price
-            console.print(f"[blue]Gas price (legacy): {w3.from_wei(gas_price, 'gwei'):.2f} gwei[/blue]")
+        gas_info = _build_eip1559_gas_params(w3)
 
         nonce = w3.eth.get_transaction_count(account.address)
         constructor_tx = contract.constructor(*constructor_args).build_transaction(
@@ -163,7 +201,7 @@ def deploy_contract(
                 "nonce": nonce,
                 "gas": 0,
                 "chainId": config["chain_id"],
-                **gas_params,
+                **gas_info["params"],
             }
         )
 
@@ -171,9 +209,10 @@ def deploy_contract(
             gas_limit = gas_limit_override
         else:
             gas_estimate = w3.eth.estimate_gas(constructor_tx)
-            gas_limit = int(gas_estimate * 1.2)  # 20% buffer
+            gas_limit = int(gas_estimate * 1.2)  # 20% safety buffer
 
         constructor_tx["gas"] = gas_limit
+        effective_price = gas_info["effective_price"]
 
         console.print(f"[blue]Gas limit:  {gas_limit:,}[/blue]")
 
@@ -215,24 +254,12 @@ def deploy_contract(
                 "deployer": account.address,
                 "constructor_args": constructor_args,
                 "block_number": receipt.blockNumber,
+                "timestamp": int(time.time()),
             }
 
             # Persist to deployments.json
-            deployments_file = Path("deployments.json")
-            deployments: Dict = {}
-            if deployments_file.exists():
-                with open(deployments_file) as f:
-                    deployments = json.load(f)
+            _save_deployment(deployment_info, config)
 
-            if config["network"] not in deployments:
-                deployments[config["network"]] = {}
-
-            deployments[config["network"]][contract_name] = deployment_info
-
-            with open(deployments_file, "w") as f:
-                json.dump(deployments, f, indent=2)
-
-            console.print(f"[green]Deployment info saved → {deployments_file}[/green]")
             return deployment_info
 
         else:
@@ -242,6 +269,26 @@ def deploy_contract(
     except Exception as e:
         console.print(f"[red]Deployment failed:[/red] {str(e)}")
         return None
+
+
+def _save_deployment(deployment_info: Dict[str, Any], config: Dict[str, Any]) -> None:
+    """Persist deployment info to deployments.json."""
+    deployments_file = Path("deployments.json")
+    deployments: Dict = {}
+    if deployments_file.exists():
+        with open(deployments_file) as f:
+            deployments = json.load(f)
+
+    network = config["network"]
+    if network not in deployments:
+        deployments[network] = {}
+
+    deployments[network][deployment_info["contract_name"]] = deployment_info
+
+    with open(deployments_file, "w") as f:
+        json.dump(deployments, f, indent=2)
+
+    console.print(f"[green]Deployment info saved → {deployments_file}[/green]")
 
 
 def verify_contract(
@@ -263,17 +310,66 @@ def verify_contract(
     api_key = config.get("explorer_api_key")
     if not api_key:
         console.print(
-            "[yellow]No explorer_api_key in pyvax_config.json. Skipping verification.[/yellow]"
+            "[yellow]No explorer_api_key in pyvax_config.json. "
+            "Skipping verification.[/yellow]"
+        )
+        console.print(
+            "[dim]Set explorer_api_key in pyvax_config.json to enable "
+            "automatic Snowtrace verification.[/dim]"
         )
         return False
 
     network = config.get("network", "fuji")
-    explorer = (
-        "https://snowtrace.io" if network == "cchain"
-        else "https://testnet.snowtrace.io"
-    )
+
+    if network == "cchain":
+        api_url = "https://api.snowtrace.io/api"
+        explorer = "https://snowtrace.io"
+    else:
+        api_url = "https://api-testnet.snowtrace.io/api"
+        explorer = "https://testnet.snowtrace.io"
 
     console.print(f"[blue]Submitting verification for {contract_name}...[/blue]")
+
+    try:
+        # Load bytecode from build artifacts
+        artifacts = get_contract_artifacts(contract_name)
+
+        # Submit verification request
+        payload = {
+            "apikey": api_key,
+            "module": "contract",
+            "action": "verifysourcecode",
+            "contractaddress": contract_address,
+            "sourceCode": json.dumps(artifacts.get("metadata", {})),
+            "contractname": contract_name,
+            "compilerversion": "pyvax-v1.0.0",
+            "optimizationUsed": "1",
+        }
+
+        response = requests.post(api_url, data=payload, timeout=30)
+
+        if response.status_code == 200:
+            result = response.json()
+            if result.get("status") == "1":
+                console.print(
+                    f"[green]✓ Verification submitted![/green] "
+                    f"GUID: {result.get('result', 'N/A')}"
+                )
+                console.print(
+                    f"[blue]View: {explorer}/address/{contract_address}#code[/blue]"
+                )
+                return True
+            else:
+                console.print(
+                    f"[yellow]Verification response: {result.get('result', 'Unknown')}[/yellow]"
+                )
+        else:
+            console.print(
+                f"[yellow]Verification API returned {response.status_code}[/yellow]"
+            )
+
+    except Exception as e:
+        console.print(f"[yellow]Verification failed: {e}[/yellow]")
+
     console.print(f"[blue]Explorer: {explorer}/address/{contract_address}[/blue]")
-    # Actual Snowtrace API submission would go here
-    return True
+    return False

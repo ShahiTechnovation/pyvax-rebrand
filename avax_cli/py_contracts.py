@@ -1,4 +1,8 @@
-"""Python smart contract base classes for PyVax."""
+"""Python smart contract base classes for PyVax v1.0.0.
+
+Provides Contract base class and decorators for writing EVM-compatible
+smart contracts in pure Python.
+"""
 
 from typing import Any, Dict
 
@@ -10,12 +14,16 @@ class Contract:
     smart contract that can be deployed to Avalanche via `pyvax deploy`.
 
     Usage:
+        from pyvax import Contract, action
+
         class MyContract(Contract):
             balance: int = 0
 
             @action
             def deposit(self, amount: int):
+                self.require(amount > 0, "Must be positive")
                 self.balance += amount
+                self.emit("Deposit", self.msg_sender(), amount)
     """
 
     def __init__(self):
@@ -33,7 +41,7 @@ class Contract:
         return initial_value
 
     def emit(self, name: str, *params):
-        """Emit an onchain event (compiled to Solidity `emit Event(...)`)."""
+        """Emit an onchain event (compiled to EVM LOG1-4 opcode)."""
         pass  # Resolved during transpilation
 
     def msg_sender(self) -> str:
@@ -47,6 +55,14 @@ class Contract:
     def block_number(self) -> int:
         """Return current Avalanche block number."""
         return 1
+
+    def block_timestamp(self) -> int:
+        """Return current block timestamp (EVM: block.timestamp)."""
+        return 0
+
+    def tx_origin(self) -> str:
+        """Return the original transaction sender (EVM: tx.origin)."""
+        return "0x0000000000000000000000000000000000000000"
 
     def require(self, condition: bool, message: str = "Requirement failed"):
         """Revert the transaction if condition is False (EVM: require)."""
@@ -62,7 +78,8 @@ class Contract:
         return 0  # Resolved at compile time to VRF callback
 
 
-# Decorator shorthands — resolved by the transpiler at compile time
+# ─── Decorators — resolved by the transpiler at compile time ─────────────────
+
 def action(func):
     """Mark a method as a public EVM function callable by any address."""
     func._pyvax_visibility = "external"
@@ -84,11 +101,27 @@ def human_action(func):
     return func
 
 
+def view(func):
+    """Mark a method as a read-only view (no state changes)."""
+    func._pyvax_visibility = "external"
+    func._pyvax_access = "all"
+    func._pyvax_view = True
+    return func
+
+
+def payable(func):
+    """Mark a method as payable (can receive AVAX)."""
+    func._pyvax_visibility = "external"
+    func._pyvax_access = "all"
+    func._pyvax_payable = True
+    return func
+
+
 # Backwards aliases — for contracts still using the old decorator names
 public_function = action
 view_function = action
 
-# EVM type aliases for explicit storage optimization
+# ─── EVM type aliases for explicit storage optimization ──────────────────────
 Uint8 = int
 Uint16 = int
 Uint32 = int
@@ -97,10 +130,12 @@ Uint128 = int
 Uint256 = int
 Address = str
 Bytes32 = bytes
+Bool = bool
+String = str
 
 
 # ─────────────────────────────────────────────
-# Example PyVax contracts (shipped with the SDK)
+# Built-in PyVax contract templates (shipped with the SDK)
 # ─────────────────────────────────────────────
 
 class SimpleStorage(Contract):
@@ -190,6 +225,72 @@ class AgentVault(Contract):
         return self.total_deposits
 
 
+class ERC20(Contract):
+    """ERC-20 compatible fungible token contract."""
+
+    total_supply: int = 0
+    balances: dict = {}
+    allowances: dict = {}
+    decimals_: int = 18
+
+    @action
+    def mint(self, to: str, amount: int):
+        """Mint new tokens to an address."""
+        self.require(amount > 0, "Amount must be positive")
+        self.balances[to] = self.balances.get(to, 0) + amount
+        self.total_supply = self.total_supply + amount
+        self.emit("Transfer", 0, to, amount)
+
+    @action
+    def transfer(self, to: str, amount: int):
+        """Transfer tokens to an address."""
+        sender = self.msg_sender()
+        self.require(self.balances.get(sender, 0) >= amount, "Insufficient balance")
+        self.balances[sender] = self.balances[sender] - amount
+        self.balances[to] = self.balances.get(to, 0) + amount
+        self.emit("Transfer", sender, to, amount)
+
+    @action
+    def balance_of(self, owner: str) -> int:
+        """Get token balance for an address."""
+        return self.balances.get(owner, 0)
+
+    @action
+    def total_supply_of(self) -> int:
+        """Get total token supply."""
+        return self.total_supply
+
+
+class Voting(Contract):
+    """Simple on-chain voting contract."""
+
+    votes: dict = {}
+    voter_status: dict = {}
+    total_votes: int = 0
+
+    @action
+    def vote(self, candidate_id: int):
+        """Cast a vote for a candidate."""
+        sender = self.msg_sender()
+        self.require(self.voter_status.get(sender, 0) == 0, "Already voted")
+        self.voter_status[sender] = 1
+        self.votes[candidate_id] = self.votes.get(candidate_id, 0) + 1
+        self.total_votes = self.total_votes + 1
+        self.emit("VoteCast", sender, candidate_id)
+
+    @action
+    def get_votes(self, candidate_id: int) -> int:
+        """Get vote count for a candidate."""
+        return self.votes.get(candidate_id, 0)
+
+    @action
+    def get_total_votes(self) -> int:
+        """Get total votes cast."""
+        return self.total_votes
+
+
+# ─── Template source strings for `pyvax new` ────────────────────────────────
+
 def get_sample_contracts() -> Dict[str, str]:
     """Return sample PyVax Python contract source strings."""
 
@@ -237,7 +338,40 @@ class AgentVault(Contract):
         self.emit("Withdraw", sender, amount)
 '''
 
+    erc20_source = '''
+from pyvax import Contract, action
+
+class ERC20(Contract):
+    total_supply: int = 0
+    balances: dict = {}
+    decimals_: int = 18
+
+    @action
+    def mint(self, to: str, amount: int):
+        self.require(amount > 0, "Amount must be positive")
+        self.balances[to] = self.balances.get(to, 0) + amount
+        self.total_supply += amount
+        self.emit("Transfer", 0, to, amount)
+
+    @action
+    def transfer(self, to: str, amount: int):
+        sender = self.msg_sender()
+        self.require(self.balances.get(sender, 0) >= amount, "Insufficient balance")
+        self.balances[sender] -= amount
+        self.balances[to] = self.balances.get(to, 0) + amount
+        self.emit("Transfer", sender, to, amount)
+
+    @action
+    def balance_of(self, owner: str) -> int:
+        return self.balances.get(owner, 0)
+
+    @action
+    def total_supply_of(self) -> int:
+        return self.total_supply
+'''
+
     return {
         "SimpleStorage": simple_storage_source,
         "AgentVault": agent_vault_source,
+        "ERC20": erc20_source,
     }

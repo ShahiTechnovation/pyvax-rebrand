@@ -1693,6 +1693,6 @@ def transpile_python_contract(
             "optimizer_level": optimizer_level,
             "bytecode_size_before_opt": original_size,
             "compiler": "pyvax-transpiler",
-            "version": "0.3.0",
+            "version": "1.0.0",
         },
     }

@@ -1,7 +1,16 @@
-"""Utility functions for the PyVax CLI."""
+"""Utility functions for the PyVax CLI v1.0.0.
+
+Provides:
+  - Configuration loading and management
+  - Network metadata (Fuji, Mainnet, custom)
+  - Environment diagnostics (pyvax doctor)
+  - Display formatters
+"""
 
 import json
 import os
+import sys
+import shutil
 from pathlib import Path
 from typing import Dict, Any, Optional
 
@@ -11,6 +20,45 @@ from rich.panel import Panel
 
 console = Console()
 
+# ─── Network Registry ───────────────────────────────────────────────────────
+
+NETWORKS: Dict[str, Dict[str, Any]] = {
+    "fuji": {
+        "name": "Avalanche Fuji Testnet",
+        "rpc_url": "https://api.avax-test.network/ext/bc/C/rpc",
+        "chain_id": 43113,
+        "explorer": "https://testnet.snowtrace.io",
+        "explorer_api": "https://api-testnet.snowtrace.io/api",
+        "faucet": "https://faucet.avax.network",
+        "is_testnet": True,
+    },
+    "cchain": {
+        "name": "Avalanche C-Chain Mainnet",
+        "rpc_url": "https://api.avax.network/ext/bc/C/rpc",
+        "chain_id": 43114,
+        "explorer": "https://snowtrace.io",
+        "explorer_api": "https://api.snowtrace.io/api",
+        "faucet": None,
+        "is_testnet": False,
+    },
+    "mainnet": {
+        "name": "Avalanche C-Chain Mainnet",
+        "rpc_url": "https://api.avax.network/ext/bc/C/rpc",
+        "chain_id": 43114,
+        "explorer": "https://snowtrace.io",
+        "explorer_api": "https://api.snowtrace.io/api",
+        "faucet": None,
+        "is_testnet": False,
+    },
+}
+
+# ─── Default optimizer settings ──────────────────────────────────────────────
+
+DEFAULT_OPTIMIZER_LEVEL = 1
+MAX_OPTIMIZER_LEVEL = 3
+
+
+# ─── Configuration ──────────────────────────────────────────────────────────
 
 def load_config(config_path: str = "pyvax_config.json") -> Dict[str, Any]:
     """Load PyVax network configuration from file."""
@@ -26,10 +74,40 @@ def load_config(config_path: str = "pyvax_config.json") -> Dict[str, Any]:
         return json.load(f)
 
 
+def save_config(config: Dict[str, Any], config_path: str = "pyvax_config.json") -> None:
+    """Save PyVax network configuration to file."""
+    with open(config_path, "w") as f:
+        json.dump(config, f, indent=2)
+
+
+# ─── Environment Diagnostics ────────────────────────────────────────────────
+
 def check_environment() -> bool:
     """Diagnose the PyVax environment — called by 'pyvax doctor'."""
     issues = []
     ok = []
+
+    # Python version
+    py_version = f"{sys.version_info.major}.{sys.version_info.minor}.{sys.version_info.micro}"
+    if sys.version_info >= (3, 9):
+        ok.append(f"Python {py_version}")
+    else:
+        issues.append(f"Python {py_version} (3.9+ required)")
+
+    # Check critical packages
+    packages = {
+        "typer": "CLI framework",
+        "rich": "Rich terminal output",
+        "web3": "Ethereum/Avalanche connectivity",
+        "cryptography": "Wallet encryption",
+        "eth_account": "Account management",
+    }
+    for pkg_name, desc in packages.items():
+        try:
+            __import__(pkg_name)
+            ok.append(f"{pkg_name} installed ({desc})")
+        except ImportError:
+            issues.append(f"{pkg_name} missing — pip install {pkg_name}")
 
     # Check private key
     if os.getenv("PRIVATE_KEY") or os.getenv("PYVAX_PRIVATE_KEY"):
@@ -44,9 +122,26 @@ def check_environment() -> bool:
             "or run 'pyvax wallet new <id>'"
         )
 
+    # Check Snowtrace API key
+    snowtrace_key = os.getenv("SNOWTRACE_API_KEY")
+    if snowtrace_key:
+        ok.append("SNOWTRACE_API_KEY environment variable is set")
+    else:
+        # Check config file
+        config = load_config()
+        if config.get("explorer_api_key"):
+            ok.append("explorer_api_key found in config")
+        else:
+            issues.append(
+                "No Snowtrace API key — set SNOWTRACE_API_KEY or explorer_api_key in config "
+                "(needed for --verify)"
+            )
+
     # Check config file
     if Path("pyvax_config.json").exists():
-        ok.append("pyvax_config.json found")
+        config = load_config()
+        network = config.get("network", "unknown")
+        ok.append(f"pyvax_config.json found (network: {network})")
     else:
         issues.append("pyvax_config.json not found — run 'pyvax new <project_name>'")
 
@@ -62,9 +157,37 @@ def check_environment() -> bool:
 
     # Check build artifacts
     if Path("build").exists():
-        ok.append("build/ directory found")
+        build_dirs = [d for d in Path("build").iterdir() if d.is_dir()]
+        ok.append(f"build/ directory found ({len(build_dirs)} artifact(s))")
     else:
         issues.append("build/ not found — run 'pyvax compile' to generate artifacts")
+
+    # Check deployments
+    if Path("deployments.json").exists():
+        try:
+            with open("deployments.json") as f:
+                deps = json.load(f)
+            total = sum(len(v) for v in deps.values())
+            ok.append(f"deployments.json found ({total} deployment(s))")
+        except Exception:
+            issues.append("deployments.json exists but is malformed")
+
+    # RPC connectivity
+    try:
+        config = load_config()
+        if config.get("rpc_url"):
+            import urllib.request
+            req = urllib.request.Request(
+                config["rpc_url"],
+                data=json.dumps({"jsonrpc": "2.0", "method": "eth_chainId", "params": [], "id": 1}).encode(),
+                headers={"Content-Type": "application/json"},
+            )
+            with urllib.request.urlopen(req, timeout=5) as resp:
+                result = json.loads(resp.read().decode())
+                chain_id = int(result["result"], 16)
+                ok.append(f"RPC connected: {config['rpc_url']} (chain {chain_id})")
+    except Exception as e:
+        issues.append(f"RPC connectivity failed: {str(e)[:60]}")
 
     # Print results
     for item in ok:
@@ -84,6 +207,8 @@ def check_environment() -> bool:
     return True
 
 
+# ─── Display helpers ─────────────────────────────────────────────────────────
+
 def display_deployment_summary(
     deployments: Dict[str, Any], network: str = "fuji"
 ):
@@ -92,11 +217,11 @@ def display_deployment_summary(
         console.print(f"[yellow]No contracts deployed on {network}.[/yellow]")
         return
 
-    table = Table(title=f"PyVax Deployments — {network.upper()}")
+    table = Table(title=f"🚀 PyVax Deployments — {network.upper()}")
     table.add_column("Contract", style="cyan")
     table.add_column("Address", style="green")
-    table.add_column("Gas Used", style="yellow")
-    table.add_column("Block", style="blue")
+    table.add_column("Gas Used", style="yellow", justify="right")
+    table.add_column("Block", style="blue", justify="right")
 
     for contract_name, info in deployments[network].items():
         table.add_row(
@@ -135,20 +260,4 @@ def validate_contract_name(name: str) -> bool:
 
 def get_network_info(network: str) -> Dict[str, Any]:
     """Return RPC and explorer metadata for a named network."""
-    networks = {
-        "fuji": {
-            "name": "Avalanche Fuji Testnet",
-            "rpc_url": "https://api.avax-test.network/ext/bc/C/rpc",
-            "chain_id": 43113,
-            "explorer": "https://testnet.snowtrace.io",
-            "faucet": "https://faucet.avax.network",
-        },
-        "cchain": {
-            "name": "Avalanche C-Chain Mainnet",
-            "rpc_url": "https://api.avax.network/ext/bc/C/rpc",
-            "chain_id": 43114,
-            "explorer": "https://snowtrace.io",
-            "faucet": None,
-        },
-    }
-    return networks.get(network, networks["fuji"])
+    return NETWORKS.get(network, NETWORKS["fuji"])

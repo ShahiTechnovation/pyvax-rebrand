@@ -1,7 +1,7 @@
-"""Python contract compilation and transpilation pipeline for PyVax."""
+"""Python contract compilation and transpilation pipeline for PyVax v1.0.0."""
 
 import json
-import shutil
+import time
 from pathlib import Path
 from typing import Dict, Any, Optional
 
@@ -16,14 +16,20 @@ def compile_contracts(
     contracts_dir: Path,
     output_dir: Path,
     solc_version: Optional[str] = None,
+    optimizer_level: int = 1,
+    overflow_safe: bool = True,
+    contract_filter: Optional[str] = None,
 ) -> Dict[str, Dict[str, Any]]:
     """
     Transpile all PyVax Python contracts in the given directory.
 
     Args:
-        contracts_dir: Directory containing .py contract files
-        output_dir:    Directory to save build artifacts
-        solc_version:  Unused (kept for API compatibility)
+        contracts_dir:    Directory containing .py contract files
+        output_dir:       Directory to save build artifacts
+        solc_version:     Unused (kept for API compatibility)
+        optimizer_level:  Peephole optimizer level (0-3)
+        overflow_safe:    Enable Solidity 0.8-style overflow checks
+        contract_filter:  Optional contract name to compile (None = all)
 
     Returns:
         Dictionary with transpilation results for each contract
@@ -34,6 +40,15 @@ def compile_contracts(
 
     py_files = list(contracts_dir.glob("*.py"))
 
+    # Filter to a specific contract if requested
+    if contract_filter:
+        py_files = [f for f in py_files if f.stem == contract_filter]
+        if not py_files:
+            console.print(
+                f"[red]Contract '{contract_filter}' not found in {contracts_dir}[/red]"
+            )
+            return results
+
     if not py_files:
         console.print(f"[yellow]No .py contract files found in {contracts_dir}[/yellow]")
         return results
@@ -41,17 +56,23 @@ def compile_contracts(
     for py_file in py_files:
         contract_name = py_file.stem
         console.print(f"[blue]Transpiling: {py_file.name}[/blue]")
+        start_time = time.time()
 
         try:
             with open(py_file, "r", encoding="utf-8") as f:
                 py_source = f.read()
 
-            result = transpile_python_contract(py_source)
+            result = transpile_python_contract(
+                py_source,
+                overflow_safe=overflow_safe,
+                optimizer_level=optimizer_level,
+            )
 
+            elapsed = time.time() - start_time
             contract_output_dir = output_dir / contract_name
             contract_output_dir.mkdir(exist_ok=True)
 
-            # Main artifact JSON
+            # Main artifact JSON (Hardhat/Foundry compatible)
             artifact_file = contract_output_dir / f"{contract_name}.json"
             with open(artifact_file, "w") as f:
                 json.dump(
@@ -63,19 +84,19 @@ def compile_contracts(
                         "metadata": result["metadata"],
                         "compiler": {
                             "type": "pyvax-transpiler",
-                            "version": "0.1.2",
+                            "version": "1.0.0",
                         },
                     },
                     f,
                     indent=2,
                 )
 
-            # Separate ABI file
+            # Separate ABI file (for frontend integration)
             abi_file = contract_output_dir / f"{contract_name}_abi.json"
             with open(abi_file, "w") as f:
                 json.dump(result["abi"], f, indent=2)
 
-            # Bytecode file
+            # Raw bytecode file (for manual deployment)
             bytecode_file = contract_output_dir / f"{contract_name}_bytecode.txt"
             with open(bytecode_file, "w") as f:
                 f.write(result["bytecode"])
@@ -87,18 +108,35 @@ def compile_contracts(
                 "bytecode_file": bytecode_file,
                 "abi": result["abi"],
                 "bytecode": result["bytecode"],
+                "metadata": result["metadata"],
                 "source_file": py_file.name,
                 "contract_type": "python",
+                "compile_time": elapsed,
             }
 
-            console.print(f"[green]✓[/green] Transpiled {contract_name}")
+            # Size stats
+            bytecode_hex = result["bytecode"]
+            size = (len(bytecode_hex) - 2) // 2 if bytecode_hex.startswith("0x") else len(bytecode_hex) // 2
+            before = result["metadata"].get("bytecode_size_before_opt", size)
+
+            size_msg = f"{size / 1024:.1f}kb"
+            if before > size:
+                pct = (before - size) / before * 100
+                size_msg += f" ({before / 1024:.1f}kb → {size / 1024:.1f}kb, -{pct:.0f}%)"
+
+            console.print(
+                f"[green]✓[/green] {contract_name}: {size_msg} "
+                f"[dim]({elapsed:.2f}s, optimizer=L{optimizer_level})[/dim]"
+            )
 
         except Exception as e:
+            elapsed = time.time() - start_time
             results[contract_name] = {
                 "success": False,
                 "error": str(e),
                 "source_file": py_file.name,
                 "contract_type": "python",
+                "compile_time": elapsed,
             }
             console.print(f"[red]✗[/red] Failed to transpile {contract_name}: {e}")
 
