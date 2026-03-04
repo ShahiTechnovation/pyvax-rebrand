@@ -1,0 +1,62 @@
+# Autonomous Execution
+
+The fundamental distinction of PyVax is replacing human-in-the-loop dependencies with deterministic EVM signatures generated entirely offline by the Agent.
+
+## Polling and Action Loops
+
+Unlike a standard frontend `Web3.js` interface reacting to human button clicks, the PyVax runtime expects perpetual evaluation cycles parsing external APIs.
+
+```python
+import time
+from pyvax import AgentWallet
+
+wallet = AgentWallet("yield-farmer-bot")
+
+def main_loop():
+    while True:
+        # Example: Check an external Oracle or CEX exchange rate
+        current_rate = fetch_market_rate()
+        
+        # Determine execution condition
+        if current_rate > 100.50:
+            print("Target rate acquired. Executing onchain swap.")
+            
+            # The wallet establishes connected EVM RPCs, fetches nonce,
+            # signs payload, and broadcasts automatically
+            wallet.execute(
+                target="0xVaultA...",
+                method="swap_tokens",
+                args=[1000]
+            )
+            
+            # Sleep to prevent rapid depletion
+            time.sleep(3600)
+            
+        else:
+            print(f"Holding. Current rate: {current_rate}")
+            time.sleep(15)
+
+# Trigger Autonomous State
+main_loop()             
+```
+
+## Abstracting the Gas Pipeline
+
+PyVax uniquely maps Gas limits out of the execution layer. The orchestrator simulates every `wallet.execute()` internally at zero cost before committing the signature.
+
+If the simulation mathematically determines the transaction `reverts` (for example, missing funds or failed require parameters), the transanction drops natively preventing the loss of native token (AVAX).
+
+```python
+try:
+    wallet.execute(
+        target="0xVaultA...",
+        method="deposit_all"
+    )
+except TransactionRevertedError as e:
+    print(f"Contract simulation rejected execution: {e.reason}")
+    # Retain your gas funds!
+```
+
+<Callout title="Smart Pre-Flight">
+This guarantees your AI agents do not empty their wallet balances due to hallucinating impossible interactions or failing to account for front-running.
+</Callout>

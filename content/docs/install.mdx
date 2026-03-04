@@ -1,0 +1,41 @@
+# Platform Installation
+
+The PyVax transpiler fundamentally operates using Python's native AST parser wrapped tightly against standard NPM modules. It expects modern NodeJS runtimes and an active Python environment.
+
+## macOS/Linux (Recommended)
+
+NodeJS 18+ is required to execute the CLI bundle without any configuration headaches. Using `npm -g` guarantees global accessibility across terminal instances.
+
+```bash
+npm install -g @pyvax/cli
+
+# Run an environment diagnostic to confirm the CLI is registered.
+pyvax doctor
+```
+
+## Windows Users
+
+We aggressively recommend **WSL2 (Windows Subsystem for Linux)**. Native Windows CMD or Powershell instances occasionally struggle with path-level module bindings for nested EVM dependencies.
+
+```bash
+curl -sL https://deb.nodesource.com/setup_lts.x | sudo bash -
+sudo apt install nodejs npm
+
+npm install -g @pyvax/cli
+```
+
+## Validate Configuration
+
+Once your download has finished compiling local dependency graphs, you can ping your local machine to make sure it establishes connections against the default Avalanche routing endpoints:
+
+```bash
+pyvax --version
+# v0.1.2
+
+pyvax networks
+# Fuji ✓ | C-Chain ✓
+```
+
+<Callout title="What about Python versions?">
+PyVax will automatically leverage whichever active interpreter you have globally specified via `python` or `python3` commands (anything `>3.10` works beautifully for typing integration). We strictly evaluate against native Types to convert memory structures into Solidity bytecode types.
+</Callout>

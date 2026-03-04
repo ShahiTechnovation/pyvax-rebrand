@@ -1,0 +1,56 @@
+# Contract Syntax
+
+The PyVax transpiler strictly requires Type Hints across all method arguments to correctly map static bindings to EVM parameter spaces.
+
+## Basic Contract
+
+This is the standard scaffold for defining stateful variables (`balance: dict`) which natively translates to a Solidity `mapping(address => uint256)` architecture.
+
+```python
+from pyvax import Contract
+
+class Vault(Contract):
+    balance: dict = {}
+    
+    @action
+    def deposit(self, amount: int):
+        self.balance[msg.sender] += amount
+```
+
+*Note: `msg.sender` and `msg.value` are implicitly derived global variables in any action environment, identical to standard EVM development paradigms.*
+
+## Agent Contract Guardrails
+
+In an Agent-only universe, you may wish to block standard EOAs (Ex: Metamask signatures) from executing high-frequency arbitrage or specialized gaming logic.
+
+The `@agent_action` decorator injects an EVM guard evaluating the `msg.sender` against the verified Autonomous Wallet protocol registry.
+
+```python
+class AgentVault(Contract):
+    @agent_action  
+    def autonomous_swap(self, token_in: str):
+        # Native deterministic logic mapping to a DEX
+        pass
+    
+    @human_action
+    def manual_withdraw(self, amount: int):
+        """Allows only the core human administrator to siphon funds"""
+        pass
+```
+
+
+## ERC1155 Game Objects
+
+PyVax maps specialized EVM standards into extremely simplified inheritance layers. For example, rendering robust gaming inventories relies on Native Types mapped across standard game mechanic definitions.
+
+```python
+class LootBox(Contract):
+    @action
+    def mint_loot(self, player: address, rarity: int):
+        # The internal `_mint` command pushes an ERC1155 signature payload
+        self._mint(player, rarity, 1)
+```
+
+<Callout title="A Note on Gas">
+PyVax natively optimizes repeated dictionary mutations and list iteration blocks in Python down to tightly localized `Yul` EVM instructions, meaning your Python syntax executes efficiently natively on Avalanche.
+</Callout>

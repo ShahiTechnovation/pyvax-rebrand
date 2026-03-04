@@ -1,0 +1,46 @@
+# Contract Debugging
+
+Because PyVax transpiles source code asynchronously, interpreting Avalanche stack traces when executions revert can initially feel unfamiliar.
+
+We provide a comprehensive diagnostic toolchain natively within the CLI to demystify EVM failures mapping them securely back into human-readable Python constraints.
+
+## Using the PyVax Doctor
+
+The foremost tool for interpreting environmental issues before execution or validating missing module path parameters is `pyvax doctor`.
+
+```bash
+$ pyvax doctor
+
+# 🔍 Diagnosing Environment Architecture
+# 
+# 🟢 Node Runtime      [v20.11.1] 
+# 🟢 Python SDK        [v3.12.0]
+# 🟢 @pyvax/cli        [v0.1.2]
+# 🟢 Avalanche Fuji    [Connected - ping: 32ms]
+#
+# Everything looks beautiful. Ready for transpile.
+```
+
+## Abstract Execution Traces
+
+When a deployed contract interaction fails, PyVax intercepts the raw `revert()` payload and decompiles the EVM OpCode hex trace back into a deterministic Python exception mapping.
+
+```bash
+$ pyvax call 0xVault2B... withdraw_funds 900
+```
+
+If the execution natively reverts due to mathematical underflow or permission barriers, PyVax intercepts the block result:
+
+```python
+# Trace Output
+# ========================
+# Execute Failed: [TransactionRevertedError]
+# 
+# File "vault.py", line 14, in withdraw_funds
+#     self.balance[msg.sender] -= amount
+# 
+# Error: Arithmetic Underflow. Attempted to subtract 900 
+# from current balance (100).
+```
+
+By adding the `--verbose` flag, the CLI explicitly prints out the target Solidity ABI definition mappings and native Yul Opcodes that threw the error so you can manually diagnose contract size issues or memory pointer defects.

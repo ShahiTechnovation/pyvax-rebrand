@@ -1,0 +1,56 @@
+# Verifiable Loot Systems
+
+Relying on JavaScript `Math.random()` to generate gaming loot exposes your game economy to trivial exploit vectors by clients simulating mempools to guarantee rare drops.
+
+PyVax natively supports **Chainlink VRF** (Verifiable Random Function) abstraction for bulletproof cryptographic randomness directly within your Python class.
+
+## The VRF Architecture
+
+```python
+from pyvax import Contract, network
+
+# Standard lookup map defining Item Rarity Thresholds
+LOOT_TABLE = {
+    "COMMON": [1, 50],       # 50% chance
+    "UNCOMMON": [51, 85],    # 35% chance 
+    "RARE": [86, 98],        # 13% chance
+    "LEGENDARY": [99, 100]   # 2% chance
+}
+
+class LootBox(Contract):
+    
+    @action
+    def open_loot(self, player: address):
+        """Processes a cryptographically secure RNG request natively"""
+        
+        # Internally blocks execution until the VRF Coordinator fulfills
+        # the asynchronous callback mapped by PyVax
+        rng_value = self.chainlink_vrf(max_value=100) 
+        
+        item_rarity = self._determine_rarity(rng_value)
+        
+        # Trigger an ERC1155 mint directly to the player's wallet
+        self._mint(player, item_rarity, 1)
+
+    # Note: Lacks a decorator, compiles to an Internal Solidity function!
+    def _determine_rarity(self, rng: int) -> int:
+        for rarity, (low, high) in LOOT_TABLE.items():
+            if low <= rng <= high:
+                return rarity
+```
+
+## VRF Funding & Subscriptions
+
+Chainlink VRF requires LINK token to fund the asynchronous oracle callbacks. 
+
+When you deploy a PyVax contract containing the `self.chainlink_vrf()` method call, the CLI will natively detect the dependency and prompt you to mapped a pre-funded Subscription ID against the Fuji or C-Chain network targets.
+
+```bash
+$ pyvax deploy vault.py --network fuji
+# Dependency detected: VRF Coordinator
+# 
+# Please enter your Chainlink Subscription ID: 
+> 8492
+# 
+# Binding VRF dependencies... Deploying.
+```

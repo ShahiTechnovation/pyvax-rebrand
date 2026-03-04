@@ -1,0 +1,62 @@
+# PyTest Integration
+
+The true power of mapping smart contracts onto native Python is leveraging the thousands of mature industry-grade open source developer tools already established.
+
+You can natively test your PyVax EVM transpilation using `pytest` without spinning up Hardhat, Foundry, or local Ganache EVM instances.
+
+## Bootstrapping a Local Environment
+
+PyVax exposes an isolated in-memory testing RPC `MockChain()` that correctly simulates EVM Opcodes and reverts without requiring background node synchronization.
+
+```python
+# test_vault.py
+import pytest
+from pyvax import MockChain, AgentWallet
+from src.vault import AgentVault
+
+@pytest.fixture
+def chain():
+    # Instantiates the zero-latency PyVax EVM Simulator
+    env = MockChain()
+    return env
+
+@pytest.fixture
+def accounts(chain):
+    # Generates 3 funded testing wallets mapping 10.0 AVAX 
+    return chain.generate_wallets(3, balance=10.0)
+
+def test_autonomous_deposit(chain, accounts):
+    human, agent_1, _ = accounts
+    
+    # Simulate a true deployment
+    contract = chain.deploy(AgentVault)
+    
+    amount = 5.0
+    
+    # 1. Human safely executes deposit externally
+    tx_1 = human.execute(contract, "deposit", [amount])
+    assert tx_1.status == "SUCCESS"
+    assert contract.balance(human) == 5.0
+    
+    # 2. Agent successfully validates its `@agent_action`
+    tx_2 = agent_1.execute(contract, "autonomous_rebalance", [])
+    assert tx_2.status == "SUCCESS"
+    
+    # 3. Simulate adversarial human attempting Agent-Only access
+    with pytest.raises(chain.TransactionRevertedError):
+        human.execute(contract, "autonomous_rebalance", [])
+```
+
+## Running the Matrix
+
+```bash
+$ pytest test_vault.py -v
+
+# test_vault.py::test_autonomous_deposit PASSED [100%]
+#
+# ================= 1 passed in 0.42s ==================
+```
+
+<Callout title="A Note on CI/CD">
+Because `MockChain` does not require complex Docker architectures or Docker-Compose sidecars running actual Avalanche nodes, your GitHub Actions run lightning fast natively executing Python code.
+</Callout>

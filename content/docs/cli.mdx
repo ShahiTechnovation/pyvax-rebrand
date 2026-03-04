@@ -1,0 +1,38 @@
+# Complete CLI Reference
+
+The `@pyvax/cli` package fundamentally orchestrates the parsing, generation, and onchain delivery of your Python application code. This reference covers every available terminal command natively bundled into the toolkit.
+
+## Core Commands
+
+| Command | Description | Example |
+|---------|-------------|---------|
+| `pyvax new <template>` | Scaffold project | `pyvax new agent-vault` |
+| `pyvax compile <file>` | Python → EVM Bytecode | `pyvax compile vault.py` |
+| `pyvax deploy <file>` | Securely deploy to network | `pyvax deploy --fuji vault.py` |
+| `pyvax call <addr> <mthd>` | Native Contract interaction | `pyvax call 0x... deposit 100` |
+| `pyvax wallet new <id>` | Agent wallet generation | `pyvax wallet new agent-001` |
+| `pyvax doctor` | Local environment check | `pyvax doctor` |
+| `pyvax config` | Output current RPC mapping | `pyvax config` |
+
+## Deployment Flags
+
+To properly control gas parameters and network targets during deployment, you can append any of the following modifiers onto a `pyvax deploy` command block:
+
+| Flag | Description | Default | Example |
+|------|-------------|---------|---------|
+| `--network, -n` | fuji, cchain, custom | `fuji` | `--network cchain` |
+| `--rpc` | Specific Web3 Provider | `Env Defined` | `--rpc https://api.avax.network...` |
+| `--gas-limit, -g` | Maximum execution tolerance | `2000000` | `--gas-limit 500000` |
+| `--verbose, -v` | Complete trace stack outputs | `false` | `--verbose` |
+
+```bash
+# Example showing a highly specialized mainnet deployment call
+pyvax deploy game-asset.py \
+    --network cchain \
+    --gas-limit 3000000 \
+    --verbose
+```
+
+<Callout title="A Note on Gas Simulation">
+PyVax natively simulates gas requirements prior to broadcasting via standard `eth_estimateGas` JSON-RPC calls. Supplying the `--gas-limit` flag will force an override against this system.
+</Callout>

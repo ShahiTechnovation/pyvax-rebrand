@@ -1,0 +1,59 @@
+# Onchain Economies
+
+Game theory dictates that sustainable onchain ecosystems require fully robust, programmable interactions against fungible currencies. PyVax provides zero-overhead mappings mapping native python math into standard ERC20 accounting patterns.
+
+## Integrating Standard Tokens
+
+Suppose you wish your Agents to swap native Wood (an ERC1155) for an underlying currency like USDC, bridging your bespoke game economy to native liquidity on Avalanche.
+
+```python
+from pyvax import Contract
+
+class Marketplace(Contract):
+    # Establish a trusted Treasury address mapping 
+    fee_wallet: address = "0xTreasury20A..."
+    marketplace_tax: float = 0.05
+    
+    @action
+    def buy_sword(self, sword_id: int):
+        # A player calls this method and provides native AVAX
+        price = self.get_dynamic_price(sword_id)
+        
+        # Verify the user transferred enough funds in the `msg.value` payload
+        assert msg.value >= price, "Insufficient funds provided."
+        
+        fee = price * self.marketplace_tax
+        seller_funds = price - fee
+        
+        # Siphon the capital directly within the execution loop!
+        self.transfer(self.fee_wallet, fee)
+        
+        # Transfer the asset securely from the decentralized exchange pool
+        self._mint(msg.sender, sword_id, 1)
+
+    def get_dynamic_price(self, item_id: int) -> int:
+        """Fetch demand curve metrics"""
+        return 1000
+```
+
+## Agent Vault Funding
+
+For fully autonomous gaming grids, bots require upfront capital. PyVax utilizes 1inch APIs and native swap abstractions mapping any asset class natively on Fuji into their respective Gas allocations.
+
+```python
+from pyvax import AgentWallet
+
+def bootstrap_city_bot():
+    npc = AgentWallet("blacksmith-001")
+    
+    # Securely exchange exactly 5 USDC into AVAX to fund the Blacksmith's
+    # gas limits for the upcoming week 
+    npc.fund(usdc=5.00)
+    
+    # NPC begins executing Game Actions entirely self-funded!
+    npc.execute(
+        target="0xMarketplace...",
+        method="craft_sword",
+        args=["iron"]
+    )
+```

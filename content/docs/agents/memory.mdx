@@ -1,0 +1,55 @@
+# Agent Memory 
+
+The PyVax transpiler natively handles persistent onchain memory storage by interpreting standard Python dictionaries and lists as persistent EVM state trees mapped directly into Avalanche blocks.
+
+## State Abstraction
+
+By isolating your autonomous actors' logic away from the blockchain and strictly using PyVax contracts as a verifiable database, agents can securely memorize parameters.
+
+```python
+from pyvax import Contract, agent_action
+
+class AgentMemory(Contract):
+    # Initializes an EVM mapping(address => string => bytes)
+    state: dict = {}
+    
+    @agent_action
+    def write_state(self, key: str, value: bytes):
+        """Only the agent can mutate their specific storage partition"""
+        self.state[msg.sender][key] = value
+        
+    @action
+    def read_state(self, target: address, key: str) -> bytes:
+        """Anyone can read the state verifying the data publicly"""
+        return self.state[target][key]
+```
+
+## Immutable Event Logging
+
+Dictionaries map to raw storage which can become expensive during highly recurrent update operations. For append-only logging (example: recording a neural network's decision weights during an epoch), utilize PyVax's built in Event emitters.
+
+```python
+class AgentLogger(Contract):
+
+    @agent_action
+    def log_decision(self, model_confidence: int, target_node: str):
+        # Natively transpiles to a Solidity `emit Event(args)` signature
+        self.emit("DecisionLogged", msg.sender, model_confidence, target_node)
+```
+
+The offline Agent script can stream these events instantly using standard WebSockets.
+
+```python
+from pyvax import AgentWallet
+
+wallet = AgentWallet("ai-node-1")
+
+def on_log(event):
+    print(f"Agent {event.sender} executed with confidence: {event.model_confidence}")
+
+wallet.subscribe(
+    target="0xAgentLogger...",
+    event="DecisionLogged",
+    callback=on_log
+)
+```

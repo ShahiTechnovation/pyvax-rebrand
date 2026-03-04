@@ -1,0 +1,55 @@
+# Gas Optimization Techniques
+
+While deploying to Avalanche intrinsically offers extremely cheap, sub-second transactional finality, running highly complex multithreaded AI Agents 24/7 evaluating billions of states onchain can still accumulate high operational costs.
+
+PyVax transpiles Python down into the **Yul / EVM Assembly** layer, offering unique memory packaging optimizations automatically.
+
+## Storage Packing
+
+Unlike dynamically sized Python objects, Solidity natively groups 256-bit slots. PyVax will automatically attempt to pack sequential memory variables to save deployment and modification gas limits.
+
+```python
+from pyvax import Contract
+
+class Unoptimized(Contract):
+    # This consumes THREE 256-bit EVM slots (60,000 Gas initialization)
+    health: int = 100
+    is_alive: bool = True
+    mana: int = 50
+
+class Optimized(Contract):
+    # PyVax maps Uint8 + Bool + Uint8 identically into exactly ONE 256-bit slot
+    # (20,000 Gas initialization)
+    health: pyvax.Uint8 = 100
+    is_alive: bool = True
+    mana: pyvax.Uint8 = 50
+```
+
+## Abstracting Loops to Agents
+
+Never execute unbounded iteration loops (such as mapping over unpredictable array lengths) natively within a `@action` or `@agent_action`. Instead, offload the computational processing loop entirely to the Python environment *before* submitting the signature.
+
+```python
+class LootVault(Contract):
+    
+    # ❌ AVOID: Processing logic onchain burns exponential Gas
+    @action
+    def give_gold_to_everyone(self, players: list):
+        for player in players:
+            self._mint(player, "gold", 100)
+            
+    # ✅ PREFER: Using the CLI / Wallet SDK to batch interactions uniquely
+    @agent_action
+    def batch_mint(self, target_player: address):
+        self._mint(target_player, "gold", 100)
+```
+
+And in your Agent script executing locally on your AWS droplet:
+
+```python
+wallet = AgentWallet("dispatcher-bot")
+
+# Process the O(N) loop Offchain at ZERO Cost
+for player in fetch_active_players_from_db():
+    wallet.execute("0xLootVault...", "batch_mint", [player])
+```

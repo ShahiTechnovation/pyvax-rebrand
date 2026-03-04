@@ -1,0 +1,59 @@
+# Your First Smart Contract
+
+To completely grasp how PyVax compiles Python logic onto Ethereum Virtual Machine architectures, we’ll build a functional `Vault` class. This allows any user to deposit native tokens (AVAX) and withdraw them safely.
+
+## Create the Architecture
+
+First, initialize a new `vault.py` project on the file system. Let's look closely at how decorators signal EVM visibility to the compiler.
+
+```python
+from pyvax import Contract
+
+class AgentVault(Contract):
+    # Dictionaries automatically map to Solidity mapping(address => uint256)
+    balance: dict = {}
+    
+    @action
+    def deposit(self, amount: int):
+        """Standard deposit action available to all wallets"""
+        self.balance[msg.sender] += amount
+        
+    @agent_action
+    def autonomous_rebalance(self):
+        """This function executes strictly by Autonomous Agent Wallet signatures"""
+        pass
+        
+    @human_action
+    def withdraw(self, amount: int):
+        """Blocks autonomous wallets from draining funds meant only for standard humans"""
+        if self.balance[msg.sender] >= amount:
+            self.balance[msg.sender] -= amount
+```
+
+### PyVax Primitive Rules
+
+1. Any class inheriting from `Contract` becomes the exact root mapping of an EVM Smart Contract.
+2. The `@action` decorator translates methods directly into `public` or `external` smart contract functions. Without it, methods remain `internal` completely hidden from blockchain interactors.
+3. Defining variables directly on the root of the standard Python class immediately translates them into verifiable `storage` state variables natively on Avalanche.
+
+## Compile & Test
+
+Run the transpiler CLI utility to evaluate the syntax against PyVax compilation rules:
+
+```bash
+$ pyvax compile vault.py
+
+# ✔ Parsed syntax mapping
+# ✔ AST generation successful 
+# => Output: /build/AgentVault.json (Contains ABI and Bytecode properties)
+```
+
+Push it straight to the Fuji Testnet!
+
+```bash
+$ pyvax deploy vault.py --network fuji
+# Contract deploying...
+# Transaction Hash: 0x8bcd...9271
+# 
+# SUCCESS: Live at => 0x4a2f3e2b1c8f...
+```

@@ -1,0 +1,243 @@
+@import 'tailwindcss';
+@import 'tw-animate-css';
+
+@custom-variant dark (&:is(.dark *));
+
+:root {
+  --background: #000000;
+  --foreground: #ffffff;
+  --card: #0a0a0a;
+  --card-foreground: #ffffff;
+  --popover: #0a0a0a;
+  --popover-foreground: #ffffff;
+  --primary: #ff0000;
+  --primary-foreground: #000000;
+  --secondary: #ffffff;
+  --secondary-foreground: #000000;
+  --muted: #333333;
+  --muted-foreground: #888888;
+  --accent: #ff0000;
+  --accent-foreground: #000000;
+  --destructive: #ff1744;
+  --destructive-foreground: #ffffff;
+  --border: #1a1a1a;
+  --input: #0a0a0a;
+  --ring: #ff0000;
+  --chart-1: #ff0000;
+  --chart-2: #ff00ff;
+  --chart-3: #00ffff;
+  --chart-4: #ffff00;
+  --chart-5: #ff6600;
+  --radius: 0.25rem;
+  --sidebar: #0a0a0a;
+  --sidebar-foreground: #ffffff;
+  --sidebar-primary: #ff0000;
+  --sidebar-primary-foreground: #000000;
+  --sidebar-accent: #ff0000;
+  --sidebar-accent-foreground: #000000;
+  --sidebar-border: #1a1a1a;
+  --sidebar-ring: #ff0000;
+}
+
+.dark {
+  --background: #000000;
+  --foreground: #ffffff;
+  --card: #0a0a0a;
+  --card-foreground: #ffffff;
+  --popover: #0a0a0a;
+  --popover-foreground: #ffffff;
+  --primary: #ff0000;
+  --primary-foreground: #000000;
+  --secondary: #ffffff;
+  --secondary-foreground: #000000;
+  --muted: #333333;
+  --muted-foreground: #888888;
+  --accent: #ff0000;
+  --accent-foreground: #000000;
+  --destructive: #ff1744;
+  --destructive-foreground: #ffffff;
+  --border: #1a1a1a;
+  --input: #0a0a0a;
+  --ring: #ff0000;
+  --chart-1: #ff0000;
+  --chart-2: #ff00ff;
+  --chart-3: #00ffff;
+  --chart-4: #ffff00;
+  --chart-5: #ff6600;
+  --sidebar: #0a0a0a;
+  --sidebar-foreground: #ffffff;
+  --sidebar-primary: #ff0000;
+  --sidebar-primary-foreground: #000000;
+  --sidebar-accent: #ff0000;
+  --sidebar-accent-foreground: #000000;
+  --sidebar-border: #1a1a1a;
+  --sidebar-ring: #ff0000;
+}
+
+@theme inline {
+  --font-sans: 'Inter', 'Inter Fallback';
+  --font-mono: 'Geist Mono', 'Geist Mono Fallback';
+  --font-pixel: 'Press Start 2P', 'Press Start 2P Fallback';
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  --color-chart-1: var(--chart-1);
+  --color-chart-2: var(--chart-2);
+  --color-chart-3: var(--chart-3);
+  --color-chart-4: var(--chart-4);
+  --color-chart-5: var(--chart-5);
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
+  --color-sidebar: var(--sidebar);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-ring: var(--sidebar-ring);
+}
+
+@layer components {
+  .glow-sm {
+    box-shadow: 0 0 8px rgba(232, 65, 66, 0.3);
+  }
+  
+  .glow-md {
+    box-shadow: 0 0 16px rgba(232, 65, 66, 0.4);
+  }
+  
+  .glow-lg {
+    box-shadow: 0 0 24px rgba(232, 65, 66, 0.5);
+  }
+  
+  .glass {
+    background: rgba(255, 255, 255, 0.04);
+    backdrop-filter: blur(8px);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+  }
+  
+  .glass-hover {
+    background: rgba(255, 255, 255, 0.04);
+    backdrop-filter: blur(8px);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    transition: all 200ms ease-out;
+  }
+  
+  .glass-hover:hover {
+    background: rgba(255, 255, 255, 0.06);
+    border-color: rgba(255, 255, 255, 0.12);
+  }
+  
+  /* Button hover states */
+  button {
+    @apply transition-all duration-200 ease-out;
+  }
+  
+  /* Link hover states */
+  a {
+    @apply transition-colors duration-200;
+  }
+  
+  /* Input focus states */
+  input, textarea, select {
+    @apply transition-all duration-200;
+  }
+  
+  /* Card hover lift */
+  .hover-lift:hover {
+    @apply transform -translate-y-1 transition-transform duration-200;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+  body {
+    @apply bg-background text-foreground;
+  }
+  
+  html {
+    scroll-behavior: smooth;
+  }
+  
+  /* Smooth scrollbar */
+  ::-webkit-scrollbar {
+    width: 8px;
+  }
+  
+  ::-webkit-scrollbar-track {
+    background: rgba(255, 255, 255, 0.02);
+  }
+  
+  ::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 4px;
+  }
+  
+  ::-webkit-scrollbar-thumb:hover {
+    background: rgba(255, 255, 255, 0.2);
+  }
+}
+
+@layer utilities {
+  .animate-type-in {
+    animation: typeIn 0.5s ease-out forwards;
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  
+  .delay-100 { animation-delay: 100ms; }
+  .delay-200 { animation-delay: 200ms; }
+  .delay-300 { animation-delay: 300ms; }
+  .delay-400 { animation-delay: 400ms; }
+  .delay-500 { animation-delay: 500ms; }
+
+  @keyframes typeIn {
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  .animate-legendary-pulse {
+    animation: legendaryPulse 2s ease-in-out infinite;
+  }
+
+  @keyframes legendaryPulse {
+    0%, 100% {
+      box-shadow: 0 0 4px rgba(232, 65, 66, 0.2);
+    }
+    50% {
+      box-shadow: 0 0 16px rgba(232, 65, 66, 0.6);
+    }
+  }
+
+  .animate-cursor-blink {
+    animation: cursorBlink 1s step-end infinite;
+  }
+
+  @keyframes cursorBlink {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0; }
+  }
+}

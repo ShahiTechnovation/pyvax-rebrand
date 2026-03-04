@@ -1,0 +1,66 @@
+# Global Leaderboards
+
+Competitive games demand verifiable state memory proving fair access, high-water marks, and unmanipulateable historical scoring metrics. We utilize the native PyVax event layer mapped over high-efficiency Python structures to achieve this.
+
+## Onchain Scorer
+
+```python
+from pyvax import Contract
+
+class Leaderboard(Contract):
+
+    # Establish an immutable tracking dict mapping addresses to integers
+    scores: dict = {}
+
+    @action
+    def submit_score(self, points: int):
+        """Standard human wallet pushes score payload"""
+        # Block malicious metric manipulation (Scores only go up!)
+        if points > self.scores.get(msg.sender, 0):
+            self.scores[msg.sender] = points
+            
+            # Emit globally indexable log tracking the new high water mark
+            self.emit("NewHighScore", msg.sender, points)
+```
+
+## Abstracting Gas via Agents
+
+The above `submit_score` architecture requires a human to sign a standard wallet transaction via Metamask—costing money (Gas) entirely destroying standard F2P (Free To Play) loops.
+
+To fix this, game developers shift to PyVax Server-Authoritative Agent implementations where an Agent Wallet deployed on an AWS lambda instance pays the gas fees on behalf of the player.
+
+```python
+class AgentLeaderboard(Contract):
+
+    scores: dict = {}
+
+    @agent_action
+    def record_authoritative_score(self, player_address: address, points: int):
+        """Only the backend Server Agent Wallet can push valid metrics"""
+        if points > self.scores.get(player_address, 0):
+            self.scores[player_address] = points
+            self.emit("NewHighScore", player_address, points)
+```
+
+## Backend Executor 
+
+```python
+# Game Backend Loop (FastAPI / Server)
+from pyvax import AgentWallet
+
+# Server instantiates its own Private wallet
+game_server = AgentWallet("game-coordinator")
+
+def end_match_webhook(player_address, final_score):
+    
+    # The server pays the Avalanche gas fees, verifying the match results perfectly 
+    game_server.execute(
+        target="0xAgentLeaderboard...",
+        method="record_authoritative_score",
+        args=[player_address, final_score]
+    )
+```
+
+<Callout title="A UX Masterclass">
+This is the holy grail for Web3 gaming adoption: The player simply connects an email or standard JWT login, while the Server Agent seamlessly manages cryptographic transactions against the Avalanche Subnet instantly eliminating UX friction.
+</Callout>

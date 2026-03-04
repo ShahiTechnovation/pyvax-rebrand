@@ -1,0 +1,60 @@
+# Agent Wallet SDK
+
+PyVax introduces the `AgentWallet`, a fundamentally new primitive designed to grant autonomous Python logic secure, abstract access to onchain funds and transaction signatures without requiring human-in-the-loop approvals.
+
+## Create & Fund
+
+Creating an Agent Wallet instantly spins up a securely derived hierarchical deterministic (HD) wallet under the hood.
+
+```python
+from pyvax import AgentWallet
+
+wallet = AgentWallet("trading-bot-v1")
+
+# The PyVax orchestrator automatically swaps fiat or testnet 
+# faucet routes to guarantee native AVAX delivery.
+wallet.fund(avax=0.5)  
+
+print(wallet.address)  
+# 0x4a2f3e...
+
+print(wallet.private_key)  
+# (Encrypted securely in environment memory)
+```
+
+## Autonomous Execution
+
+Because `AgentWallet` abstracts away `web3` providers, you can drop transaction execution blocks directly inside of conditional logic loops.
+
+```python
+# Agent reads market data → executes purely on metrics
+if market_price > threshold:
+    receipt = wallet.execute(
+        target="0xVault8f92...",
+        method="swap",
+        args=[token_in, token_out, amount]
+    )
+    
+    print(f"Swap confirmed! Gas used: {receipt.gas_used}")
+```
+
+## Multi-Agent Coordination
+
+Need to spin up a hive-mind of actors to stress-test your PyVax smart contract? Generating fleets of agents is completely trivial:
+
+```python
+# Generate 10 distinct autonomous wallets
+wallets = [AgentWallet(f"agent-{i}") for i in range(10)]
+
+for wallet in wallets:
+    # Each wallet inherently tracks its own nonce and signers
+    wallet.execute(
+        target="0xCoordinatorVault...", 
+        method="heartbeat", 
+        args=[]
+    )
+```
+
+<Callout title="Security Notice">
+Never hardcode private keys when configuring production PyVax agents. The `AgentWallet` sdk will search for `.env` mappings matching `PYVAX_AGENT_KEY_{NAME}` automatically.
+</Callout>

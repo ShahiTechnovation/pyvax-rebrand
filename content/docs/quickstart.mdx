@@ -1,0 +1,35 @@
+# Deploy Your First Agent
+
+Deploy a fully autonomous smart contract onto an Avalanche subnet in 60 seconds with our zero-config CLI toolchain. PyVax natively transpiles your Python into highly optimized EVM bytecode.
+
+## Terminal Walkthrough
+
+We'll use `npm` to globally index the command line utility, then scaffold out a blank vault project using `pyvax new`.
+
+```bash
+npm install -g @pyvax/cli
+pyvax new agent-vault
+cd agent-vault
+
+# Transpile the AST
+pyvax compile vault.py
+
+# Push the artifacts to the Fuji Testnet
+pyvax deploy --fuji
+```
+
+<Callout title="Deployment Success">
+✓ Live at **0x4a2f3e2b1c...** (2.1kb)<br/>
+Your contract bytecode is successfully verified and broadcasting on the Fuji Testnet.
+</Callout>
+
+## Verify Execution
+
+You don't need to boot up web3.js or ethers to test your contract. You can interact with it directly through the transpiler environment natively using `pyvax call`:
+
+```bash
+pyvax call 0x4a2f... deposit 100
+# ✓ Transaction confirmed (Gas: 21,394)
+```
+
+**Next Steps**: Head to [Installation](/docs/install) to configure your system or learn about [Agent Wallets](/docs/agents/wallets) to let your smart contract sign itself.

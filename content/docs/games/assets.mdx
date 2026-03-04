@@ -1,0 +1,53 @@
+# ERC1155 Game Assets
+
+To support robust web3 gaming ecosystems, PyVax natively transpiles the standard `_mint` syntax into fully compliant ERC1155 smart contracts on Avalanche. This allows a single deployed contract to manage infinite permutations of fungible (gold, wood) and non-fungible (unique swords, armor) assets.
+
+## Defining the Inventory Set
+
+We avoid complex mapping structures by explicitly declaring game-logic constraints inside an Avalanche smart contract.
+
+```python
+from pyvax import Contract
+
+class GameAssets(Contract):
+    # Dictionaries persist equipped states for players
+    equipped: dict = {}
+    
+    @action
+    def mint_materials(self, player: address, material_id: int, quantity: int):
+        """Mints fungible resources (e.g. 1000 Wood or 50 Iron)"""
+        # The _mint compiler function natively builds ERC1155 payloads
+        self._mint(player, material_id, quantity)
+
+    @action
+    def mint_unique_weapon(self, player: address, weapon_id: int):
+        """Mints a non-fungible weapon (Quantity is strictly 1)"""
+        self._mint(player, weapon_id, 1)
+
+    @action
+    def equip_item(self, player: address, item_id: int):
+        """Records active equipment on the blockchain state"""
+        self.equipped[player] = item_id
+```
+
+## Abstracting Game Logic via Agents
+
+A major hurdle in onchain gaming is requiring human players to sign transactions via Metamask every single time they pick up a piece of gold or equip a new shield.
+
+By binding `AgentWallets` to player sessions, game studios can execute PyVax contracts completely invisibly in the background.
+
+```python
+from pyvax import AgentWallet
+
+def game_loop(player_session_wallet: AgentWallet):
+    # A monster drops an item ID 405 (Ex: Iron Sword)
+    dropped_item = 405
+    
+    # The session wallet instantly signs and captures the asset onchain! 
+    # Zero metamask popups.
+    player_session_wallet.execute(
+        target="0xGameAssets...",
+        method="mint_unique_weapon",
+        args=[player_session_wallet.address, dropped_item]
+    )
+```

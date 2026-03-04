@@ -1,0 +1,32 @@
+# Multi-Chain Deployment
+
+The `pyvax deploy` environment securely maps the Python logic into standard ABI and EVM deployer formats, routing standard Web3 signatures transparently.
+
+## The Network Modifier
+
+By default, any compilation command assumes the `fuji` Testnet environment to guarantee zero-risk iteration. Moving to production (the primary Avalanche C-Chain) only requires a CLI flag string manipulation.
+
+```bash
+# Deploys your parsed vault.py contract bytecode straight to Fuji
+pyvax deploy vault.py --network fuji
+
+# Production launch across all verified Avalanche nodes natively
+pyvax deploy vault.py --network cchain
+```
+
+## Custom RPC Validation
+
+To bypass rate limits against default RPC gateways during high-volume Agent deployments, supply your own private URL endpoint configurations:
+
+```bash
+pyvax deploy agent-orchestrator.py \
+    --network fuji \
+    --rpc https://api.avax-test.network/ext/bc/C/rpc \
+    --verbose
+```
+
+Under the hood, `pyvax deploy` simulates the initialization against the EVM stack natively and establishes gas thresholds prior to exposing a signing request to your local terminal instance. 
+
+<Callout title="A note on verification.">
+Whenever `--network` is supplied, PyVax natively executes the Etherscan bytecode verification hooks automatically upon block confirmation.
+</Callout>

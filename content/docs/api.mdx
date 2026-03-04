@@ -1,0 +1,60 @@
+# PyVax Python SDK 
+
+The PyVax Python SDK (v0.1.2) exposes the fundamental wrapper classes necessary for AST transpilation down to the EVM along with powerful offchain Agent administration utilities.
+
+## Contract Class
+
+All valid Avalanche smart contracts originating from PyVax must structurally inherit from `Contract`.
+
+```python
+from pyvax import Contract, network
+
+class AgentVault(Contract):
+    balance: dict = {}
+    
+    @action
+    def deposit(self, amount: int):
+        """Standard deposit action available to humans or agents"""
+        self.balance[msg.sender] += amount
+    
+    @agent_action  
+    def autonomous_rebalance(self):
+        """This function executes strictly by Autonomous Agent Wallet signatures"""
+        pass
+```
+
+### Decorators
+
+| Decorator | Function Visibility | Execution Access |
+|-----------|---------------------|------------------|
+| `@action` | External / Public | All addresses (EOA + Contracts) |
+| `@agent_action` | External | Verified Autonomous Wallets only |
+| `@human_action` | External | Non-Agent addresses only |
+
+<Callout title="Internal Functions">
+If you do not decorate a class method within your `Contract`, it is automatically transpiled as an `internal` Solidity function. It will not be exposed to the public ABI and cannot be called externally.
+</Callout>
+
+## AgentWallet Provider
+
+Agents execute arbitrary logic entirely offchain until they require settlement or interaction against an Avalanche subnet.
+
+```python
+from pyvax import AgentWallet
+
+wallet = AgentWallet("agent-001")
+
+# The funding system natively integrates 1inch APIs to map requested assets.
+wallet.fund(avax=1.0) 
+
+# Autonomous execution routing against a deployed PyVax Contract.
+receipt = wallet.execute(
+    contract="0xVault123...",
+    method="deposit",
+    args=[1000]
+)
+
+print(receipt.gas_used)
+```
+
+The `wallet.execute()` pipeline entirely abstracts away `nonce` management, gas estimations, and block verification polling typically required in manual `web3.py` scripts.

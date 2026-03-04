@@ -1,0 +1,34 @@
+# Custom RPC Configurations
+
+By default, the `@pyvax/cli` automatically routes all compilation payloads and transaction requests through the public Avalanche endpoints (`api.avax-test.network` for Fuji, and `api.avax.network` for the C-Chain). 
+
+For production applications generating high-frequency transaction volumes (HFT trading bots, MMO game servers), you must inject custom WebSocket or HTTP endpoints to prevent rate-limiting.
+
+## Using the CLI
+
+You can establish connection overrides for a single deployment directly from the terminal.
+
+```bash
+# Push an orchestrator contract relying strictly on Ankr or Infura endpoints
+pyvax deploy master.py \
+    --network cchain \
+    --rpc https://avalanche-mainnet.infura.io/v3/YOUR_PROJECT_ID
+```
+
+## Global Environment Overrides
+
+If you prefer not to append flags to every command, you can lock your preferred routing instances natively within the `.env` root of your project scaffold.
+
+```env
+# .env file
+
+# Staging Environment
+PYVAX_FUJI_RPC="https://your-custom-full-node.local:9650/ext/bc/C/rpc"
+
+# Production Environment
+PYVAX_CCHAIN_RPC="https://virginia-aws-node.pyvax.io/rpc"
+```
+
+<Callout title="Testing Your Connection">
+Run `pyvax doctor` at any time to verify the latency and active block-height of your injected RPC bindings. The toolchain natively validates the Web3 handshakes.
+</Callout>
