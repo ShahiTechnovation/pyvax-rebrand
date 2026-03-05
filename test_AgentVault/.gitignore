@@ -1,0 +1,8 @@
+# PyVax
+build/
+*.json
+!pyvax_config.json
+pyvax_key*.json
+.env
+__pycache__/
+deployments.json

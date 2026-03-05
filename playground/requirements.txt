@@ -1,0 +1,4 @@
+fastapi
+pydantic
+pycryptodome>=3.15.0
+rich>=13.0.0

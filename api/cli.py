@@ -1,44 +1,28 @@
-#!/usr/bin/env python3
-"""JSON API wrapper for the PyVax transpiler v2.0.0.
+"""
+PyVax CLI API Handler for Vercel Serverless Functions.
 
-Reads a JSON request from stdin and writes the result to stdout.
-Used by the Next.js API route to execute CLI commands locally via child process.
+POST /api/cli → Execute pyvax commands (new, compile, test)
+GET  /api/cli → Health check
 
-Usage:
-    echo '{"command": "compile", "source": "class Token(Contract): ...", "contract_name": "Token"}' | python -m avax_cli.api_wrapper
-
-Request format:
-    {
-        "command":        "compile" | "test" | "deploy" | "new" | "help" | "version" | "templates",
-        "source":         "<python source>",          // required for compile/test/deploy
-        "contract_name":  "ContractName",             // optional, default "Contract"
-        "optimizer_level": 1,                         // optional, 0-3
-        "overflow_safe":  true,                       // optional
-        "template":       "ERC20",                    // optional, for 'new' command
-        "chain":          "fuji"                      // optional, for 'deploy' command
-    }
-
-Response format (always JSON on stdout):
-    {
-        "success": true/false,
-        "command": "compile",
-        "stdout":  "...",            // human-readable output for terminal
-        "bytecode": "0x...",         // on compile/test/deploy success
-        "abi": [...],               
-        "metadata": {...},
-        ...
-    }
+The transpiler runs natively in Python on Vercel's serverless runtime.
+No Pyodide needed on the backend — the real Python transpiler executes directly.
 """
 
-import sys
 import json
+import os
+import sys
+import shlex
+import tempfile
 import traceback
+from pathlib import Path
+from http.server import BaseHTTPRequestHandler
 from io import StringIO
 from contextlib import redirect_stdout, redirect_stderr
-from .transpiler import transpile_python_contract
 
+# Add the avax_cli package to the path
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), "avax_cli"))
 
-# ─── Contract Templates ─────────────────────────────────────────────────────
+# ─── Contract Templates (mirrored from avax_cli/cli.py) ─────────────────────
 
 TEMPLATES = {
     "SimpleStorage": (
@@ -182,10 +166,44 @@ TEMPLATES = {
 }
 
 
-# ─── Command Handlers ────────────────────────────────────────────────────────
+def execute_new(project_name, template=None):
+    """Simulate `pyvax new <project_name>` — returns template source code."""
+    template_name = template or project_name
+    if template_name in TEMPLATES:
+        source = TEMPLATES[template_name]
+    else:
+        source = TEMPLATES["SimpleStorage"]
+        template_name = "SimpleStorage"
+
+    return {
+        "success": True,
+        "command": "new",
+        "project": project_name,
+        "template": template_name,
+        "source": source,
+        "config": {
+            "network": "fuji",
+            "rpc_url": "https://api.avax-test.network/ext/bc/C/rpc",
+            "chain_id": 43113,
+            "optimizer_level": 1,
+            "overflow_safe": True,
+        },
+        "stdout": (
+            f"✓ Project '{project_name}' initialized!\n"
+            f"  Template: {template_name}\n"
+            f"  Network: fuji (Chain ID: 43113)\n\n"
+            f"Next steps:\n"
+            f"  1. Edit contracts/{template_name}.py\n"
+            f"  2. pyvax compile\n"
+            f"  3. pyvax deploy {template_name} --chain fuji\n"
+        ),
+    }
+
 
 def execute_compile(source_code, contract_name="Contract", optimizer_level=1, overflow_safe=True):
     """Run the real PyVax transpiler on source code."""
+    from transpiler import transpile_python_contract
+
     stdout_capture = StringIO()
     stderr_capture = StringIO()
 
@@ -283,8 +301,9 @@ def execute_deploy_dry_run(source_code, contract_name="Contract", chain="fuji"):
     if not compile_result["success"]:
         return compile_result
 
+    # Estimate gas from bytecode size (reasonable approximation)
     bytecode_size = compile_result["size_bytes"]
-    estimated_gas = 21000 + (bytecode_size * 200) + 32000
+    estimated_gas = 21000 + (bytecode_size * 200) + 32000  # base + deployment + overhead
 
     return {
         "success": True,
@@ -295,8 +314,6 @@ def execute_deploy_dry_run(source_code, contract_name="Contract", chain="fuji"):
         "estimated_gas": estimated_gas,
         "bytecode": compile_result["bytecode"],
         "abi": compile_result["abi"],
-        "metadata": compile_result.get("metadata", {}),
-        "size_bytes": bytecode_size,
         "stdout": (
             f"Gas Simulation for {contract_name}\n\n"
             f"  Estimated gas: {estimated_gas:,}\n"
@@ -308,157 +325,212 @@ def execute_deploy_dry_run(source_code, contract_name="Contract", chain="fuji"):
     }
 
 
-def execute_new(project_name, template=None):
-    """Simulate `pyvax new <project_name>` — returns template source code."""
-    template_name = template or project_name
-    if template_name in TEMPLATES:
-        source = TEMPLATES[template_name]
-    else:
-        source = TEMPLATES["SimpleStorage"]
-        template_name = "SimpleStorage"
-
-    return {
-        "success": True,
-        "command": "new",
-        "project": project_name,
-        "template": template_name,
-        "source": source,
-        "config": {
-            "network": "fuji",
-            "rpc_url": "https://api.avax-test.network/ext/bc/C/rpc",
-            "chain_id": 43113,
-            "optimizer_level": 1,
-            "overflow_safe": True,
-        },
-        "stdout": (
-            f"✓ Project '{project_name}' initialized!\n"
-            f"  Template: {template_name}\n"
-            f"  Network: fuji (Chain ID: 43113)\n\n"
-            f"Next steps:\n"
-            f"  1. Edit contracts/{template_name}.py\n"
-            f"  2. pyvax compile\n"
-            f"  3. pyvax deploy {template_name} --chain fuji\n"
-        ),
-    }
-
-
-# ─── Main Entry Point ────────────────────────────────────────────────────────
-
-def main():
-    """Process a CLI command request from stdin, write JSON result to stdout."""
-    input_data = sys.stdin.read()
-
+def parse_command(raw_command):
+    """Parse a pyvax CLI command string into action + arguments."""
     try:
-        request = json.loads(input_data)
-    except json.JSONDecodeError as e:
-        result = {"success": False, "error": f"Invalid JSON input: {str(e)}"}
-        print(json.dumps(result))
-        return
+        parts = shlex.split(raw_command.strip())
+    except ValueError:
+        parts = raw_command.strip().split()
 
-    command = request.get("command", "").strip()
-    source_code = request.get("source", "")
-    contract_name = request.get("contract_name", "Contract")
-    optimizer_level = int(request.get("optimizer_level", 1))
-    overflow_safe = request.get("overflow_safe", True)
-    template = request.get("template", None)
-    chain = request.get("chain", "fuji")
+    # Strip leading 'pyvax' if present
+    if parts and parts[0].lower() == "pyvax":
+        parts = parts[1:]
 
-    if not command:
-        result = {"success": False, "error": "No command provided"}
-        print(json.dumps(result))
-        return
+    if not parts:
+        return "help", {}, None
 
-    try:
-        if command == "compile":
-            if not source_code:
-                result = {"success": False, "error": "No source code provided for compilation"}
+    action = parts[0].lower()
+    args = parts[1:]
+    kwargs = {}
+
+    # Parse flags
+    i = 0
+    positional = []
+    while i < len(args):
+        if args[i].startswith("--"):
+            key = args[i].lstrip("-").replace("-", "_")
+            if "=" in key:
+                k, v = key.split("=", 1)
+                kwargs[k] = v
+            elif i + 1 < len(args) and not args[i + 1].startswith("--"):
+                kwargs[key] = args[i + 1]
+                i += 1
             else:
-                result = execute_compile(source_code, contract_name, optimizer_level, overflow_safe)
-
-        elif command == "test":
-            if not source_code:
-                result = {"success": False, "error": "No source code provided for testing"}
+                kwargs[key] = True
+        elif args[i].startswith("-") and len(args[i]) == 2:
+            key = args[i][1]
+            if i + 1 < len(args) and not args[i + 1].startswith("-"):
+                kwargs[key] = args[i + 1]
+                i += 1
             else:
-                result = execute_test(source_code, contract_name)
-
-        elif command in ("deploy", "deploy --dry-run"):
-            if not source_code:
-                result = {"success": False, "error": "No source code provided for deployment simulation"}
-            else:
-                result = execute_deploy_dry_run(source_code, contract_name, chain)
-
-        elif command == "new":
-            project_name = contract_name or "MyProject"
-            result = execute_new(project_name, template)
-
-        elif command == "version":
-            result = {
-                "success": True,
-                "command": "version",
-                "stdout": (
-                    "PyVax CLI v1.0.0\n\n"
-                    "Python to EVM transpiler for Avalanche smart contracts\n"
-                    "https://pyvax.io\n"
-                ),
-            }
-
-        elif command == "templates":
-            result = {
-                "success": True,
-                "command": "templates",
-                "templates": list(TEMPLATES.keys()),
-                "stdout": (
-                    "Available Templates:\n"
-                    + "\n".join(f"  • {t}" for t in TEMPLATES.keys())
-                    + "\n\nUsage: pyvax new <name> --template <template>\n"
-                ),
-            }
-
-        elif command == "help":
-            result = {
-                "success": True,
-                "command": "help",
-                "stdout": (
-                    "PyVax v1.0.0 — Python to EVM Transpiler\n\n"
-                    "Commands:\n"
-                    "  pyvax new <name>             Scaffold a new project\n"
-                    "  pyvax compile [contract]     Transpile Python → EVM bytecode\n"
-                    "  pyvax test [contract]        Run compilation tests\n"
-                    "  pyvax deploy <name>          Deploy to Avalanche (dry-run)\n"
-                    "  pyvax version                Show version info\n"
-                    "  pyvax templates              List available templates\n\n"
-                    "Options:\n"
-                    "  --optimizer=N    Optimizer level (0-3)\n"
-                    "  --template=T     Contract template for 'new'\n"
-                    "  --chain=C        Target chain (fuji | mainnet)\n"
-                    "  --gas-report     Show gas breakdown\n\n"
-                    "Workflow: new → compile → deploy → call\n"
-                ),
-            }
-
+                kwargs[key] = True
         else:
-            result = {
-                "success": False,
-                "command": command,
-                "error": f"Unknown command: '{command}'",
-                "stdout": (
-                    f"Error: Unknown command '{command}'\n\n"
-                    "Available commands: new, compile, test, deploy, version, help, templates\n"
-                    "Run 'pyvax help' for more information.\n"
-                ),
-            }
+            positional.append(args[i])
+        i += 1
 
-    except Exception as e:
-        result = {
-            "success": False,
-            "error": str(e),
-            "traceback": traceback.format_exc(),
-            "stdout": f"Internal error: {str(e)}\n",
+    return action, kwargs, positional
+
+
+class handler(BaseHTTPRequestHandler):
+    """Vercel serverless function handler for POST /api/cli"""
+
+    def do_OPTIONS(self):
+        """Handle CORS preflight."""
+        self.send_response(200)
+        self.send_header("Access-Control-Allow-Origin", "*")
+        self.send_header("Access-Control-Allow-Methods", "GET, POST, OPTIONS")
+        self.send_header("Access-Control-Allow-Headers", "Content-Type")
+        self.send_header("Access-Control-Max-Age", "86400")
+        self.end_headers()
+
+    def do_GET(self):
+        """Health check endpoint."""
+        self.send_response(200)
+        self.send_header("Content-Type", "application/json")
+        self.send_header("Access-Control-Allow-Origin", "*")
+        self.end_headers()
+        response = {
+            "status": "ok",
+            "service": "pyvax-playground",
+            "version": "1.0.0",
+            "commands": ["new", "compile", "test", "deploy", "help", "version", "templates"],
         }
+        self.wfile.write(json.dumps(response).encode())
 
-    # Write JSON to stdout — this is what the Next.js API route reads
-    print(json.dumps(result, default=str))
+    def do_POST(self):
+        """Execute a pyvax CLI command."""
+        self.send_header("Access-Control-Allow-Origin", "*")
+        self.send_header("Access-Control-Allow-Headers", "Content-Type")
 
+        try:
+            content_length = int(self.headers.get("Content-Length", 0))
+            body = self.rfile.read(content_length).decode("utf-8")
+            request = json.loads(body) if body else {}
+        except (json.JSONDecodeError, ValueError) as e:
+            self._send_json(400, {"success": False, "error": f"Invalid request: {e}"})
+            return
 
-if __name__ == "__main__":
-    main()
+        command = request.get("command", "").strip()
+        source_code = request.get("source", "")
+        contract_name = request.get("contract_name", "Contract")
+
+        if not command:
+            self._send_json(400, {"success": False, "error": "No command provided"})
+            return
+
+        action, kwargs, positional = parse_command(command)
+
+        try:
+            if action == "new":
+                name = positional[0] if positional else "MyProject"
+                template = kwargs.get("template") or kwargs.get("t") or None
+                result = execute_new(name, template)
+
+            elif action == "compile":
+                if not source_code:
+                    self._send_json(400, {
+                        "success": False,
+                        "error": "No source code provided for compilation",
+                    })
+                    return
+
+                opt_level = int(kwargs.get("optimizer", kwargs.get("opt", 1)))
+                overflow = kwargs.get("no_overflow_safe") is None
+                name = positional[0] if positional else contract_name
+                result = execute_compile(source_code, name, opt_level, overflow)
+
+            elif action == "test":
+                if not source_code:
+                    self._send_json(400, {
+                        "success": False,
+                        "error": "No source code provided for testing",
+                    })
+                    return
+                name = positional[0] if positional else contract_name
+                result = execute_test(source_code, name)
+
+            elif action == "deploy":
+                if not source_code:
+                    self._send_json(400, {
+                        "success": False,
+                        "error": "No source code provided for deployment simulation",
+                    })
+                    return
+                name = positional[0] if positional else contract_name
+                chain = kwargs.get("chain", kwargs.get("n", "fuji"))
+                result = execute_deploy_dry_run(source_code, name, chain)
+
+            elif action == "version":
+                result = {
+                    "success": True,
+                    "command": "version",
+                    "stdout": (
+                        "PyVax CLI v1.0.0\n\n"
+                        "Python to EVM transpiler for Avalanche smart contracts\n"
+                        "https://pyvax.io\n"
+                    ),
+                }
+
+            elif action == "templates":
+                result = {
+                    "success": True,
+                    "command": "templates",
+                    "templates": list(TEMPLATES.keys()),
+                    "stdout": (
+                        "Available Templates:\n"
+                        + "\n".join(f"  • {t}" for t in TEMPLATES.keys())
+                        + "\n\nUsage: pyvax new <name> --template <template>\n"
+                    ),
+                }
+
+            elif action == "help":
+                result = {
+                    "success": True,
+                    "command": "help",
+                    "stdout": (
+                        "PyVax v1.0.0 — Python to EVM Transpiler\n\n"
+                        "Commands:\n"
+                        "  pyvax new <name>             Scaffold a new project\n"
+                        "  pyvax compile [contract]     Transpile Python → EVM bytecode\n"
+                        "  pyvax test [contract]        Run compilation tests\n"
+                        "  pyvax deploy <name>          Deploy to Avalanche (dry-run)\n"
+                        "  pyvax version                Show version info\n"
+                        "  pyvax templates              List available templates\n\n"
+                        "Options:\n"
+                        "  --optimizer=N    Optimizer level (0-3)\n"
+                        "  --template=T     Contract template for 'new'\n"
+                        "  --chain=C        Target chain (fuji | mainnet)\n"
+                        "  --gas-report     Show gas breakdown\n\n"
+                        "Workflow: new → compile → deploy → call\n"
+                    ),
+                }
+
+            else:
+                result = {
+                    "success": False,
+                    "command": action,
+                    "error": f"Unknown command: '{action}'",
+                    "stdout": (
+                        f"Error: Unknown command '{action}'\n\n"
+                        "Available commands: new, compile, test, deploy, version, help\n"
+                        "Run 'pyvax help' for more information.\n"
+                    ),
+                }
+
+            self._send_json(200, result)
+
+        except Exception as e:
+            self._send_json(500, {
+                "success": False,
+                "error": str(e),
+                "traceback": traceback.format_exc(),
+                "stdout": f"Internal error: {str(e)}\n",
+            })
+
+    def _send_json(self, status_code, data):
+        """Send a JSON response."""
+        self.send_response(status_code)
+        self.send_header("Content-Type", "application/json")
+        self.send_header("Access-Control-Allow-Origin", "*")
+        self.end_headers()
+        self.wfile.write(json.dumps(data, default=str).encode())

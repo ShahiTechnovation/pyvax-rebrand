@@ -1,0 +1,6 @@
+[build]
+dockerfile = "Dockerfile"
+
+[deploy]
+healthcheckPath = "/api/cli"
+restartPolicyType = "ON_FAILURE"
