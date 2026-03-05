@@ -1,16 +1,21 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>PyVax Playground — Python → EVM Transpiler</title>
-    <meta name="description" content="Write, compile, and deploy Avalanche smart contracts in pure Python. Browser-based IDE powered by PyVax transpiler.">
-    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🐍</text></svg>">
-    
+    <meta name="description"
+        content="Write, compile, and deploy Avalanche smart contracts in pure Python. Browser-based IDE powered by PyVax transpiler.">
+    <link rel="icon"
+        href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🐍</text></svg>">
+
     <!-- Google Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@300;400;500;600;700&display=swap"
+        rel="stylesheet">
 
     <style>
         /* ─── CSS Custom Properties ─────────────────────────────────── */
@@ -24,43 +29,45 @@
             --border-primary: #1e2a3f;
             --border-secondary: #2a3854;
             --border-glow: rgba(99, 179, 237, 0.15);
-            
+
             --text-primary: #e2e8f0;
             --text-secondary: #94a3b8;
             --text-muted: #64748b;
             --text-accent: #63b3ed;
-            
+
             --accent-blue: #63b3ed;
             --accent-purple: #a78bfa;
             --accent-emerald: #34d399;
             --accent-amber: #fbbf24;
             --accent-rose: #fb7185;
             --accent-cyan: #22d3ee;
-            
+
             --gradient-primary: linear-gradient(135deg, #63b3ed 0%, #a78bfa 50%, #34d399 100%);
-            --gradient-glow: linear-gradient(135deg, rgba(99,179,237,.15) 0%, rgba(167,139,250,.15) 50%, rgba(52,211,153,.15) 100%);
-            --gradient-card: linear-gradient(135deg, rgba(99,179,237,.06) 0%, rgba(167,139,250,.06) 100%);
-            
-            --shadow-sm: 0 1px 2px rgba(0,0,0,.4);
-            --shadow-md: 0 4px 12px rgba(0,0,0,.5);
-            --shadow-lg: 0 8px 32px rgba(0,0,0,.6);
-            --shadow-glow: 0 0 40px rgba(99,179,237,.08);
-            
+            --gradient-glow: linear-gradient(135deg, rgba(99, 179, 237, .15) 0%, rgba(167, 139, 250, .15) 50%, rgba(52, 211, 153, .15) 100%);
+            --gradient-card: linear-gradient(135deg, rgba(99, 179, 237, .06) 0%, rgba(167, 139, 250, .06) 100%);
+
+            --shadow-sm: 0 1px 2px rgba(0, 0, 0, .4);
+            --shadow-md: 0 4px 12px rgba(0, 0, 0, .5);
+            --shadow-lg: 0 8px 32px rgba(0, 0, 0, .6);
+            --shadow-glow: 0 0 40px rgba(99, 179, 237, .08);
+
             --radius-sm: 6px;
             --radius-md: 10px;
             --radius-lg: 16px;
             --radius-xl: 20px;
-            
+
             --transition-fast: 150ms cubic-bezier(0.4, 0, 0.2, 1);
             --transition-base: 250ms cubic-bezier(0.4, 0, 0.2, 1);
             --transition-slow: 400ms cubic-bezier(0.4, 0, 0.2, 1);
-            
+
             --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
             --font-mono: 'JetBrains Mono', 'Fira Code', 'Cascadia Code', monospace;
         }
 
         /* ─── Reset & Base ──────────────────────────────────────────── */
-        *, *::before, *::after {
+        *,
+        *::before,
+        *::after {
             margin: 0;
             padding: 0;
             box-sizing: border-box;
@@ -82,13 +89,23 @@
         }
 
         /* ─── Scrollbar ─────────────────────────────────────────────── */
-        ::-webkit-scrollbar { width: 6px; height: 6px; }
-        ::-webkit-scrollbar-track { background: transparent; }
-        ::-webkit-scrollbar-thumb { 
-            background: var(--border-secondary); 
-            border-radius: 3px; 
+        ::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
         }
-        ::-webkit-scrollbar-thumb:hover { background: var(--text-muted); }
+
+        ::-webkit-scrollbar-track {
+            background: transparent;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: var(--border-secondary);
+            border-radius: 3px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: var(--text-muted);
+        }
 
         /* ─── App Layout ────────────────────────────────────────────── */
         #app {
@@ -134,7 +151,7 @@
             align-items: center;
             justify-content: center;
             font-size: 16px;
-            box-shadow: 0 0 20px rgba(99,179,237,.2);
+            box-shadow: 0 0 20px rgba(99, 179, 237, .2);
         }
 
         .logo-text {
@@ -151,8 +168,8 @@
             font-size: 10px;
             font-weight: 600;
             color: var(--accent-emerald);
-            background: rgba(52,211,153,.1);
-            border: 1px solid rgba(52,211,153,.2);
+            background: rgba(52, 211, 153, .1);
+            border: 1px solid rgba(52, 211, 153, .2);
             padding: 2px 7px;
             border-radius: 20px;
             letter-spacing: 0.5px;
@@ -202,50 +219,50 @@
         }
 
         .btn-primary {
-            background: linear-gradient(135deg, rgba(99,179,237,.15) 0%, rgba(99,179,237,.08) 100%);
-            border-color: rgba(99,179,237,.3);
+            background: linear-gradient(135deg, rgba(99, 179, 237, .15) 0%, rgba(99, 179, 237, .08) 100%);
+            border-color: rgba(99, 179, 237, .3);
             color: var(--accent-blue);
         }
 
         .btn-primary:hover {
-            background: linear-gradient(135deg, rgba(99,179,237,.25) 0%, rgba(99,179,237,.12) 100%);
-            border-color: rgba(99,179,237,.5);
-            box-shadow: 0 0 20px rgba(99,179,237,.1);
+            background: linear-gradient(135deg, rgba(99, 179, 237, .25) 0%, rgba(99, 179, 237, .12) 100%);
+            border-color: rgba(99, 179, 237, .5);
+            box-shadow: 0 0 20px rgba(99, 179, 237, .1);
         }
 
         .btn-success {
-            background: linear-gradient(135deg, rgba(52,211,153,.15) 0%, rgba(52,211,153,.08) 100%);
-            border-color: rgba(52,211,153,.3);
+            background: linear-gradient(135deg, rgba(52, 211, 153, .15) 0%, rgba(52, 211, 153, .08) 100%);
+            border-color: rgba(52, 211, 153, .3);
             color: var(--accent-emerald);
         }
 
         .btn-success:hover {
-            background: linear-gradient(135deg, rgba(52,211,153,.25) 0%, rgba(52,211,153,.12) 100%);
-            border-color: rgba(52,211,153,.5);
-            box-shadow: 0 0 20px rgba(52,211,153,.1);
+            background: linear-gradient(135deg, rgba(52, 211, 153, .25) 0%, rgba(52, 211, 153, .12) 100%);
+            border-color: rgba(52, 211, 153, .5);
+            box-shadow: 0 0 20px rgba(52, 211, 153, .1);
         }
 
         .btn-warning {
-            background: linear-gradient(135deg, rgba(251,191,36,.15) 0%, rgba(251,191,36,.08) 100%);
-            border-color: rgba(251,191,36,.3);
+            background: linear-gradient(135deg, rgba(251, 191, 36, .15) 0%, rgba(251, 191, 36, .08) 100%);
+            border-color: rgba(251, 191, 36, .3);
             color: var(--accent-amber);
         }
 
         .btn-warning:hover {
-            background: linear-gradient(135deg, rgba(251,191,36,.25) 0%, rgba(251,191,36,.12) 100%);
-            border-color: rgba(251,191,36,.5);
-            box-shadow: 0 0 20px rgba(251,191,36,.1);
+            background: linear-gradient(135deg, rgba(251, 191, 36, .25) 0%, rgba(251, 191, 36, .12) 100%);
+            border-color: rgba(251, 191, 36, .5);
+            box-shadow: 0 0 20px rgba(251, 191, 36, .1);
         }
 
         .btn-danger {
-            background: linear-gradient(135deg, rgba(251,113,133,.15) 0%, rgba(251,113,133,.08) 100%);
-            border-color: rgba(251,113,133,.3);
+            background: linear-gradient(135deg, rgba(251, 113, 133, .15) 0%, rgba(251, 113, 133, .08) 100%);
+            border-color: rgba(251, 113, 133, .3);
             color: var(--accent-rose);
         }
 
         .btn-danger:hover {
-            background: linear-gradient(135deg, rgba(251,113,133,.25) 0%, rgba(251,113,133,.12) 100%);
-            border-color: rgba(251,113,133,.5);
+            background: linear-gradient(135deg, rgba(251, 113, 133, .25) 0%, rgba(251, 113, 133, .12) 100%);
+            border-color: rgba(251, 113, 133, .5);
         }
 
         .btn-icon {
@@ -263,7 +280,9 @@
         }
 
         @keyframes spin {
-            to { transform: rotate(360deg); }
+            to {
+                transform: rotate(360deg);
+            }
         }
 
         .divider-v {
@@ -303,7 +322,7 @@
 
         .template-select:focus {
             border-color: var(--accent-blue);
-            box-shadow: 0 0 0 2px rgba(99,179,237,.1);
+            box-shadow: 0 0 0 2px rgba(99, 179, 237, .1);
         }
 
         /* ─── Main Content ──────────────────────────────────────────── */
@@ -353,7 +372,7 @@
 
         .file-tab:hover {
             color: var(--text-secondary);
-            background: rgba(255,255,255,.03);
+            background: rgba(255, 255, 255, .03);
         }
 
         .file-tab.active {
@@ -455,8 +474,15 @@
         }
 
         @keyframes pulse {
-            0%, 100% { opacity: 1; }
-            50% { opacity: 0.3; }
+
+            0%,
+            100% {
+                opacity: 1;
+            }
+
+            50% {
+                opacity: 0.3;
+            }
         }
 
         .terminal-header-right {
@@ -478,7 +504,7 @@
         }
 
         .terminal-btn:hover {
-            background: rgba(255,255,255,.06);
+            background: rgba(255, 255, 255, .06);
             color: var(--text-secondary);
         }
 
@@ -559,7 +585,7 @@
             display: none;
             position: fixed;
             inset: 0;
-            background: rgba(0,0,0,.6);
+            background: rgba(0, 0, 0, .6);
             backdrop-filter: blur(4px);
             z-index: 200;
             justify-content: center;
@@ -584,8 +610,15 @@
         }
 
         @keyframes modalIn {
-            from { opacity: 0; transform: scale(0.95) translateY(10px); }
-            to { opacity: 1; transform: scale(1) translateY(0); }
+            from {
+                opacity: 0;
+                transform: scale(0.95) translateY(10px);
+            }
+
+            to {
+                opacity: 1;
+                transform: scale(1) translateY(0);
+            }
         }
 
         .results-header {
@@ -618,7 +651,7 @@
         }
 
         .results-close:hover {
-            background: rgba(255,255,255,.06);
+            background: rgba(255, 255, 255, .06);
             color: var(--text-primary);
         }
 
@@ -718,7 +751,7 @@
         .loading-overlay {
             position: absolute;
             inset: 0;
-            background: rgba(10,14,23,.8);
+            background: rgba(10, 14, 23, .8);
             backdrop-filter: blur(4px);
             display: none;
             align-items: center;
@@ -761,15 +794,20 @@
             .header {
                 padding: 0 12px;
             }
-            .logo-badge, .header-center, .header-right .btn:not(.btn-primary) {
+
+            .logo-badge,
+            .header-center,
+            .header-right .btn:not(.btn-primary) {
                 display: none;
             }
+
             .terminal-panel {
                 height: 200px;
             }
         }
     </style>
 </head>
+
 <body>
     <div id="app">
         <!-- ─── Header ──────────────────────────────────────────────── -->
@@ -860,9 +898,8 @@
                 <div class="terminal-output" id="terminalOutput"></div>
                 <div class="terminal-input-row">
                     <span class="terminal-prompt-symbol">❯</span>
-                    <input class="terminal-input" id="terminalInput" type="text" 
-                           placeholder="Type 'pyvax help' for commands..." 
-                           spellcheck="false" autocomplete="off">
+                    <input class="terminal-input" id="terminalInput" type="text"
+                        placeholder="Type 'pyvax help' for commands..." spellcheck="false" autocomplete="off">
                 </div>
             </div>
         </main>
@@ -889,20 +926,20 @@
 
     <!-- ─── Monaco Editor ───────────────────────────────────────────── -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.50.0/min/vs/loader.min.js"></script>
-    
-    <script>
-    // ─── State ─────────────────────────────────────────────────────────
-    const state = {
-        editor: null,
-        lastResult: null,
-        isExecuting: false,
-        contractName: 'Token',
-        history: [],
-        historyIndex: -1,
-    };
 
-    // ─── Default Contract ──────────────────────────────────────────────
-    const DEFAULT_CONTRACT = `"""Token -- ERC-20 style token built with PyVax."""
+    <script>
+        // ─── State ─────────────────────────────────────────────────────────
+        const state = {
+            editor: null,
+            lastResult: null,
+            isExecuting: false,
+            contractName: 'Token',
+            history: [],
+            historyIndex: -1,
+        };
+
+        // ─── Default Contract ──────────────────────────────────────────────
+        const DEFAULT_CONTRACT = `"""Token -- ERC-20 style token built with PyVax."""
 from pyvax import Contract, action
 
 
@@ -941,373 +978,394 @@ class Token(Contract):
         return self.total_supply
 `;
 
-    // ─── Monaco Setup ──────────────────────────────────────────────────
-    require.config({
-        paths: { vs: 'https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.50.0/min/vs' }
-    });
-
-    require(['vs/editor/editor.main'], function () {
-        // Define PyVax Python theme
-        monaco.editor.defineTheme('pyvax-dark', {
-            base: 'vs-dark',
-            inherit: true,
-            rules: [
-                { token: 'comment', foreground: '4b5563', fontStyle: 'italic' },
-                { token: 'keyword', foreground: 'c792ea' },
-                { token: 'string', foreground: 'c3e88d' },
-                { token: 'number', foreground: 'f78c6c' },
-                { token: 'type', foreground: 'ffcb6b' },
-                { token: 'delimiter', foreground: '89ddff' },
-                { token: 'function', foreground: '82aaff' },
-                { token: 'variable', foreground: 'eeffff' },
-                { token: 'constant', foreground: 'f78c6c' },
-                { token: 'annotation', foreground: 'ffcb6b' },
-                { token: 'decorator', foreground: 'ffcb6b' },
-                { token: 'identifier', foreground: 'eeffff' },
-            ],
-            colors: {
-                'editor.background': '#0d1117',
-                'editor.foreground': '#e2e8f0',
-                'editor.lineHighlightBackground': '#141a2806',
-                'editor.selectionBackground': '#2563eb33',
-                'editor.inactiveSelectionBackground': '#2563eb1a',
-                'editorCursor.foreground': '#63b3ed',
-                'editorLineNumber.foreground': '#374151',
-                'editorLineNumber.activeForeground': '#64748b',
-                'editor.selectionHighlightBackground': '#2563eb1a',
-                'editorIndentGuide.background': '#1e293b',
-                'editorIndentGuide.activeBackground': '#334155',
-                'editorBracketMatch.background': '#2563eb22',
-                'editorBracketMatch.border': '#2563eb44',
-                'scrollbar.shadow': '#00000000',
-                'scrollbarSlider.background': '#334155',
-                'scrollbarSlider.hoverBackground': '#475569',
-                'scrollbarSlider.activeBackground': '#64748b',
-                'minimap.background': '#0d1117',
-            }
+        // ─── Monaco Setup ──────────────────────────────────────────────────
+        require.config({
+            paths: { vs: 'https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.50.0/min/vs' }
         });
 
-        state.editor = monaco.editor.create(document.getElementById('editor'), {
-            value: DEFAULT_CONTRACT,
-            language: 'python',
-            theme: 'pyvax-dark',
-            fontFamily: "'JetBrains Mono', 'Fira Code', 'Cascadia Code', monospace",
-            fontSize: 13.5,
-            fontLigatures: true,
-            lineHeight: 22,
-            padding: { top: 16, bottom: 16 },
-            minimap: { enabled: false },
-            scrollBeyondLastLine: false,
-            wordWrap: 'on',
-            tabSize: 4,
-            insertSpaces: true,
-            automaticLayout: true,
-            renderLineHighlight: 'line',
-            cursorBlinking: 'smooth',
-            cursorSmoothCaretAnimation: 'on',
-            smoothScrolling: true,
-            bracketPairColorization: { enabled: true },
-            guides: {
-                bracketPairs: true,
-                indentation: true,
-            },
-            suggest: {
-                showMethods: true,
-                showFunctions: true,
-                showConstructors: true,
-                showFields: true,
-                showVariables: true,
-                showClasses: true,
-                showStructs: true,
-                showInterfaces: true,
-                showModules: true,
-                showProperties: true,
-                showEvents: true,
-                showOperators: true,
-                showUnits: true,
-                showValues: true,
-                showConstants: true,
-                showEnumMembers: true,
-                showKeywords: true,
-                showWords: true,
-            },
-            scrollbar: {
-                verticalScrollbarSize: 6,
-                horizontalScrollbarSize: 6,
-            },
-        });
-
-        // Keyboard shortcut: Ctrl+Shift+B → Compile
-        state.editor.addCommand(
-            monaco.KeyMod.CtrlCmd | monaco.KeyMod.Shift | monaco.KeyCode.KeyB,
-            () => executeCommand('pyvax compile')
-        );
-
-        // Keyboard shortcut: Ctrl+Enter → Compile
-        state.editor.addCommand(
-            monaco.KeyMod.CtrlCmd | monaco.KeyCode.Enter,
-            () => executeCommand('pyvax compile')
-        );
-
-        // Update contract name from editor content
-        state.editor.onDidChangeModelContent(() => {
-            updateContractNameFromEditor();
-        });
-
-        updateContractNameFromEditor();
-        termPrint('PyVax Playground v1.0.0 — Python → EVM Transpiler', 'info');
-        termPrint('Type "pyvax help" for available commands, or click a button above.', 'muted');
-        termPrint('', '');
-    });
-
-    // ─── Contract Name Detection ───────────────────────────────────────
-    function updateContractNameFromEditor() {
-        if (!state.editor) return;
-        const code = state.editor.getValue();
-        const match = code.match(/class\s+(\w+)\s*\(/);
-        if (match) {
-            state.contractName = match[1];
-            const tab = document.querySelector('.file-tab.active span:last-child');
-            if (tab) tab.textContent = `${state.contractName}.py`;
-        }
-    }
-
-    // ─── Terminal Output ───────────────────────────────────────────────
-    function termPrint(text, type = '') {
-        const output = document.getElementById('terminalOutput');
-        const line = document.createElement('div');
-        line.className = `terminal-line ${type}`;
-        line.textContent = text;
-        output.appendChild(line);
-        output.scrollTop = output.scrollHeight;
-    }
-
-    function termClear() {
-        document.getElementById('terminalOutput').innerHTML = '';
-    }
-
-    function setStatus(text, type = 'ready') {
-        const dot = document.getElementById('statusDot');
-        const label = document.getElementById('statusText');
-        dot.className = `status-dot ${type === 'loading' ? 'loading' : type === 'error' ? 'error' : ''}`;
-        label.textContent = text;
-    }
-
-    // ─── API Call ──────────────────────────────────────────────────────
-    async function callAPI(command, source = null) {
-        const body = { command };
-        if (source !== null) {
-            body.source = source;
-            body.contract_name = state.contractName;
-        }
-
-        const response = await fetch('/api/cli', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(body),
-        });
-
-        if (!response.ok) {
-            const errText = await response.text();
-            throw new Error(`HTTP ${response.status}: ${errText}`);
-        }
-
-        return response.json();
-    }
-
-    // ─── Command Execution ─────────────────────────────────────────────
-    async function executeCommand(rawCmd) {
-        if (state.isExecuting) return;
-        state.isExecuting = true;
-
-        const cmd = rawCmd.trim();
-        if (!cmd) {
-            state.isExecuting = false;
-            return;
-        }
-
-        // Add to history
-        state.history.push(cmd);
-        state.historyIndex = state.history.length;
-
-        termPrint(`❯ ${cmd}`, 'prompt');
-        setStatus('Executing...', 'loading');
-
-        // Show loading on editor for compile/deploy/test
-        const action = cmd.replace(/^pyvax\s+/i, '').split(/\s+/)[0]?.toLowerCase();
-        const needsSource = ['compile', 'test', 'deploy'].includes(action);
-        const editorLoading = document.getElementById('editorLoading');
-        const loadingText = editorLoading.querySelector('.loading-text');
-
-        if (needsSource) {
-            editorLoading.classList.add('visible');
-            loadingText.textContent = action === 'compile' ? 'Transpiling...' : 
-                                     action === 'deploy' ? 'Simulating deployment...' : 'Testing...';
-        }
-
-        // Set button loading state
-        const btnMap = { compile: 'btnCompile', deploy: 'btnDeploy', test: 'btnTest' };
-        const activeBtn = document.getElementById(btnMap[action]);
-        if (activeBtn) activeBtn.classList.add('loading');
-
-        try {
-            const source = needsSource ? state.editor.getValue() : null;
-            const result = await callAPI(cmd, source);
-
-            // Output stdout
-            if (result.stdout) {
-                const lines = result.stdout.split('\n');
-                for (const line of lines) {
-                    if (line.includes('✓') || line.includes('PASS') || line.includes('OK') || line.includes('successfully')) {
-                        termPrint(line, 'success');
-                    } else if (line.includes('✗') || line.includes('FAIL') || line.includes('Error') || line.includes('error')) {
-                        termPrint(line, 'error');
-                    } else if (line.includes('⚠') || line.includes('WARNING') || line.includes('Warning')) {
-                        termPrint(line, 'warning');
-                    } else if (line.trim()) {
-                        termPrint(line, '');
-                    }
+        require(['vs/editor/editor.main'], function () {
+            // Define PyVax Python theme
+            monaco.editor.defineTheme('pyvax-dark', {
+                base: 'vs-dark',
+                inherit: true,
+                rules: [
+                    { token: 'comment', foreground: '4b5563', fontStyle: 'italic' },
+                    { token: 'keyword', foreground: 'c792ea' },
+                    { token: 'string', foreground: 'c3e88d' },
+                    { token: 'number', foreground: 'f78c6c' },
+                    { token: 'type', foreground: 'ffcb6b' },
+                    { token: 'delimiter', foreground: '89ddff' },
+                    { token: 'function', foreground: '82aaff' },
+                    { token: 'variable', foreground: 'eeffff' },
+                    { token: 'constant', foreground: 'f78c6c' },
+                    { token: 'annotation', foreground: 'ffcb6b' },
+                    { token: 'decorator', foreground: 'ffcb6b' },
+                    { token: 'identifier', foreground: 'eeffff' },
+                ],
+                colors: {
+                    'editor.background': '#0d1117',
+                    'editor.foreground': '#e2e8f0',
+                    'editor.lineHighlightBackground': '#141a2806',
+                    'editor.selectionBackground': '#2563eb33',
+                    'editor.inactiveSelectionBackground': '#2563eb1a',
+                    'editorCursor.foreground': '#63b3ed',
+                    'editorLineNumber.foreground': '#374151',
+                    'editorLineNumber.activeForeground': '#64748b',
+                    'editor.selectionHighlightBackground': '#2563eb1a',
+                    'editorIndentGuide.background': '#1e293b',
+                    'editorIndentGuide.activeBackground': '#334155',
+                    'editorBracketMatch.background': '#2563eb22',
+                    'editorBracketMatch.border': '#2563eb44',
+                    'scrollbar.shadow': '#00000000',
+                    'scrollbarSlider.background': '#334155',
+                    'scrollbarSlider.hoverBackground': '#475569',
+                    'scrollbarSlider.activeBackground': '#64748b',
+                    'minimap.background': '#0d1117',
                 }
-            }
+            });
 
-            // Handle errors
-            if (!result.success && result.error) {
-                termPrint(`Error: ${result.error}`, 'error');
-                if (result.traceback) {
-                    const tbLines = result.traceback.split('\n').slice(-5);
-                    for (const tl of tbLines) {
-                        if (tl.trim()) termPrint(tl, 'muted');
-                    }
-                }
-                setStatus('Error', 'error');
-            } else {
-                setStatus('Ready');
-            }
+            state.editor = monaco.editor.create(document.getElementById('editor'), {
+                value: DEFAULT_CONTRACT,
+                language: 'python',
+                theme: 'pyvax-dark',
+                fontFamily: "'JetBrains Mono', 'Fira Code', 'Cascadia Code', monospace",
+                fontSize: 13.5,
+                fontLigatures: true,
+                lineHeight: 22,
+                padding: { top: 16, bottom: 16 },
+                minimap: { enabled: false },
+                scrollBeyondLastLine: false,
+                wordWrap: 'on',
+                tabSize: 4,
+                insertSpaces: true,
+                automaticLayout: true,
+                renderLineHighlight: 'line',
+                cursorBlinking: 'smooth',
+                cursorSmoothCaretAnimation: 'on',
+                smoothScrolling: true,
+                bracketPairColorization: { enabled: true },
+                guides: {
+                    bracketPairs: true,
+                    indentation: true,
+                },
+                suggest: {
+                    showMethods: true,
+                    showFunctions: true,
+                    showConstructors: true,
+                    showFields: true,
+                    showVariables: true,
+                    showClasses: true,
+                    showStructs: true,
+                    showInterfaces: true,
+                    showModules: true,
+                    showProperties: true,
+                    showEvents: true,
+                    showOperators: true,
+                    showUnits: true,
+                    showValues: true,
+                    showConstants: true,
+                    showEnumMembers: true,
+                    showKeywords: true,
+                    showWords: true,
+                },
+                scrollbar: {
+                    verticalScrollbarSize: 6,
+                    horizontalScrollbarSize: 6,
+                },
+            });
 
-            // Store compile results for artifacts modal
-            if (result.success && (action === 'compile' || action === 'deploy')) {
-                state.lastResult = result;
-                document.getElementById('btnArtifacts').style.display = '';
-            }
+            // Keyboard shortcut: Ctrl+Shift+B → Compile
+            state.editor.addCommand(
+                monaco.KeyMod.CtrlCmd | monaco.KeyMod.Shift | monaco.KeyCode.KeyB,
+                () => executeCommand('pyvax compile')
+            );
 
-            // If 'new' command, load the source into editor
-            if (result.success && action === 'new' && result.source) {
-                state.editor.setValue(result.source);
+            // Keyboard shortcut: Ctrl+Enter → Compile
+            state.editor.addCommand(
+                monaco.KeyMod.CtrlCmd | monaco.KeyCode.Enter,
+                () => executeCommand('pyvax compile')
+            );
+
+            // Update contract name from editor content
+            state.editor.onDidChangeModelContent(() => {
                 updateContractNameFromEditor();
-                termPrint('', '');
-                termPrint('Contract loaded into editor.', 'info');
+            });
+
+            updateContractNameFromEditor();
+            termPrint('PyVax Playground v1.0.0 — Python → EVM Transpiler', 'info');
+            termPrint('Type "pyvax help" for available commands, or click a button above.', 'muted');
+            termPrint('', '');
+        });
+
+        // ─── Contract Name Detection ───────────────────────────────────────
+        function updateContractNameFromEditor() {
+            if (!state.editor) return;
+            const code = state.editor.getValue();
+            const match = code.match(/class\s+(\w+)\s*\(/);
+            if (match) {
+                state.contractName = match[1];
+                const tab = document.querySelector('.file-tab.active span:last-child');
+                if (tab) tab.textContent = `${state.contractName}.py`;
             }
-
-            termPrint('', '');
-
-        } catch (err) {
-            termPrint(`Network error: ${err.message}`, 'error');
-            setStatus('Error', 'error');
-            termPrint('', '');
-        } finally {
-            state.isExecuting = false;
-            editorLoading.classList.remove('visible');
-            if (activeBtn) activeBtn.classList.remove('loading');
         }
-    }
 
-    // ─── Event Listeners ───────────────────────────────────────────────
-    document.addEventListener('DOMContentLoaded', () => {
-        // Toolbar buttons
-        document.getElementById('btnCompile').addEventListener('click', () => {
-            executeCommand('pyvax compile');
-        });
+        // ─── Terminal Output ───────────────────────────────────────────────
+        function termPrint(text, type = '') {
+            const output = document.getElementById('terminalOutput');
+            const line = document.createElement('div');
+            line.className = `terminal-line ${type}`;
+            line.textContent = text;
+            output.appendChild(line);
+            output.scrollTop = output.scrollHeight;
+        }
 
-        document.getElementById('btnDeploy').addEventListener('click', () => {
-            executeCommand('pyvax deploy --dry-run');
-        });
+        function termClear() {
+            document.getElementById('terminalOutput').innerHTML = '';
+        }
 
-        document.getElementById('btnTest').addEventListener('click', () => {
-            executeCommand('pyvax test');
-        });
+        function setStatus(text, type = 'ready') {
+            const dot = document.getElementById('statusDot');
+            const label = document.getElementById('statusText');
+            dot.className = `status-dot ${type === 'loading' ? 'loading' : type === 'error' ? 'error' : ''}`;
+            label.textContent = text;
+        }
 
-        document.getElementById('btnClear').addEventListener('click', termClear);
-
-        // Template selector
-        document.getElementById('templateSelect').addEventListener('change', (e) => {
-            const template = e.target.value;
-            if (template) {
-                executeCommand(`pyvax new ${template} --template ${template}`);
-                e.target.value = '';
+        // ─── API Call ──────────────────────────────────────────────────────
+        async function callAPI(command, source = null) {
+            const body = { command };
+            if (source !== null) {
+                body.source = source;
+                body.contract_name = state.contractName;
             }
-        });
 
-        // Terminal input
-        const termInput = document.getElementById('terminalInput');
-        termInput.addEventListener('keydown', (e) => {
-            if (e.key === 'Enter') {
-                const cmd = termInput.value.trim();
-                if (cmd) {
-                    executeCommand(cmd);
-                    termInput.value = '';
+            const response = await fetch('/api/cli', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(body),
+            });
+
+            if (!response.ok) {
+                const errText = await response.text();
+                throw new Error(`HTTP ${response.status}: ${errText}`);
+            }
+
+            return response.json();
+        }
+
+        // ─── Command Execution ─────────────────────────────────────────────
+        async function executeCommand(rawCmd) {
+            if (state.isExecuting) return;
+            state.isExecuting = true;
+
+            const cmd = rawCmd.trim();
+            if (!cmd) {
+                state.isExecuting = false;
+                return;
+            }
+
+            // Add to history
+            state.history.push(cmd);
+            state.historyIndex = state.history.length;
+
+            termPrint(`❯ ${cmd}`, 'prompt');
+            setStatus('Executing...', 'loading');
+
+            // Show loading on editor for compile/deploy/test
+            const action = cmd.replace(/^pyvax\s+/i, '').split(/\s+/)[0]?.toLowerCase();
+            const needsSource = ['compile', 'test', 'deploy'].includes(action);
+            const editorLoading = document.getElementById('editorLoading');
+            const loadingText = editorLoading.querySelector('.loading-text');
+
+            if (needsSource) {
+                editorLoading.classList.add('visible');
+                loadingText.textContent = action === 'compile' ? 'Transpiling...' :
+                    action === 'deploy' ? 'Simulating deployment...' : 'Testing...';
+            }
+
+            // Set button loading state
+            const btnMap = { compile: 'btnCompile', deploy: 'btnDeploy', test: 'btnTest' };
+            const activeBtn = document.getElementById(btnMap[action]);
+            if (activeBtn) activeBtn.classList.add('loading');
+
+            try {
+                const source = needsSource ? state.editor.getValue() : null;
+                const result = await callAPI(cmd, source);
+
+                // Output stdout
+                if (result.stdout) {
+                    const lines = result.stdout.split('\n');
+                    for (const line of lines) {
+                        if (line.includes('✓') || line.includes('PASS') || line.includes('OK') || line.includes('successfully')) {
+                            termPrint(line, 'success');
+                        } else if (line.includes('✗') || line.includes('FAIL') || line.includes('Error') || line.includes('error')) {
+                            termPrint(line, 'error');
+                        } else if (line.includes('⚠') || line.includes('WARNING') || line.includes('Warning')) {
+                            termPrint(line, 'warning');
+                        } else if (line.trim()) {
+                            termPrint(line, '');
+                        }
+                    }
                 }
-            } else if (e.key === 'ArrowUp') {
-                e.preventDefault();
-                if (state.historyIndex > 0) {
-                    state.historyIndex--;
-                    termInput.value = state.history[state.historyIndex] || '';
-                }
-            } else if (e.key === 'ArrowDown') {
-                e.preventDefault();
-                if (state.historyIndex < state.history.length - 1) {
-                    state.historyIndex++;
-                    termInput.value = state.history[state.historyIndex] || '';
+
+                // Handle errors
+                if (!result.success && result.error) {
+                    termPrint(`Error: ${result.error}`, 'error');
+                    if (result.traceback) {
+                        const tbLines = result.traceback.split('\n').slice(-5);
+                        for (const tl of tbLines) {
+                            if (tl.trim()) termPrint(tl, 'muted');
+                        }
+                    }
+                    setStatus('Error', 'error');
                 } else {
-                    state.historyIndex = state.history.length;
-                    termInput.value = '';
+                    setStatus('Ready');
                 }
+
+                // Store compile results for artifacts modal
+                if (result.success && (action === 'compile' || action === 'deploy')) {
+                    state.lastResult = result;
+                    document.getElementById('btnArtifacts').style.display = '';
+
+                    // Show decoded ABI function selectors
+                    if (result.abi && result.abi.length > 0) {
+                        termPrint('', '');
+                        termPrint('─── ABI Function Selectors ───', 'info');
+                        const fns = result.abi.filter(item => item.type === 'function');
+                        for (const fn of fns) {
+                            const inputTypes = (fn.inputs || []).map(i => i.type).join(',');
+                            const sig = `${fn.name}(${inputTypes})`;
+                            const mutability = fn.stateMutability || 'nonpayable';
+                            const badge = mutability === 'view' || mutability === 'pure' ? '📖 READ' : '✍️ WRITE';
+                            termPrint(`  ${badge}  ${sig}`, mutability === 'view' || mutability === 'pure' ? 'info' : 'warning');
+                        }
+                        const evts = result.abi.filter(item => item.type === 'event');
+                        if (evts.length > 0) {
+                            for (const ev of evts) {
+                                const inputTypes = (ev.inputs || []).map(i => i.type).join(',');
+                                termPrint(`  ⚡ EVENT ${ev.name}(${inputTypes})`, 'muted');
+                            }
+                        }
+                    }
+                }
+
+                // If 'new' command, load the source into editor
+                if (result.success && action === 'new' && result.source) {
+                    state.editor.setValue(result.source);
+                    updateContractNameFromEditor();
+                    termPrint('', '');
+                    termPrint('Contract loaded into editor.', 'info');
+                }
+
+                termPrint('', '');
+
+            } catch (err) {
+                termPrint(`Network error: ${err.message}`, 'error');
+                setStatus('Error', 'error');
+                termPrint('', '');
+            } finally {
+                state.isExecuting = false;
+                editorLoading.classList.remove('visible');
+                if (activeBtn) activeBtn.classList.remove('loading');
             }
+        }
+
+        // ─── Event Listeners ───────────────────────────────────────────────
+        document.addEventListener('DOMContentLoaded', () => {
+            // Toolbar buttons
+            document.getElementById('btnCompile').addEventListener('click', () => {
+                executeCommand('pyvax compile');
+            });
+
+            document.getElementById('btnDeploy').addEventListener('click', () => {
+                executeCommand('pyvax deploy --dry-run');
+            });
+
+            document.getElementById('btnTest').addEventListener('click', () => {
+                executeCommand('pyvax test');
+            });
+
+            document.getElementById('btnClear').addEventListener('click', termClear);
+
+            // Template selector
+            document.getElementById('templateSelect').addEventListener('change', (e) => {
+                const template = e.target.value;
+                if (template) {
+                    executeCommand(`pyvax new ${template} --template ${template}`);
+                    e.target.value = '';
+                }
+            });
+
+            // Terminal input
+            const termInput = document.getElementById('terminalInput');
+            termInput.addEventListener('keydown', (e) => {
+                if (e.key === 'Enter') {
+                    const cmd = termInput.value.trim();
+                    if (cmd) {
+                        executeCommand(cmd);
+                        termInput.value = '';
+                    }
+                } else if (e.key === 'ArrowUp') {
+                    e.preventDefault();
+                    if (state.historyIndex > 0) {
+                        state.historyIndex--;
+                        termInput.value = state.history[state.historyIndex] || '';
+                    }
+                } else if (e.key === 'ArrowDown') {
+                    e.preventDefault();
+                    if (state.historyIndex < state.history.length - 1) {
+                        state.historyIndex++;
+                        termInput.value = state.history[state.historyIndex] || '';
+                    } else {
+                        state.historyIndex = state.history.length;
+                        termInput.value = '';
+                    }
+                }
+            });
+
+            // Artifacts modal
+            document.getElementById('btnArtifacts').addEventListener('click', showArtifacts);
+            document.getElementById('resultsClose').addEventListener('click', () => {
+                document.getElementById('resultsOverlay').classList.remove('visible');
+            });
+            document.getElementById('resultsOverlay').addEventListener('click', (e) => {
+                if (e.target === e.currentTarget) {
+                    e.currentTarget.classList.remove('visible');
+                }
+            });
+
+            // Results tabs
+            document.getElementById('resultsTabs').addEventListener('click', (e) => {
+                const tab = e.target.closest('.results-tab');
+                if (!tab) return;
+                document.querySelectorAll('.results-tab').forEach(t => t.classList.remove('active'));
+                tab.classList.add('active');
+                renderArtifactTab(tab.dataset.tab);
+            });
+
+            // Terminal resize
+            setupTerminalResize();
         });
 
-        // Artifacts modal
-        document.getElementById('btnArtifacts').addEventListener('click', showArtifacts);
-        document.getElementById('resultsClose').addEventListener('click', () => {
-            document.getElementById('resultsOverlay').classList.remove('visible');
-        });
-        document.getElementById('resultsOverlay').addEventListener('click', (e) => {
-            if (e.target === e.currentTarget) {
-                e.currentTarget.classList.remove('visible');
-            }
-        });
+        // ─── Artifacts Modal ───────────────────────────────────────────────
+        function showArtifacts() {
+            if (!state.lastResult) return;
+            document.getElementById('resultsOverlay').classList.add('visible');
+            document.getElementById('resultsTitle').textContent =
+                `${state.lastResult.contract || state.contractName} — Compilation Artifacts`;
+            renderArtifactTab('bytecode');
+        }
 
-        // Results tabs
-        document.getElementById('resultsTabs').addEventListener('click', (e) => {
-            const tab = e.target.closest('.results-tab');
-            if (!tab) return;
-            document.querySelectorAll('.results-tab').forEach(t => t.classList.remove('active'));
-            tab.classList.add('active');
-            renderArtifactTab(tab.dataset.tab);
-        });
+        function renderArtifactTab(tab) {
+            const result = state.lastResult;
+            if (!result) return;
 
-        // Terminal resize
-        setupTerminalResize();
-    });
+            const statsEl = document.getElementById('resultsStats');
+            const codeEl = document.getElementById('resultsCode');
 
-    // ─── Artifacts Modal ───────────────────────────────────────────────
-    function showArtifacts() {
-        if (!state.lastResult) return;
-        document.getElementById('resultsOverlay').classList.add('visible');
-        document.getElementById('resultsTitle').textContent = 
-            `${state.lastResult.contract || state.contractName} — Compilation Artifacts`;
-        renderArtifactTab('bytecode');
-    }
-
-    function renderArtifactTab(tab) {
-        const result = state.lastResult;
-        if (!result) return;
-
-        const statsEl = document.getElementById('resultsStats');
-        const codeEl = document.getElementById('resultsCode');
-
-        if (tab === 'bytecode') {
-            const sizeBytes = result.size_bytes || 0;
-            const meta = result.metadata || {};
-            statsEl.innerHTML = `
+            if (tab === 'bytecode') {
+                const sizeBytes = result.size_bytes || 0;
+                const meta = result.metadata || {};
+                statsEl.innerHTML = `
                 <div class="stat-card">
                     <div class="stat-label">Bytecode Size</div>
                     <div class="stat-value">${sizeBytes} bytes</div>
@@ -1325,46 +1383,47 @@ class Token(Contract):
                     <div class="stat-value">${(meta.gas_estimate || 0).toLocaleString()}</div>
                 </div>
             `;
-            codeEl.textContent = result.bytecode || '(no bytecode)';
-        } else if (tab === 'abi') {
-            statsEl.innerHTML = '';
-            codeEl.textContent = JSON.stringify(result.abi || [], null, 2);
-        } else if (tab === 'metadata') {
-            statsEl.innerHTML = '';
-            codeEl.textContent = JSON.stringify(result.metadata || {}, null, 2);
-        }
-    }
-
-    // ─── Terminal Resize ───────────────────────────────────────────────
-    function setupTerminalResize() {
-        const handle = document.getElementById('resizeHandle');
-        const panel = document.getElementById('terminalPanel');
-        let startY, startH;
-
-        function onMouseDown(e) {
-            e.preventDefault();
-            startY = e.clientY;
-            startH = panel.offsetHeight;
-            handle.classList.add('dragging');
-            document.addEventListener('mousemove', onMouseMove);
-            document.addEventListener('mouseup', onMouseUp);
+                codeEl.textContent = result.bytecode || '(no bytecode)';
+            } else if (tab === 'abi') {
+                statsEl.innerHTML = '';
+                codeEl.textContent = JSON.stringify(result.abi || [], null, 2);
+            } else if (tab === 'metadata') {
+                statsEl.innerHTML = '';
+                codeEl.textContent = JSON.stringify(result.metadata || {}, null, 2);
+            }
         }
 
-        function onMouseMove(e) {
-            const dy = startY - e.clientY;
-            const newH = Math.max(120, Math.min(500, startH + dy));
-            panel.style.height = `${newH}px`;
-        }
+        // ─── Terminal Resize ───────────────────────────────────────────────
+        function setupTerminalResize() {
+            const handle = document.getElementById('resizeHandle');
+            const panel = document.getElementById('terminalPanel');
+            let startY, startH;
 
-        function onMouseUp() {
-            handle.classList.remove('dragging');
-            document.removeEventListener('mousemove', onMouseMove);
-            document.removeEventListener('mouseup', onMouseUp);
-            if (state.editor) state.editor.layout();
-        }
+            function onMouseDown(e) {
+                e.preventDefault();
+                startY = e.clientY;
+                startH = panel.offsetHeight;
+                handle.classList.add('dragging');
+                document.addEventListener('mousemove', onMouseMove);
+                document.addEventListener('mouseup', onMouseUp);
+            }
 
-        handle.addEventListener('mousedown', onMouseDown);
-    }
+            function onMouseMove(e) {
+                const dy = startY - e.clientY;
+                const newH = Math.max(120, Math.min(500, startH + dy));
+                panel.style.height = `${newH}px`;
+            }
+
+            function onMouseUp() {
+                handle.classList.remove('dragging');
+                document.removeEventListener('mousemove', onMouseMove);
+                document.removeEventListener('mouseup', onMouseUp);
+                if (state.editor) state.editor.layout();
+            }
+
+            handle.addEventListener('mousedown', onMouseDown);
+        }
     </script>
 </body>
+
 </html>

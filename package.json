@@ -51,6 +51,7 @@
     "highlight.js": "^11.11.1",
     "idb-keyval": "^6.2.2",
     "input-otp": "1.4.2",
+    "js-sha3": "^0.9.3",
     "lucide-react": "^0.564.0",
     "monaco-editor": "^0.55.1",
     "next": "16.1.6",

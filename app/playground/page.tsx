@@ -32,65 +32,37 @@ interface CompileResult {
   error?: string
 }
 
-// ─── Default Contracts ──────────────────────────────────────────────────────
-const DEFAULT_FILES: Record<string, string> = {
-  'contracts/AgentVault.py': `"""AgentVault — Production vault for PyVax AgentWallets."""
-from pyvax import Contract, action, agent_action, human_action
+// ─── Contract Templates ─────────────────────────────────────────────────────
+// All templates use ONLY transpiler-supported constructs:
+//   Types: int→uint256, str→address, bool→bool, dict→mapping
+//   Decorators: @action (write), @view_function (read)
+//   Builtins: self.require(), self.msg_sender(), self.msg_value(), self.emit()
+// ─────────────────────────────────────────────────────────────────────────────
+
+const TEMPLATES: Record<string, { label: string; icon: string; code: string }> = {
+  // ─── 1. ERC20 Token ────────────────────────────────────────────────────────
+  'contracts/ERC20Token.py': {
+    label: 'ERC-20 Token',
+    icon: '🪙',
+    code: `"""ERC20Token — Standard fungible token."""
+from pyvax import Contract, action, view_function
 
 
-class AgentVault(Contract):
-    """Production-ready vault for PyVax AgentWallets."""
-
-    balances: dict = {}
-    total_deposits: int = 0
-
-    @action
-    def deposit(self, amount: int):
-        """Deposit AVAX into this vault."""
-        self.require(amount > 0, "Amount must be positive")
-        sender = self.msg_sender()
-        self.balances[sender] = self.balances[sender] + amount
-        self.total_deposits = self.total_deposits + amount
-        self.emit("Deposit", sender, amount)
-
-    @agent_action
-    def autonomous_rebalance(self):
-        """Rebalance logic for AgentWallet only."""
-        pass
-
-    @human_action
-    def withdraw(self, amount: int):
-        """Withdraw AVAX — only callable by human EOA."""
-        sender = self.msg_sender()
-        self.require(self.balances[sender] >= amount, "Insufficient balance")
-        self.balances[sender] = self.balances[sender] - amount
-        self.total_deposits = self.total_deposits - amount
-        self.emit("Withdraw", sender, amount)
-
-    @action
-    def balance_of(self, user: str) -> int:
-        """Get balance for a specific address."""
-        return self.balances[user]
-
-    @action
-    def get_total_deposits(self) -> int:
-        """Get total deposits across all users."""
-        return self.total_deposits
-`,
-  'contracts/Token.py': `"""ERC20 — Standard fungible token contract."""
-from pyvax import Contract, action
-
-
-class ERC20(Contract):
-    """ERC-20 compatible token contract."""
+class ERC20Token(Contract):
+    """ERC-20 compatible token with mint, transfer, approve."""
 
     total_supply: int = 0
     balances: dict = {}
-    decimals_: int = 18
+    allowances: dict = {}
+    owner: str = ""
+
+    def __init__(self):
+        self.owner = self.msg_sender()
 
     @action
     def mint(self, to: str, amount: int):
-        """Mint new tokens to an address."""
+        """Mint new tokens. Only owner."""
+        self.require(self.msg_sender() == self.owner, "Only owner")
         self.require(amount > 0, "Amount must be positive")
         self.balances[to] = self.balances[to] + amount
         self.total_supply = self.total_supply + amount
@@ -98,7 +70,7 @@ class ERC20(Contract):
 
     @action
     def transfer(self, to: str, amount: int):
-        """Transfer tokens to an address."""
+        """Transfer tokens to another address."""
         sender = self.msg_sender()
         self.require(self.balances[sender] >= amount, "Insufficient balance")
         self.balances[sender] = self.balances[sender] - amount
@@ -106,47 +78,555 @@ class ERC20(Contract):
         self.emit("Transfer", sender, to, amount)
 
     @action
-    def balance_of(self, owner: str) -> int:
-        """Get token balance for an address."""
-        return self.balances[owner]
+    def approve(self, spender: str, amount: int):
+        """Approve spender to transfer tokens on your behalf."""
+        sender = self.msg_sender()
+        self.allowances[sender] = amount
+        self.emit("Approval", sender, spender, amount)
 
-    @action
-    def total_supply_of(self) -> int:
+    @view_function
+    def balance_of(self, account: str) -> int:
+        """Get token balance."""
+        return self.balances[account]
+
+    @view_function
+    def get_total_supply(self) -> int:
         """Get total token supply."""
         return self.total_supply
+
+    @view_function
+    def get_owner(self) -> int:
+        """Get contract owner."""
+        return self.owner
 `,
-  'contracts/Voting.py': `"""Voting — Decentralized voting contract."""
-from pyvax import Contract, action
+  },
+
+  // ─── 2. Voting ─────────────────────────────────────────────────────────────
+  'contracts/Voting.py': {
+    label: 'Voting System',
+    icon: '🗳️',
+    code: `"""Voting — On-chain voting with one-person-one-vote."""
+from pyvax import Contract, action, view_function
 
 
 class Voting(Contract):
-    """Simple on-chain voting contract."""
+    """Decentralized voting with candidate tracking."""
 
     votes: dict = {}
-    voter_status: dict = {}
+    has_voted: dict = {}
     total_votes: int = 0
+    is_active: int = 1
 
     @action
     def vote(self, candidate_id: int):
         """Cast a vote for a candidate."""
         sender = self.msg_sender()
-        self.require(self.voter_status[sender] == 0, "Already voted")
-        self.voter_status[sender] = 1
+        self.require(self.is_active == 1, "Voting is closed")
+        self.require(self.has_voted[sender] == 0, "Already voted")
+        self.has_voted[sender] = 1
         self.votes[candidate_id] = self.votes[candidate_id] + 1
         self.total_votes = self.total_votes + 1
         self.emit("VoteCast", sender, candidate_id)
 
     @action
+    def close_voting(self):
+        """Close voting permanently."""
+        self.is_active = 0
+        self.emit("VotingClosed", self.msg_sender(), self.total_votes)
+
+    @view_function
     def get_votes(self, candidate_id: int) -> int:
         """Get vote count for a candidate."""
         return self.votes[candidate_id]
 
-    @action
+    @view_function
     def get_total_votes(self) -> int:
         """Get total votes cast."""
         return self.total_votes
+
+    @view_function
+    def check_voted(self, voter: str) -> int:
+        """Check if an address has voted (1=yes, 0=no)."""
+        return self.has_voted[voter]
 `,
+  },
+
+  // ─── 3. AgentVault ─────────────────────────────────────────────────────────
+  'contracts/AgentVault.py': {
+    label: 'Agent Vault',
+    icon: '🏦',
+    code: `"""AgentVault — Production vault for AI AgentWallets."""
+from pyvax import Contract, action, agent_action, human_action, view_function
+
+
+class AgentVault(Contract):
+    """Vault separating agent vs human permissions."""
+
+    balances: dict = {}
+    total_deposits: int = 0
+    agent_ops: int = 0
+
+    @action
+    def deposit(self, amount: int):
+        """Deposit into the vault."""
+        self.require(amount > 0, "Amount must be positive")
+        sender = self.msg_sender()
+        self.balances[sender] = self.balances[sender] + amount
+        self.total_deposits = self.total_deposits + amount
+        self.emit("Deposit", sender, amount)
+
+    @human_action
+    def withdraw(self, amount: int):
+        """Withdraw — only callable by human EOA."""
+        sender = self.msg_sender()
+        self.require(self.balances[sender] >= amount, "Insufficient balance")
+        self.balances[sender] = self.balances[sender] - amount
+        self.total_deposits = self.total_deposits - amount
+        self.emit("Withdraw", sender, amount)
+
+    @agent_action
+    def rebalance(self):
+        """Agent-only operation counter."""
+        self.agent_ops = self.agent_ops + 1
+        self.emit("Rebalance", self.msg_sender(), self.agent_ops)
+
+    @view_function
+    def balance_of(self, user: str) -> int:
+        """Get balance for address."""
+        return self.balances[user]
+
+    @view_function
+    def get_total_deposits(self) -> int:
+        """Get total vault deposits."""
+        return self.total_deposits
+`,
+  },
+
+  // ─── 4. Counter ────────────────────────────────────────────────────────────
+  'contracts/Counter.py': {
+    label: 'Counter',
+    icon: '🔢',
+    code: `"""Counter — Simple counter contract for testing."""
+from pyvax import Contract, action, view_function
+
+
+class Counter(Contract):
+    """Minimal counter — great for first deploy."""
+
+    count: int = 0
+
+    @action
+    def increment(self):
+        """Add 1 to the counter."""
+        self.count = self.count + 1
+        self.emit("Incremented", self.msg_sender(), self.count)
+
+    @action
+    def decrement(self):
+        """Subtract 1 from the counter."""
+        self.require(self.count > 0, "Cannot go below zero")
+        self.count = self.count - 1
+        self.emit("Decremented", self.msg_sender(), self.count)
+
+    @action
+    def add(self, value: int):
+        """Add a custom value."""
+        self.require(value > 0, "Value must be positive")
+        self.count = self.count + value
+
+    @action
+    def reset(self):
+        """Reset counter to zero."""
+        self.count = 0
+
+    @view_function
+    def get_count(self) -> int:
+        """Get current count."""
+        return self.count
+`,
+  },
+
+  // ─── 5. Staking Pool ──────────────────────────────────────────────────────
+  'contracts/StakingPool.py': {
+    label: 'Staking Pool',
+    icon: '💎',
+    code: `"""StakingPool — Stake tokens and track rewards."""
+from pyvax import Contract, action, view_function
+
+
+class StakingPool(Contract):
+    """Simple staking pool with reward tracking."""
+
+    staked: dict = {}
+    rewards: dict = {}
+    total_staked: int = 0
+    reward_rate: int = 5
+
+    @action
+    def stake(self, amount: int):
+        """Stake tokens into the pool."""
+        self.require(amount > 0, "Amount must be positive")
+        sender = self.msg_sender()
+        self.staked[sender] = self.staked[sender] + amount
+        self.total_staked = self.total_staked + amount
+        self.emit("Staked", sender, amount)
+
+    @action
+    def unstake(self, amount: int):
+        """Unstake tokens from the pool."""
+        sender = self.msg_sender()
+        self.require(self.staked[sender] >= amount, "Not enough staked")
+        self.staked[sender] = self.staked[sender] - amount
+        self.total_staked = self.total_staked - amount
+        self.emit("Unstaked", sender, amount)
+
+    @action
+    def claim_rewards(self):
+        """Claim accumulated rewards."""
+        sender = self.msg_sender()
+        reward = self.staked[sender] * self.reward_rate
+        self.rewards[sender] = self.rewards[sender] + reward
+        self.emit("RewardsClaimed", sender, reward)
+
+    @view_function
+    def get_staked(self, user: str) -> int:
+        """Get staked amount for user."""
+        return self.staked[user]
+
+    @view_function
+    def get_rewards(self, user: str) -> int:
+        """Get accumulated rewards."""
+        return self.rewards[user]
+
+    @view_function
+    def get_total_staked(self) -> int:
+        """Get total staked in pool."""
+        return self.total_staked
+`,
+  },
+
+  // ─── 6. Crowdfund ──────────────────────────────────────────────────────────
+  'contracts/Crowdfund.py': {
+    label: 'Crowdfund',
+    icon: '🚀',
+    code: `"""Crowdfund — Raise funds toward a goal."""
+from pyvax import Contract, action, view_function
+
+
+class Crowdfund(Contract):
+    """Crowdfunding with goal tracking and refund."""
+
+    contributions: dict = {}
+    total_raised: int = 0
+    goal: int = 1000
+    is_complete: int = 0
+    creator: str = ""
+
+    def __init__(self):
+        self.creator = self.msg_sender()
+
+    @action
+    def contribute(self, amount: int):
+        """Contribute to the crowdfund."""
+        self.require(self.is_complete == 0, "Crowdfund is complete")
+        self.require(amount > 0, "Amount must be positive")
+        sender = self.msg_sender()
+        self.contributions[sender] = self.contributions[sender] + amount
+        self.total_raised = self.total_raised + amount
+        self.emit("Contributed", sender, amount)
+
+    @action
+    def finalize(self):
+        """Finalize if goal is met."""
+        self.require(self.msg_sender() == self.creator, "Only creator")
+        self.require(self.total_raised >= self.goal, "Goal not met")
+        self.is_complete = 1
+        self.emit("Finalized", self.creator, self.total_raised)
+
+    @view_function
+    def get_contribution(self, donor: str) -> int:
+        """Get contribution amount."""
+        return self.contributions[donor]
+
+    @view_function
+    def get_total_raised(self) -> int:
+        """Get total raised."""
+        return self.total_raised
+
+    @view_function
+    def get_goal(self) -> int:
+        """Get funding goal."""
+        return self.goal
+
+    @view_function
+    def get_status(self) -> int:
+        """Get status (0=active, 1=complete)."""
+        return self.is_complete
+`,
+  },
+
+  // ─── 7. Escrow ─────────────────────────────────────────────────────────────
+  'contracts/Escrow.py': {
+    label: 'Escrow',
+    icon: '🔐',
+    code: `"""Escrow — Hold funds between buyer and seller."""
+from pyvax import Contract, action, view_function
+
+
+class Escrow(Contract):
+    """Two-party escrow with arbiter release."""
+
+    deposits: dict = {}
+    released: dict = {}
+    arbiter: str = ""
+    total_held: int = 0
+
+    def __init__(self):
+        self.arbiter = self.msg_sender()
+
+    @action
+    def deposit_escrow(self, amount: int):
+        """Deposit funds into escrow."""
+        self.require(amount > 0, "Amount must be positive")
+        sender = self.msg_sender()
+        self.deposits[sender] = self.deposits[sender] + amount
+        self.total_held = self.total_held + amount
+        self.emit("EscrowDeposit", sender, amount)
+
+    @action
+    def release(self, to: str, amount: int):
+        """Release escrowed funds. Arbiter only."""
+        self.require(self.msg_sender() == self.arbiter, "Only arbiter")
+        self.require(self.total_held >= amount, "Insufficient escrow")
+        self.released[to] = self.released[to] + amount
+        self.total_held = self.total_held - amount
+        self.emit("EscrowReleased", to, amount)
+
+    @action
+    def refund(self, to: str, amount: int):
+        """Refund escrowed funds. Arbiter only."""
+        self.require(self.msg_sender() == self.arbiter, "Only arbiter")
+        self.require(self.deposits[to] >= amount, "Exceeds deposit")
+        self.deposits[to] = self.deposits[to] - amount
+        self.total_held = self.total_held - amount
+        self.emit("EscrowRefunded", to, amount)
+
+    @view_function
+    def get_deposit(self, user: str) -> int:
+        """Get escrowed amount."""
+        return self.deposits[user]
+
+    @view_function
+    def get_total_held(self) -> int:
+        """Get total held in escrow."""
+        return self.total_held
+`,
+  },
+
+  // ─── 8. DAO Treasury ───────────────────────────────────────────────────────
+  'contracts/DAOTreasury.py': {
+    label: 'DAO Treasury',
+    icon: '🏛️',
+    code: `"""DAOTreasury — Multi-member treasury with spending limits."""
+from pyvax import Contract, action, view_function
+
+
+class DAOTreasury(Contract):
+    """DAO treasury with member management and spending."""
+
+    members: dict = {}
+    balances: dict = {}
+    treasury_balance: int = 0
+    member_count: int = 0
+    admin: str = ""
+
+    def __init__(self):
+        self.admin = self.msg_sender()
+        self.members[self.msg_sender()] = 1
+        self.member_count = 1
+
+    @action
+    def add_member(self, member: str):
+        """Add a DAO member. Admin only."""
+        self.require(self.msg_sender() == self.admin, "Only admin")
+        self.require(self.members[member] == 0, "Already member")
+        self.members[member] = 1
+        self.member_count = self.member_count + 1
+        self.emit("MemberAdded", member, self.member_count)
+
+    @action
+    def remove_member(self, member: str):
+        """Remove a DAO member. Admin only."""
+        self.require(self.msg_sender() == self.admin, "Only admin")
+        self.require(self.members[member] == 1, "Not a member")
+        self.members[member] = 0
+        self.member_count = self.member_count - 1
+        self.emit("MemberRemoved", member, self.member_count)
+
+    @action
+    def fund_treasury(self, amount: int):
+        """Add funds to treasury. Members only."""
+        sender = self.msg_sender()
+        self.require(self.members[sender] == 1, "Not a member")
+        self.require(amount > 0, "Amount must be positive")
+        self.treasury_balance = self.treasury_balance + amount
+        self.balances[sender] = self.balances[sender] + amount
+        self.emit("TreasuryFunded", sender, amount)
+
+    @action
+    def spend(self, amount: int):
+        """Spend from treasury. Admin only."""
+        self.require(self.msg_sender() == self.admin, "Only admin")
+        self.require(self.treasury_balance >= amount, "Insufficient funds")
+        self.treasury_balance = self.treasury_balance - amount
+        self.emit("TreasurySpent", self.admin, amount)
+
+    @view_function
+    def is_member(self, addr: str) -> int:
+        """Check membership (1=yes, 0=no)."""
+        return self.members[addr]
+
+    @view_function
+    def get_treasury_balance(self) -> int:
+        """Get treasury balance."""
+        return self.treasury_balance
+
+    @view_function
+    def get_member_count(self) -> int:
+        """Get member count."""
+        return self.member_count
+`,
+  },
+
+  // ─── 9. Lottery ────────────────────────────────────────────────────────────
+  'contracts/Lottery.py': {
+    label: 'Lottery',
+    icon: '🎰',
+    code: `"""Lottery — Simple on-chain lottery."""
+from pyvax import Contract, action, view_function
+
+
+class Lottery(Contract):
+    """Buy tickets. Last entry before close wins the pool."""
+
+    tickets: dict = {}
+    ticket_count: int = 0
+    prize_pool: int = 0
+    ticket_price: int = 100
+    is_open: int = 1
+    last_buyer: str = ""
+    manager: str = ""
+
+    def __init__(self):
+        self.manager = self.msg_sender()
+
+    @action
+    def buy_ticket(self, quantity: int):
+        """Buy lottery tickets."""
+        self.require(self.is_open == 1, "Lottery closed")
+        self.require(quantity > 0, "Buy at least 1")
+        sender = self.msg_sender()
+        cost = quantity * self.ticket_price
+        self.tickets[sender] = self.tickets[sender] + quantity
+        self.ticket_count = self.ticket_count + quantity
+        self.prize_pool = self.prize_pool + cost
+        self.last_buyer = sender
+        self.emit("TicketPurchased", sender, quantity)
+
+    @action
+    def draw_winner(self):
+        """Close lottery and declare winner. Manager only."""
+        self.require(self.msg_sender() == self.manager, "Only manager")
+        self.require(self.is_open == 1, "Already closed")
+        self.require(self.ticket_count > 0, "No tickets sold")
+        self.is_open = 0
+        self.emit("WinnerDrawn", self.last_buyer, self.prize_pool)
+
+    @view_function
+    def get_tickets(self, player: str) -> int:
+        """Get ticket count for player."""
+        return self.tickets[player]
+
+    @view_function
+    def get_prize_pool(self) -> int:
+        """Get current prize pool."""
+        return self.prize_pool
+
+    @view_function
+    def get_ticket_count(self) -> int:
+        """Get total tickets sold."""
+        return self.ticket_count
+
+    @view_function
+    def get_is_open(self) -> int:
+        """Get lottery status (1=open, 0=closed)."""
+        return self.is_open
+`,
+  },
+
+  // ─── 10. NFT Registry ─────────────────────────────────────────────────────
+  'contracts/NFTRegistry.py': {
+    label: 'NFT Registry',
+    icon: '🖼️',
+    code: `"""NFTRegistry — Simple non-fungible token registry."""
+from pyvax import Contract, action, view_function
+
+
+class NFTRegistry(Contract):
+    """Mint and transfer unique token IDs."""
+
+    owners: dict = {}
+    balances: dict = {}
+    token_count: int = 0
+    minter: str = ""
+
+    def __init__(self):
+        self.minter = self.msg_sender()
+
+    @action
+    def mint_nft(self, to: str):
+        """Mint a new NFT to an address."""
+        self.require(self.msg_sender() == self.minter, "Only minter")
+        self.token_count = self.token_count + 1
+        token_id = self.token_count
+        self.owners[token_id] = to
+        self.balances[to] = self.balances[to] + 1
+        self.emit("Transfer", 0, to, token_id)
+
+    @action
+    def transfer_nft(self, to: str, token_id: int):
+        """Transfer NFT to another address."""
+        sender = self.msg_sender()
+        self.require(self.owners[token_id] == sender, "Not owner")
+        self.owners[token_id] = to
+        self.balances[sender] = self.balances[sender] - 1
+        self.balances[to] = self.balances[to] + 1
+        self.emit("Transfer", sender, to, token_id)
+
+    @view_function
+    def owner_of(self, token_id: int) -> int:
+        """Get owner of a token."""
+        return self.owners[token_id]
+
+    @view_function
+    def balance_of(self, owner: str) -> int:
+        """Get NFT count for address."""
+        return self.balances[owner]
+
+    @view_function
+    def get_token_count(self) -> int:
+        """Get total minted."""
+        return self.token_count
+`,
+  },
 }
+
+// Build DEFAULT_FILES from TEMPLATES
+const DEFAULT_FILES: Record<string, string> = {}
+for (const [path, tmpl] of Object.entries(TEMPLATES)) {
+  DEFAULT_FILES[path] = tmpl.code
+}
+
 
 // ─── Monaco Theme ───────────────────────────────────────────────────────────
 const PYVAX_THEME = {
@@ -202,7 +682,7 @@ function PlaygroundInner() {
 
   // State
   const [files, setFiles] = useState<Record<string, string>>({})
-  const [activeFile, setActiveFile] = useState('contracts/AgentVault.py')
+  const [activeFile, setActiveFile] = useState('contracts/Counter.py')
   const [isExecuting, setIsExecuting] = useState(false)
   const [lastResult, setLastResult] = useState<CompileResult | null>(null)
   const [lines, setLines] = useState<TerminalLine[]>([
@@ -487,21 +967,26 @@ function PlaygroundInner() {
                   title="New File"
                 >+</button>
                 {showNewFileMenu && (
-                  <div className="absolute right-0 top-full mt-1 bg-[#0C0C0E] border border-[#1C1C1F] rounded-lg shadow-2xl py-1 z-50 min-w-[180px]">
-                    {[
-                      { label: '📄 Empty Contract', name: 'contracts/NewContract.py', content: `from pyvax import Contract, action\n\n\nclass NewContract(Contract):\n    pass\n` },
-                      { label: '🪙 ERC-20 Token', name: 'contracts/MyToken.py', content: DEFAULT_FILES['contracts/Token.py'] },
-                      { label: '🗳️ Voting', name: 'contracts/MyVoting.py', content: DEFAULT_FILES['contracts/Voting.py'] },
-                      { label: '🏦 Vault', name: 'contracts/MyVault.py', content: DEFAULT_FILES['contracts/AgentVault.py'] },
-                    ].map(tmpl => (
+                  <div className="absolute right-0 top-full mt-1 bg-[#0C0C0E] border border-[#1C1C1F] rounded-lg shadow-2xl py-1 z-50 min-w-[200px] max-h-[320px] overflow-y-auto">
+                    {/* Empty contract */}
+                    <button
+                      onClick={() => {
+                        const name = prompt('File name:', 'contracts/NewContract.py') || 'contracts/NewContract.py'
+                        createFile(name, `"""NewContract — Custom PyVax contract."""\nfrom pyvax import Contract, action, view_function\n\n\nclass NewContract(Contract):\n    """Write your contract here."""\n\n    value: int = 0\n\n    @action\n    def set_value(self, new_value: int):\n        """Set the value."""\n        self.value = new_value\n        self.emit("ValueSet", self.msg_sender(), new_value)\n\n    @view_function\n    def get_value(self) -> int:\n        """Get the value."""\n        return self.value\n`)
+                      }}
+                      className="w-full text-left px-3 py-1.5 text-[10px] text-[#A1A1AA] hover:bg-[#18181B] transition-colors"
+                    >📄 Empty Contract</button>
+                    <div className="h-px bg-[#1C1C1F] my-1" />
+                    {/* All templates */}
+                    {Object.entries(TEMPLATES).map(([path, t]) => (
                       <button
-                        key={tmpl.label}
+                        key={path}
                         onClick={() => {
-                          const name = prompt('File name:', tmpl.name) || tmpl.name
-                          createFile(name, tmpl.content)
+                          const name = prompt('File name:', path) || path
+                          createFile(name, t.code)
                         }}
                         className="w-full text-left px-3 py-1.5 text-[10px] text-[#A1A1AA] hover:bg-[#18181B] transition-colors"
-                      >{tmpl.label}</button>
+                      >{t.icon} {t.label}</button>
                     ))}
                   </div>
                 )}
@@ -732,10 +1217,10 @@ function PlaygroundInner() {
                   key={tab}
                   onClick={() => setRightPanelTab(tab)}
                   className={`text-[9px] tracking-widest font-bold px-2.5 py-1 rounded transition-all ${rightPanelTab === tab
-                      ? tab === 'interact'
-                        ? 'bg-[#60A5FA15] text-[#60A5FA]'
-                        : 'bg-[#E8414215] text-[#E84142]'
-                      : 'text-[#3F3F46] hover:text-[#71717A]'
+                    ? tab === 'interact'
+                      ? 'bg-[#60A5FA15] text-[#60A5FA]'
+                      : 'bg-[#E8414215] text-[#E84142]'
+                    : 'text-[#3F3F46] hover:text-[#71717A]'
                     }`}
                 >
                   {tab === 'deploy' ? '🚀 DEPLOY' : '📖 INTERACT'}
@@ -876,6 +1361,8 @@ function PlaygroundInner() {
                     abi={lastResult?.abi || []}
                     bytecode={lastResult?.bytecode}
                     contractName={lastResult?.contract || contractName(activeFile)}
+                    sourceCode={files[activeFile] || ''}
+                    chainId={wallet.chain.id}
                     onTerminalPrint={termPrint}
                   />
                 </div>

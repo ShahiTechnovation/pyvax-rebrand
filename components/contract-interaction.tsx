@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback, useRef } from 'react'
 import { useWallet } from './wallet-provider'
+import { keccak256 as keccak256Hash } from 'js-sha3'
 
 // ─── ABI Helpers (pure JS — no ethers dependency) ───────────────────────────
 // We encode/decode ABI data manually to avoid ethers.js bundle size.
@@ -12,18 +13,14 @@ function padLeft(hex: string, bytes: number): string {
 }
 
 function functionSelector(name: string, inputTypes: string[]): string {
-    // keccak256 of function signature → first 4 bytes
-    // We compute this via the Web Crypto API
+    // keccak256 of function signature → first 4 bytes (0x + 8 hex chars)
     const sig = `${name}(${inputTypes.join(',')})`
-    return keccak256Sync(sig).slice(0, 10) // 0x + 8 hex chars
+    return '0x' + keccak256Hash(sig).slice(0, 8)
 }
 
-// Minimal keccak256 for function selectors (synchronous, no deps)
-// We'll use a tiny implementation
-function keccak256Sync(input: string): string {
-    // Fallback: compute via the ABI encoding we already have from compile
-    // For now we pre-compute selectors from the ABI items that have them
-    return '0x00000000'
+// Proper keccak256 hex using js-sha3 (matches EVM, Solidity, pycryptodome)
+function keccak256Hex(input: string): string {
+    return keccak256Hash(input)
 }
 
 // ─── Better approach: use built-in TextEncoder + manual ABI encode ──────────
@@ -165,6 +162,9 @@ interface TxRecord {
     txHash?: string
     error?: string
     gasUsed?: string
+    calldataHex?: string
+    methodSelector?: string
+    functionSig?: string
     timestamp: number
     status: 'pending' | 'success' | 'error'
 }
@@ -174,6 +174,8 @@ interface ContractInteractionProps {
     abi: any[]
     bytecode?: string
     contractName: string
+    sourceCode?: string
+    chainId?: number
     onTerminalPrint?: (text: string, type: 'prompt' | 'success' | 'error' | 'warning' | 'info' | 'muted' | 'bytecode' | '') => void
 }
 
@@ -183,12 +185,134 @@ export function ContractInteraction({
     abi,
     bytecode,
     contractName,
+    sourceCode,
+    chainId,
     onTerminalPrint,
 }: ContractInteractionProps) {
     const wallet = useWallet()
     const [txHistory, setTxHistory] = useState<TxRecord[]>([])
     const [activeSection, setActiveSection] = useState<'functions' | 'state' | 'history'>('functions')
     const [functionSelectors, setFunctionSelectors] = useState<Record<string, string>>({})
+    const [verificationStatus, setVerificationStatus] = useState<'unverified' | 'pending' | 'verified' | 'error'>('unverified')
+    const [verificationGuid, setVerificationGuid] = useState<string | null>(null)
+
+    // ─── Snowtrace Auto-Verification + Signature Registration ─────────────
+    const submitVerification = useCallback(async () => {
+        if (!address || !abi || abi.length === 0) return
+        setVerificationStatus('pending')
+        onTerminalPrint?.(``, '')
+        onTerminalPrint?.(`─── PyVax Auto-Verify ───`, 'info')
+        onTerminalPrint?.(`  Address: ${address}`, 'muted')
+        onTerminalPrint?.(`  Registering ${abi.filter((a: any) => a.type === 'function').length} functions + ${abi.filter((a: any) => a.type === 'event').length} events...`, 'muted')
+
+        try {
+            const res = await fetch('/api/verify', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    address,
+                    sourceCode: sourceCode || '',
+                    contractName,
+                    abi,
+                    bytecode: bytecode || '',
+                    chainId: chainId || wallet.chain.id,
+                }),
+            })
+            const data = await res.json()
+
+            // ─── Signature registration results ─────────────────────────
+            if (data.signatureRegistration?.databases) {
+                onTerminalPrint?.(``, '')
+                for (const db of data.signatureRegistration.databases) {
+                    const icon = db.status === 'ok' ? '✓' : '⚠'
+                    const color: any = db.status === 'ok' ? 'success' : 'warning'
+                    onTerminalPrint?.(`  ${icon} ${db.name}: ${db.count} registered`, color)
+                }
+            }
+
+            // ─── Function signatures with selectors ─────────────────────
+            if (data.signatureRegistration?.signatures?.length) {
+                onTerminalPrint?.(``, '')
+                for (const sig of data.signatureRegistration.signatures) {
+                    const badge = sig.type === 'function' ? '📖' : '⚡'
+                    const sel = sig.selector ? ` → ${sig.selector}` : ''
+                    onTerminalPrint?.(`    ${badge} ${sig.sig}${sel}`, 'muted')
+                }
+            }
+
+            // ─── Snowtrace API result ───────────────────────────────────
+            onTerminalPrint?.(``, '')
+            if (data.verified) {
+                setVerificationStatus('verified')
+                setVerificationGuid(data.guid || null)
+                onTerminalPrint?.(`  ✓ VERIFIED on Snowtrace!`, 'success')
+                onTerminalPrint?.(`  GUID: ${data.guid}`, 'muted')
+
+                // Poll for confirmation
+                if (data.guid) {
+                    onTerminalPrint?.(`  Polling verification status...`, 'muted')
+                    setTimeout(async () => {
+                        try {
+                            const pollRes = await fetch(`/api/verify?guid=${data.guid}&chainId=${chainId || wallet.chain.id}`)
+                            const pollData = await pollRes.json()
+                            if (pollData.status === 'verified') {
+                                onTerminalPrint?.(`  ✓ Snowtrace confirmed: VERIFIED`, 'success')
+                                setVerificationStatus('verified')
+                            } else {
+                                onTerminalPrint?.(`  ⏳ Status: ${pollData.message || pollData.status}`, 'warning')
+                            }
+                        } catch { /* ignore polling errors */ }
+                    }, 5000)
+                }
+            } else {
+                setVerificationStatus('unverified')
+                onTerminalPrint?.(`  ⚠ Snowtrace auto-verify: ${data.message || 'pending'}`, 'warning')
+            }
+
+            // ─── Solidity interface (always show for manual fallback) ───
+            if (data.solidityInterface) {
+                onTerminalPrint?.(``, '')
+                onTerminalPrint?.(`─── Solidity Interface ───`, 'info')
+                const lines = data.solidityInterface.split('\n')
+                for (const line of lines) {
+                    onTerminalPrint?.(`  ${line}`, 'bytecode')
+                }
+
+                // Auto-copy to clipboard
+                if (typeof navigator !== 'undefined') {
+                    try {
+                        await navigator.clipboard.writeText(data.solidityInterface)
+                        onTerminalPrint?.(``, '')
+                        onTerminalPrint?.(`  📋 Copied to clipboard!`, 'success')
+                    } catch { /* clipboard might be blocked */ }
+                }
+            }
+
+            // ─── Manual verify link ─────────────────────────────────────
+            if (data.verifyPageUrl) {
+                onTerminalPrint?.(``, '')
+                onTerminalPrint?.(`  To manually verify on Snowtrace:`, 'info')
+                onTerminalPrint?.(`  1. Go to: ${data.verifyPageUrl}`, 'info')
+                onTerminalPrint?.(`  2. Select "Solidity (Single file)", Compiler v0.8.20`, 'info')
+                onTerminalPrint?.(`  3. Paste the interface above (already copied!)`, 'info')
+            }
+
+            onTerminalPrint?.(``, '')
+            onTerminalPrint?.(`  Explorer: ${data.explorerUrl || ''}`, 'info')
+            onTerminalPrint?.(``, '')
+
+        } catch (err: any) {
+            setVerificationStatus('error')
+            onTerminalPrint?.(`✗ Verify error: ${err.message}`, 'error')
+        }
+    }, [address, abi, bytecode, sourceCode, contractName, chainId, wallet.chain.id, onTerminalPrint])
+
+    // Auto-verify on first deploy (triggered when address changes)
+    useEffect(() => {
+        if (address && abi && abi.length > 0 && verificationStatus === 'unverified') {
+            submitVerification()
+        }
+    }, [address])
 
     // Parse ABI into read/write functions
     const functions = (abi || []).filter((item: any) => item.type === 'function') as ABIFunction[]
@@ -199,16 +323,11 @@ export function ContractInteraction({
     // Compute function selectors on mount
     useEffect(() => {
         if (!abi || abi.length === 0) return
-
-        // Use the Web Crypto API to compute keccak256 of function signatures
-        // Since Web Crypto doesn't have keccak, we'll use a simple approach:
-        // compute selector = first 4 bytes of sha256 (close enough for display)
-        // In production, use a proper keccak256 library
         const selectors: Record<string, string> = {}
         functions.forEach(fn => {
             const sig = `${fn.name}(${fn.inputs.map(i => i.type).join(',')})`
-            // Simple hash for display — the actual blockchain encoding happens server-side
-            selectors[fn.name] = sig
+            const hash = keccak256Hex(sig)
+            selectors[fn.name] = '0x' + hash.slice(0, 8)
         })
         setFunctionSelectors(selectors)
     }, [abi])
@@ -388,6 +507,19 @@ export function ContractInteraction({
                     <div className="flex items-center gap-2 mt-1">
                         <span className="text-[8px] text-[#3F3F46] tracking-widest font-bold">{contractName}</span>
                         <span className="text-[8px] text-[#22C55E] bg-[#22C55E10] px-1.5 py-0.5 rounded font-bold tracking-wider">DEPLOYED</span>
+                        <span className={`text-[8px] px-1.5 py-0.5 rounded font-bold tracking-wider ${verificationStatus === 'verified' ? 'text-[#22C55E] bg-[#22C55E10]' :
+                            verificationStatus === 'pending' ? 'text-[#F59E0B] bg-[#F59E0B10] animate-pulse' :
+                                'text-[#52525B] bg-[#52525B10]'
+                            }`}>
+                            {verificationStatus === 'verified' ? '✓ VERIFIED' :
+                                verificationStatus === 'pending' ? '⏳ VERIFYING' : '⚠ UNVERIFIED'}
+                        </span>
+                        {verificationStatus !== 'verified' && verificationStatus !== 'pending' && (
+                            <button
+                                onClick={submitVerification}
+                                className="text-[8px] text-[#60A5FA] hover:text-[#93C5FD] transition-colors tracking-wider font-bold"
+                            >VERIFY →</button>
+                        )}
                     </div>
                 </div>
             )}
@@ -429,17 +561,27 @@ export function ContractInteraction({
                                         key={`read-${i}`}
                                         fn={fn}
                                         type="read"
+                                        selector={functionSelectors[fn.name]}
                                         onExecute={async (inputs) => {
                                             const id = `${Date.now()}-${fn.name}`
-                                            addTx({ id, type: 'call', functionName: fn.name, inputs, timestamp: Date.now(), status: 'pending' })
+                                            const inputTypes = fn.inputs.map(i => i.type)
+                                            const sig = `${fn.name}(${inputTypes.join(',')})`
+                                            const selector = functionSelectors[fn.name] || '0x????????'
+                                            const values = fn.inputs.map((inp, idx) => inputs[inp.name] || inputs[String(idx)] || '0')
+                                            let calldataHex = ''
+                                            try { calldataHex = encodeCallData(selector, inputTypes, values) } catch { }
+                                            addTx({ id, type: 'call', functionName: fn.name, inputs, calldataHex, methodSelector: selector, functionSig: sig, timestamp: Date.now(), status: 'pending' })
+                                            onTerminalPrint?.(`📖 CALL ${sig}`, 'info')
+                                            onTerminalPrint?.(`  Method: ${selector}`, 'muted')
+                                            if (calldataHex) onTerminalPrint?.(`  Calldata: ${calldataHex.slice(0, 42)}${calldataHex.length > 42 ? '...' : ''}`, 'muted')
                                             try {
                                                 const result = await (address ? clientSideCall(fn, inputs) : Promise.reject(new Error('Deploy first')))
-                                                addTx({ id, type: 'call', functionName: fn.name, inputs, result, timestamp: Date.now(), status: 'success' })
-                                                onTerminalPrint?.(`📖 ${fn.name}() → ${result}`, 'success')
+                                                addTx({ id, type: 'call', functionName: fn.name, inputs, result, calldataHex, methodSelector: selector, functionSig: sig, timestamp: Date.now(), status: 'success' })
+                                                onTerminalPrint?.(`  ✓ Result: ${result}`, 'success')
                                                 return result
                                             } catch (err: any) {
-                                                addTx({ id, type: 'call', functionName: fn.name, inputs, error: err.message, timestamp: Date.now(), status: 'error' })
-                                                onTerminalPrint?.(`✗ ${fn.name}(): ${err.message}`, 'error')
+                                                addTx({ id, type: 'call', functionName: fn.name, inputs, error: err.message, calldataHex, methodSelector: selector, functionSig: sig, timestamp: Date.now(), status: 'error' })
+                                                onTerminalPrint?.(`  ✗ Error: ${err.message}`, 'error')
                                                 throw err
                                             }
                                         }}
@@ -461,19 +603,29 @@ export function ContractInteraction({
                                         key={`write-${i}`}
                                         fn={fn}
                                         type="write"
+                                        selector={functionSelectors[fn.name]}
                                         onExecute={async (inputs) => {
                                             const id = `${Date.now()}-${fn.name}`
-                                            addTx({ id, type: 'write', functionName: fn.name, inputs, timestamp: Date.now(), status: 'pending' })
+                                            const inputTypes = fn.inputs.map(i => i.type)
+                                            const sig = `${fn.name}(${inputTypes.join(',')})`
+                                            const selector = functionSelectors[fn.name] || '0x????????'
+                                            const values = fn.inputs.map((inp, idx) => inputs[inp.name] || inputs[String(idx)] || '0')
+                                            let calldataHex = ''
+                                            try { calldataHex = encodeCallData(selector, inputTypes, values) } catch { }
+                                            addTx({ id, type: 'write', functionName: fn.name, inputs, calldataHex, methodSelector: selector, functionSig: sig, timestamp: Date.now(), status: 'pending' })
+                                            onTerminalPrint?.(`✍️ WRITE ${sig}`, 'warning')
+                                            onTerminalPrint?.(`  Method: ${selector}`, 'muted')
+                                            if (calldataHex) onTerminalPrint?.(`  Calldata: ${calldataHex.slice(0, 66)}${calldataHex.length > 66 ? '...' : ''}`, 'bytecode')
                                             try {
                                                 const { txHash, gasUsed } = await executeWrite(fn, inputs)
-                                                addTx({ id, type: 'write', functionName: fn.name, inputs, txHash, gasUsed, timestamp: Date.now(), status: 'success' })
-                                                onTerminalPrint?.(`✓ ${fn.name}() → tx: ${txHash.slice(0, 14)}...`, 'success')
-                                                if (gasUsed) onTerminalPrint?.(`  Gas used: ${parseInt(gasUsed).toLocaleString()}`, 'muted')
+                                                addTx({ id, type: 'write', functionName: fn.name, inputs, txHash, gasUsed, calldataHex, methodSelector: selector, functionSig: sig, timestamp: Date.now(), status: 'success' })
+                                                onTerminalPrint?.(`  ✓ tx: ${txHash}`, 'success')
+                                                if (gasUsed) onTerminalPrint?.(`  Gas: ${parseInt(gasUsed).toLocaleString()}`, 'muted')
                                                 return txHash
                                             } catch (err: any) {
                                                 const msg = err.code === 4001 ? 'Transaction rejected by user' : err.message
-                                                addTx({ id, type: 'write', functionName: fn.name, inputs, error: msg, timestamp: Date.now(), status: 'error' })
-                                                onTerminalPrint?.(`✗ ${fn.name}(): ${msg}`, 'error')
+                                                addTx({ id, type: 'write', functionName: fn.name, inputs, error: msg, calldataHex, methodSelector: selector, functionSig: sig, timestamp: Date.now(), status: 'error' })
+                                                onTerminalPrint?.(`  ✗ ${msg}`, 'error')
                                                 throw err
                                             }
                                         }}
@@ -549,19 +701,29 @@ export function ContractInteraction({
                                                     'bg-[#F59E0B] animate-pulse'
                                                 }`} />
                                             <span className="text-[10px] text-[#E4E4E7] font-bold">{tx.functionName}()</span>
+                                            {tx.methodSelector && (
+                                                <span className="text-[8px] text-[#A78BFA] font-mono bg-[#A78BFA10] px-1 rounded" title={tx.functionSig}>{tx.methodSelector}</span>
+                                            )}
                                             <span className={`text-[8px] tracking-wider font-bold ml-auto ${tx.type === 'call' ? 'text-[#60A5FA]' : 'text-[#F59E0B]'
                                                 }`}>
                                                 {tx.type === 'call' ? 'READ' : 'WRITE'}
                                             </span>
                                         </div>
+                                        {tx.calldataHex && (
+                                            <div className="text-[8px] text-[#71717A] font-mono mt-1 break-all bg-[#09090B] rounded px-1.5 py-1 border border-[#18181B]">
+                                                <span className="text-[#A78BFA]">{tx.calldataHex.slice(0, 10)}</span>
+                                                <span className="text-[#52525B]">{tx.calldataHex.slice(10, 74)}</span>
+                                                {tx.calldataHex.length > 74 && <span className="text-[#3F3F46]">…</span>}
+                                            </div>
+                                        )}
                                         {tx.txHash && (
                                             <a
                                                 href={`${wallet.chain.explorer}/tx/${tx.txHash}`}
                                                 target="_blank"
                                                 rel="noopener noreferrer"
-                                                className="text-[9px] text-[#A78BFA] hover:text-[#C4B5FD] font-mono truncate block transition-colors"
+                                                className="text-[9px] text-[#A78BFA] hover:text-[#C4B5FD] font-mono truncate block transition-colors mt-1"
                                             >
-                                                {tx.txHash}
+                                                tx: {tx.txHash}
                                             </a>
                                         )}
                                         {tx.result && (
@@ -588,9 +750,10 @@ export function ContractInteraction({
 }
 
 // ─── Function Card (Accordion item with inputs) ─────────────────────────────
-function FunctionCard({ fn, type, onExecute, disabled, walletNeeded }: {
+function FunctionCard({ fn, type, selector, onExecute, disabled, walletNeeded }: {
     fn: ABIFunction
     type: 'read' | 'write'
+    selector?: string
     onExecute: (inputs: Record<string, string>) => Promise<string>
     disabled?: boolean
     walletNeeded?: boolean
@@ -628,6 +791,9 @@ function FunctionCard({ fn, type, onExecute, disabled, walletNeeded }: {
             >
                 <span className="text-[8px] text-[#3F3F46]">{expanded ? '▾' : '▸'}</span>
                 <span className="text-[10px] font-bold text-[#E4E4E7]">{fn.name}</span>
+                {selector && (
+                    <span className="text-[8px] text-[#A78BFA] font-mono bg-[#A78BFA10] px-1 rounded" title={`${fn.name}(${fn.inputs.map(i => i.type).join(',')})`}>{selector}</span>
+                )}
                 <span className="text-[9px] text-[#52525B] font-mono">
                     ({fn.inputs.map(i => i.type).join(', ')})
                 </span>
@@ -782,108 +948,4 @@ function getPlaceholder(type: string): string {
     if (type === 'string') return 'Enter text...'
     if (type.startsWith('bytes')) return '0x...'
     return 'Enter value...'
-}
-
-// ─── Minimal Keccak-256 (pure JS, no dependencies) ──────────────────────────
-// This is a compact keccak256 implementation for computing function selectors.
-// Based on the NIST SHA-3 / Keccak specification.
-
-const KECCAK_ROUND_CONSTANTS = [
-    0x0000000000000001n, 0x0000000000008082n, 0x800000000000808an, 0x8000000080008000n,
-    0x000000000000808bn, 0x0000000080000001n, 0x8000000080008081n, 0x8000000000008009n,
-    0x000000000000008an, 0x0000000000000088n, 0x0000000080008009n, 0x000000008000000an,
-    0x000000008000808bn, 0x800000000000008bn, 0x8000000000008089n, 0x8000000000008003n,
-    0x8000000000008002n, 0x8000000000000080n, 0x000000000000800an, 0x800000008000000an,
-    0x8000000080008081n, 0x8000000000008080n, 0x0000000080000001n, 0x8000000080008008n,
-]
-
-const KECCAK_ROTATION_OFFSETS = [
-    [0, 36, 3, 41, 18], [1, 44, 10, 45, 2], [62, 6, 43, 15, 61],
-    [28, 55, 25, 21, 56], [27, 20, 39, 8, 14],
-]
-
-function keccak256Hex(input: string): string {
-    const bytes = new TextEncoder().encode(input)
-    const hash = keccakHash(bytes, 256)
-    return Array.from(hash).map(b => b.toString(16).padStart(2, '0')).join('')
-}
-
-function keccakHash(message: Uint8Array, outputBits: number): Uint8Array {
-    const rate = 1600 - outputBits * 2
-    const rateBytes = rate / 8
-    const blockSize = rateBytes
-
-    // Pad message: append 0x01, pad with zeros, set last byte |= 0x80
-    const padLen = blockSize - (message.length % blockSize)
-    const padded = new Uint8Array(message.length + padLen)
-    padded.set(message)
-    padded[message.length] = 0x01
-    padded[padded.length - 1] |= 0x80
-
-    // State: 5x5 matrix of 64-bit words = 25 lanes
-    const state = new Array<bigint>(25).fill(0n)
-
-    // Absorb
-    for (let offset = 0; offset < padded.length; offset += blockSize) {
-        for (let i = 0; i < blockSize / 8; i++) {
-            let lane = 0n
-            for (let j = 0; j < 8; j++) {
-                lane |= BigInt(padded[offset + i * 8 + j]) << BigInt(j * 8)
-            }
-            state[i] ^= lane
-        }
-        keccakF1600(state)
-    }
-
-    // Squeeze
-    const output = new Uint8Array(outputBits / 8)
-    for (let i = 0; i < output.length / 8; i++) {
-        const lane = state[i]
-        for (let j = 0; j < 8 && i * 8 + j < output.length; j++) {
-            output[i * 8 + j] = Number((lane >> BigInt(j * 8)) & 0xFFn)
-        }
-    }
-
-    return output
-}
-
-function keccakF1600(state: bigint[]) {
-    const mask64 = (1n << 64n) - 1n
-
-    for (let round = 0; round < 24; round++) {
-        // θ step
-        const C = new Array<bigint>(5).fill(0n)
-        for (let x = 0; x < 5; x++) {
-            C[x] = state[x] ^ state[x + 5] ^ state[x + 10] ^ state[x + 15] ^ state[x + 20]
-        }
-        const D = new Array<bigint>(5).fill(0n)
-        for (let x = 0; x < 5; x++) {
-            D[x] = C[(x + 4) % 5] ^ (((C[(x + 1) % 5] << 1n) | (C[(x + 1) % 5] >> 63n)) & mask64)
-        }
-        for (let x = 0; x < 5; x++) {
-            for (let y = 0; y < 5; y++) {
-                state[x + y * 5] = (state[x + y * 5] ^ D[x]) & mask64
-            }
-        }
-
-        // ρ and π steps
-        const B = new Array<bigint>(25).fill(0n)
-        for (let x = 0; x < 5; x++) {
-            for (let y = 0; y < 5; y++) {
-                const r = KECCAK_ROTATION_OFFSETS[y][x]
-                const rotated = r === 0 ? state[x + y * 5] : (((state[x + y * 5] << BigInt(r)) | (state[x + y * 5] >> BigInt(64 - r))) & mask64)
-                B[y + ((2 * x + 3 * y) % 5) * 5] = rotated
-            }
-        }
-
-        // χ step
-        for (let x = 0; x < 5; x++) {
-            for (let y = 0; y < 5; y++) {
-                state[x + y * 5] = (B[x + y * 5] ^ ((~B[(x + 1) % 5 + y * 5] & mask64) & B[(x + 2) % 5 + y * 5])) & mask64
-            }
-        }
-
-        // ι step
-        state[0] = (state[0] ^ KECCAK_ROUND_CONSTANTS[round]) & mask64
-    }
 }

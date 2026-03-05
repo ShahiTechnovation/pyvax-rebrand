@@ -31,6 +31,8 @@ class PlaygroundHandler(http.server.SimpleHTTPRequestHandler):
     def do_POST(self):
         if self.path == "/api/cli":
             self._handle_api()
+        elif self.path == "/api/verify":
+            self._handle_verify()
         else:
             self.send_response(404)
             self.end_headers()
@@ -46,6 +48,10 @@ class PlaygroundHandler(http.server.SimpleHTTPRequestHandler):
                 "service": "pyvax-playground-local",
                 "version": "1.0.0",
             }).encode())
+            return
+
+        if self.path.startswith("/api/verify"):
+            self._handle_verify_status()
             return
 
         # Serve static files
@@ -157,6 +163,52 @@ class PlaygroundHandler(http.server.SimpleHTTPRequestHandler):
         self.send_header("Access-Control-Allow-Origin", "*")
         self.end_headers()
         self.wfile.write(json.dumps(data, default=str).encode())
+
+    def _handle_verify(self):
+        """Handle POST /api/verify — Snowtrace verification."""
+        sys.path.insert(0, API_DIR)
+        try:
+            content_length = int(self.headers.get("Content-Length", 0))
+            body = self.rfile.read(content_length).decode("utf-8")
+            request = json.loads(body) if body else {}
+        except Exception as e:
+            self._json_response(400, {"success": False, "error": str(e)})
+            return
+
+        try:
+            if "verify" in sys.modules:
+                importlib.reload(sys.modules["verify"])
+            import verify as verify_module
+            result = verify_module.handle_verify(request)
+            self._json_response(200, result)
+        except Exception as e:
+            import traceback
+            self._json_response(500, {
+                "success": False,
+                "error": str(e),
+                "traceback": traceback.format_exc(),
+            })
+
+    def _handle_verify_status(self):
+        """Handle GET /api/verify?guid=...&chainId=... — poll status."""
+        sys.path.insert(0, API_DIR)
+        try:
+            from urllib.parse import urlparse, parse_qs
+            query = parse_qs(urlparse(self.path).query)
+            guid = query.get("guid", [""])[0]
+            chain_id = int(query.get("chainId", ["43113"])[0])
+
+            if not guid:
+                self._json_response(400, {"success": False, "error": "guid required"})
+                return
+
+            if "verify" in sys.modules:
+                importlib.reload(sys.modules["verify"])
+            import verify as verify_module
+            result = verify_module.handle_verify_status(guid, chain_id)
+            self._json_response(200, result)
+        except Exception as e:
+            self._json_response(500, {"success": False, "error": str(e)})
 
     def log_message(self, format, *args):
         # Colorized logging
