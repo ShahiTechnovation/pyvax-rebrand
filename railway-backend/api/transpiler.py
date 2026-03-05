@@ -304,12 +304,6 @@ class PythonASTAnalyzer(ast.NodeVisitor):
                 rmap = {"int": "uint256", "bool": "bool", "str": "string", "list": "bytes32[]"}
                 return_type = rmap.get(node.returns.id, "uint256")
 
-        # Detect if function accepts AVAX (uses self.msg_value())
-        uses_msg_value = any(
-            isinstance(n, ast.Call) and isinstance(n.func, ast.Attribute) and n.func.attr == "msg_value"
-            for n in ast.walk(node)
-        )
-
         self.functions[node.name] = {
             "is_public": is_public,
             "is_view": is_view,
@@ -320,7 +314,6 @@ class PythonASTAnalyzer(ast.NodeVisitor):
             "body": node.body,
             "has_return": has_return,
             "return_type": return_type,
-            "uses_msg_value": uses_msg_value,
         }
 
         self.generic_visit(node)
@@ -1589,7 +1582,7 @@ def generate_abi(state: ContractState) -> List[Dict[str, Any]]:
             for arg, ptype in zip(args, param_types)
         ]
 
-        state_mutability = "view" if func_info.get("is_view") else ("payable" if func_info.get("uses_msg_value") else "nonpayable")
+        state_mutability = "view" if func_info.get("is_view") else "nonpayable"
 
         func_abi: Dict[str, Any] = {
             "type": "function",
