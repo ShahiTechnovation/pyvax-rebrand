@@ -697,10 +697,30 @@ function PlaygroundInner() {
   const [deployedContracts, setDeployedContracts] = useState<{ address: string; name: string; chain: string; txHash: string }[]>([])
   const [deployedAddress, setDeployedAddress] = useState<string | null>(null)
   const [rightPanelTab, setRightPanelTab] = useState<'deploy' | 'interact'>('deploy')
+  const [backendStatus, setBackendStatus] = useState<'checking' | 'connected' | 'error'>('checking')
 
   // Refs
   const terminalRef = useRef<HTMLDivElement>(null)
   const editorSourceRef = useRef('')
+
+  // ─── Backend Health Check ───────────────────────────────────────────────
+  useEffect(() => {
+    fetch('/api/pyvax')
+      .then(res => res.json())
+      .then(data => {
+        if (data.status === 'ok') {
+          setBackendStatus('connected')
+          setLines(prev => [...prev, { text: `░ Backend connected (${data.mode || data.service || 'remote'})`, type: 'success' }, { text: '', type: '' }])
+        } else {
+          setBackendStatus('error')
+          setLines(prev => [...prev, { text: '░ ⚠ Backend returned unexpected status', type: 'warning' }, { text: '', type: '' }])
+        }
+      })
+      .catch(() => {
+        setBackendStatus('error')
+        setLines(prev => [...prev, { text: '░ ✗ Backend unreachable — compilation will not work', type: 'error' }, { text: '░   Check that the backend is deployed and RAILWAY_BACKEND_URL is set', type: 'muted' }, { text: '', type: '' }])
+      })
+  }, [])
 
   // ─── IndexedDB Load ─────────────────────────────────────────────────────
   useEffect(() => {
@@ -735,26 +755,41 @@ function PlaygroundInner() {
   }, [])
 
   // ─── API Call ───────────────────────────────────────────────────────────
-  const callAPI = useCallback(async (command: string, sourceCode?: string) => {
+  const callAPI = useCallback(async (command: string, sourceCode?: string): Promise<CompileResult> => {
     const body: any = { command }
     if (sourceCode !== undefined) {
       body.source = sourceCode
       body.contract_name = contractName(activeFile)
     }
 
-    const res = await fetch('/api/pyvax', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(body),
-    })
+    const doFetch = async (): Promise<CompileResult> => {
+      const res = await fetch('/api/pyvax', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body),
+      })
 
-    if (!res.ok) {
-      const text = await res.text()
-      throw new Error(`HTTP ${res.status}: ${text}`)
+      if (!res.ok) {
+        const text = await res.text()
+        throw new Error(`HTTP ${res.status}: ${text}`)
+      }
+
+      return res.json() as Promise<CompileResult>
     }
 
-    return res.json() as Promise<CompileResult>
-  }, [activeFile])
+    // Try once, retry on network error
+    try {
+      return await doFetch()
+    } catch (err: any) {
+      // Retry once after 1 second for transient network errors
+      if (err.message?.includes('fetch') || err.message?.includes('network') || err.message?.includes('Failed')) {
+        termPrint('  ↻ Retrying...', 'warning')
+        await new Promise(r => setTimeout(r, 1000))
+        return await doFetch()
+      }
+      throw err
+    }
+  }, [activeFile, termPrint])
 
   // ─── Execute Command ────────────────────────────────────────────────────
   const executeCommand = useCallback(async (rawCmd: string) => {
@@ -902,6 +937,10 @@ function PlaygroundInner() {
             PYVAX
           </Link>
           <span className="text-[9px] text-[#3F3F46] tracking-widest font-bold">IDE</span>
+          <span className={`w-1.5 h-1.5 rounded-full ${backendStatus === 'connected' ? 'bg-[#22C55E]' :
+            backendStatus === 'error' ? 'bg-[#EF4444]' :
+              'bg-[#F59E0B] animate-pulse'
+            }`} title={backendStatus === 'connected' ? 'Backend connected' : backendStatus === 'error' ? 'Backend unreachable' : 'Checking backend...'} />
 
           {/* Chain Picker from wallet adapter */}
           <ChainPicker />

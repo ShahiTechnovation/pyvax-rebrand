@@ -5,6 +5,9 @@ import path from "path";
 // ─── Configuration ──────────────────────────────────────────────────────────
 // If RAILWAY_BACKEND_URL is set, proxy to remote backend (production).
 // Otherwise, spawn local Python transpiler (local dev).
+//
+// RAILWAY_BACKEND_URL should be the FULL URL including path, e.g.:
+//   https://pyvax-backend.up.railway.app/api/cli
 const BACKEND_URL = process.env.RAILWAY_BACKEND_URL || "";
 
 // ─── Parse "pyvax compile --optimizer=2" style commands ─────────────────────
@@ -49,7 +52,65 @@ function parseCommand(raw: string): {
     return { action, flags, positional };
 }
 
-// ─── Local Python execution ─────────────────────────────────────────────────
+// ─── Remote proxy (production) ──────────────────────────────────────────────
+async function executeRemote(
+    body: Record<string, any>,
+    method: string = "POST"
+): Promise<any> {
+    // Build the request to the Railway backend
+    // The backend accepts the same JSON body the frontend sends
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 30000);
+
+    try {
+        const res = await fetch(BACKEND_URL, {
+            method,
+            headers: { "Content-Type": "application/json" },
+            body: method === "POST" ? JSON.stringify(body) : undefined,
+            signal: controller.signal,
+            cache: "no-store",
+        });
+
+        clearTimeout(timeout);
+
+        const responseText = await res.text();
+        let data;
+        try {
+            data = JSON.parse(responseText);
+        } catch {
+            if (!res.ok) {
+                return {
+                    success: false,
+                    error: `Backend returned HTTP ${res.status}: ${responseText.slice(0, 200)}`,
+                    stdout: `Error: Backend returned HTTP ${res.status}\n`,
+                };
+            }
+            return {
+                success: false,
+                error: "Invalid JSON response from compilation backend",
+                stdout: "Error: Invalid response from backend\n",
+            };
+        }
+
+        return data;
+    } catch (err: any) {
+        clearTimeout(timeout);
+        if (err.name === "AbortError") {
+            return {
+                success: false,
+                error: "Compilation timed out after 30 seconds",
+                stdout: "Error: Compilation timed out\n",
+            };
+        }
+        return {
+            success: false,
+            error: `Failed to reach compilation backend: ${err.message}`,
+            stdout: `Error: Backend unreachable — ${err.message}\n`,
+        };
+    }
+}
+
+// ─── Local Python execution (dev only) ──────────────────────────────────────
 async function executeLocal(body: Record<string, any>): Promise<any> {
     const command = (body.command || "").trim();
     const source = body.source || "";
@@ -144,26 +205,11 @@ async function executeLocal(body: Record<string, any>): Promise<any> {
     });
 }
 
-// ─── Remote proxy (production fallback) ─────────────────────────────────────
-async function executeRemote(
-    body: Record<string, any>,
-    method: string = "POST"
-): Promise<Response> {
-    const res = await fetch(BACKEND_URL, {
-        method,
-        headers: { "Content-Type": "application/json" },
-        body: method === "POST" ? JSON.stringify(body) : undefined,
-        cache: "no-store",
-    });
-    return res;
-}
-
 // ─── GET handler (health check) ─────────────────────────────────────────────
 export async function GET() {
     if (BACKEND_URL) {
         try {
-            const res = await executeRemote({}, "GET");
-            const data = await res.json();
+            const data = await executeRemote({}, "GET");
             return NextResponse.json(data);
         } catch (error: any) {
             return NextResponse.json(
@@ -198,27 +244,9 @@ export async function POST(request: NextRequest) {
 
         // If a remote backend URL is configured, proxy to it
         if (BACKEND_URL) {
-            const res = await executeRemote(body);
-            const responseText = await res.text();
-            let data;
-            try {
-                data = JSON.parse(responseText);
-            } catch {
-                if (!res.ok) {
-                    return NextResponse.json(
-                        { success: false, error: responseText },
-                        { status: res.status }
-                    );
-                }
-                return NextResponse.json(
-                    { success: false, error: "Invalid JSON from backend" },
-                    { status: 500 }
-                );
-            }
-            if (!res.ok) {
-                return NextResponse.json(data, { status: res.status });
-            }
-            return NextResponse.json(data);
+            const data = await executeRemote(body);
+            const statusCode = data.success === false && data.error ? 200 : 200;
+            return NextResponse.json(data, { status: statusCode });
         }
 
         // Local mode — spawn Python child process
@@ -227,7 +255,11 @@ export async function POST(request: NextRequest) {
         return NextResponse.json(result, { status: statusCode });
     } catch (error: any) {
         return NextResponse.json(
-            { success: false, error: error.message || String(error) },
+            {
+                success: false,
+                error: error.message || String(error),
+                stdout: `Error: ${error.message || "Unknown error"}\n`,
+            },
             { status: 500 }
         );
     }
