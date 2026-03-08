@@ -3,14 +3,14 @@
 from setuptools import setup, find_packages
 
 setup(
-    name="pyvax",
+    name="pyvax-cli",
     version="1.0.0",
     description="PyVax — Python to EVM transpiler for Avalanche smart contracts",
     long_description=open("README.md", encoding="utf-8").read(),
     long_description_content_type="text/markdown",
     author="PyVax Team",
     author_email="team@pyvax.io",
-    url="https://github.com/pyvax/pyvax-cli",
+    url="https://github.com/ShahiTechnovation/pyvax-rebrand",
     license="MIT",
     packages=find_packages(exclude=["tests", "tests.*"]),
     python_requires=">=3.9",
