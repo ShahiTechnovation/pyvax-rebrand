@@ -1607,7 +1607,40 @@ def generate_abi(state: ContractState) -> List[Dict[str, Any]]:
             for arg, ptype in zip(args, param_types)
         ]
 
-        state_mutability = "view" if func_info.get("is_view") else "nonpayable"
+        # Auto-detect view: if function has return value and no state writes,
+        # mark as "view" even if not explicitly decorated with @view_function
+        is_view_func = func_info.get("is_view", False)
+        if not is_view_func and func_info.get("has_return"):
+            # Check if function body contains any state-modifying operations
+            has_state_write = False
+            for body_node in ast.walk(ast.Module(body=func_info.get("body", []), type_ignores=[])):
+                # self.X = ... (SSTORE to simple var)
+                if isinstance(body_node, ast.Assign):
+                    for t in body_node.targets:
+                        if (isinstance(t, ast.Attribute) and isinstance(t.value, ast.Name)
+                                and t.value.id == "self"):
+                            has_state_write = True
+                        if isinstance(t, ast.Subscript):
+                            if (isinstance(t.value, ast.Attribute)
+                                    and isinstance(t.value.value, ast.Name)
+                                    and t.value.value.id == "self"):
+                                has_state_write = True
+                # self.X += ... (AugAssign to state var)
+                if isinstance(body_node, ast.AugAssign):
+                    if (isinstance(body_node.target, ast.Attribute)
+                            and isinstance(body_node.target.value, ast.Name)
+                            and body_node.target.value.id == "self"):
+                        has_state_write = True
+                # self.emit(...) — events are state-changing (LOG opcode)
+                if (isinstance(body_node, ast.Call)
+                        and isinstance(body_node.func, ast.Attribute)
+                        and isinstance(body_node.func.value, ast.Name)
+                        and body_node.func.value.id == "self"
+                        and body_node.func.attr == "emit"):
+                    has_state_write = True
+            if not has_state_write:
+                is_view_func = True
+        state_mutability = "view" if is_view_func else "nonpayable"
 
         func_abi: Dict[str, Any] = {
             "type": "function",
