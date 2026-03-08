@@ -69,12 +69,10 @@ export default function DocsLayout({ children }: { children: React.ReactNode }) 
 
                         <div className="group relative">
                             <button className="flex items-center gap-2 bg-[#131313] border border-[#1F1F1F] rounded-full px-3 py-1 font-[family-name:var(--font-dm-mono)] text-[10px] text-[#C0C0C0] hover:text-[#F2F2F2] hover:border-[#333] transition-colors">
-                                v0.1.2 <div className="w-1.5 h-1.5 rounded-full bg-[#E84142]"></div>
+                                v1.0.0 <div className="w-1.5 h-1.5 rounded-full bg-[#E84142]"></div>
                             </button>
                             <div className="absolute top-full right-0 mt-2 w-32 bg-[#131313] border border-[#1F1F1F] rounded-[8px] opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all z-50 shadow-2xl overflow-hidden p-1">
-                                <div className="text-[#F2F2F2] text-[10px] font-[family-name:var(--font-dm-mono)] p-2 bg-[#1A1A1A] rounded">v0.1.2 (Latest)</div>
-                                <div className="text-[#666] text-[10px] font-[family-name:var(--font-dm-mono)] p-2 hover:bg-[#1A1A1A] rounded cursor-pointer transition">v0.1.1</div>
-                                <div className="text-[#666] text-[10px] font-[family-name:var(--font-dm-mono)] p-2 hover:bg-[#1A1A1A] rounded cursor-pointer transition">v0.1.0</div>
+                                <div className="text-[#F2F2F2] text-[10px] font-[family-name:var(--font-dm-mono)] p-2 bg-[#1A1A1A] rounded">v1.0.0 (Latest)</div>
                             </div>
                         </div>
                     </div>
