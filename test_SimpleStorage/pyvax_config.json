@@ -1,8 +1,0 @@
-{
-  "network": "fuji",
-  "rpc_url": "https://api.avax-test.network/ext/bc/C/rpc",
-  "chain_id": 43113,
-  "explorer_api_key": "",
-  "optimizer_level": 1,
-  "overflow_safe": true
-}

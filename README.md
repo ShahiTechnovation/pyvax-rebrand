@@ -10,7 +10,7 @@
 [![Playground](https://img.shields.io/badge/Playground-pyvax.xyz-blue)](https://www.pyvax.xyz/playground)
 
 ```bash
-pip install pyvax
+pipx install pyvax-cli
 pyvax new my-agent-vault --template AgentVault
 pyvax compile
 pyvax deploy AgentVault --chain fuji
@@ -83,10 +83,18 @@ The transpiler parses your Python via the built-in `ast` module and emits raw EV
 
 ## Installation
 
+We recommend using `pipx` to install PyVax to avoid conflicts with system Python environments:
+
 ```bash
-pip install pyvax
+# 1. Install pipx (if you don't have it)
+# On macOS/Linux: brew install pipx || (sudo apt install pipx && pipx ensurepath)
+# On Windows: python -m pip install --user pipx && python -m pipx ensurepath
+
+# 2. Install PyVax CLI
+pipx install pyvax-cli
 ```
 
+*Note: Restart your terminal after running `ensurepath` for the first time.*
 **Requirements:** Python 3.9+
 
 Verify your environment:
@@ -98,7 +106,7 @@ PyVax Environment Diagnostic
 
 🟢 Node Runtime      [v20.11.1]
 🟢 Python SDK        [v3.12.0]
-🟢 @pyvax/cli        [v0.3.0]
+🟢 pyvax-cli         [v1.0.0]
 🟢 Avalanche Fuji    [Connected - ping: 32ms]
 
 Everything looks beautiful. Ready for transpile.
@@ -404,7 +412,7 @@ Run `pyvax doctor` at any time to verify environment health and RPC connectivity
 ```bash
 git clone https://github.com/ShahiTechnovation/pyvax-rebrand
 cd pyvax-rebrand
-pip install -e .
+pipx install -e .
 bash demo.sh
 ```
 

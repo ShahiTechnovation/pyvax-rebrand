@@ -1,27 +1,41 @@
 # Platform Installation
 
-The PyVax transpiler fundamentally operates using Python's native AST parser wrapped tightly against standard NPM modules. It expects modern NodeJS runtimes and an active Python environment.
+The PyVax transpiler fundamentally operates using Python's native AST parser. It expects a modern Python environment (>= 3.9) to act as the primary CLI toolchain.
+
+PyVax is distributed as a Python CLI tool. To avoid dependency conflicts and PEP 668 "Externally Managed Environment" errors, we strongly recommend installing it using **`pipx`**, which creates an isolated virtual environment automatically.
 
 ## macOS/Linux (Recommended)
 
-NodeJS 18+ is required to execute the CLI bundle without any configuration headaches. Using `npm -g` guarantees global accessibility across terminal instances.
+First, install `pipx` if you don't already have it, then install the PyVax CLI.
 
 ```bash
-npm install -g @pyvax/cli
+# 1. Install pipx
+# On Ubuntu/Debian:
+sudo apt update && sudo apt install pipx
+pipx ensurepath
 
-# Run an environment diagnostic to confirm the CLI is registered.
+# On macOS (Homebrew):
+brew install pipx
+pipx ensurepath
+
+# 2. Restart your terminal, then install PyVax
+pipx install pyvax-cli
+
+# 3. Run an environment diagnostic to confirm the CLI is registered
 pyvax doctor
 ```
 
 ## Windows Users
 
-We aggressively recommend **WSL2 (Windows Subsystem for Linux)**. Native Windows CMD or Powershell instances occasionally struggle with path-level module bindings for nested EVM dependencies.
+You can install PyVax smoothly on Windows using PowerShell or Command Prompt, or within WSL2.
 
-```bash
-curl -sL https://deb.nodesource.com/setup_lts.x | sudo bash -
-sudo apt install nodejs npm
+```powershell
+# 1. Install pipx via standard pip
+python -m pip install --user pipx
+python -m pipx ensurepath
 
-npm install -g @pyvax/cli
+# 2. Restart your terminal, then install PyVax
+pipx install pyvax-cli
 ```
 
 ## Validate Configuration

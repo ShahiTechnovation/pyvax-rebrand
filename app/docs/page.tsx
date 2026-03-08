@@ -37,9 +37,9 @@ export default function DocsHomepage() {
               Install CLI
             </h3>
             <div className="bg-[#090909] border border-[#1F1F1F] rounded-[8px] p-4 font-[family-name:var(--font-dm-mono)] text-[12px] text-[#C0C0C0] space-y-2 mt-auto">
-              <div><span className="text-[#E84142] mr-2">$</span>npm install -g @pyvax/cli</div>
+              <div><span className="text-[#E84142] mr-2">$</span>pipx install pyvax-cli</div>
               <div><span className="text-[#E84142] mr-2">$</span>pyvax --version</div>
-              <div className="text-[#4CAF50]">0.1.2 ✓</div>
+              <div className="text-[#4CAF50]">1.0.0 ✓</div>
             </div>
           </Link>
 
