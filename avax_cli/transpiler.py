@@ -664,6 +664,31 @@ class EVMBytecodeGenerator:
             else:
                 self.emit_push(0)
         elif isinstance(node, ast.Call):
+            # Handle self.mapping.get(key, default) → mapping SLOAD
+            if (isinstance(node.func, ast.Attribute)
+                    and node.func.attr == "get"
+                    and isinstance(node.func.value, ast.Attribute)
+                    and isinstance(node.func.value.value, ast.Name)
+                    and node.func.value.value.id == "self"
+                    and self.current_state
+                    and node.func.value.attr in self.current_state.variables
+                    and self.current_state.variable_types.get(
+                        node.func.value.attr) == "mapping"
+                    and len(node.args) >= 1):
+                mapping_name = node.func.value.attr
+                base_slot = self.current_state.variables[mapping_name]
+                # Compute mapping slot: keccak256(key . base_slot)
+                self.compile_expr(node.args[0], arg_map)  # key
+                self.emit_push(0x00)
+                self.emit_opcode(EVMOpcode.MSTORE)
+                self.emit_push(base_slot)
+                self.emit_push(0x20)
+                self.emit_opcode(EVMOpcode.MSTORE)
+                self.emit_push(0x40)
+                self.emit_push(0x00)
+                self.emit_opcode(EVMOpcode.SHA3)
+                self.emit_opcode(EVMOpcode.SLOAD)
+                return
             # Handle self.msg_sender(), self.msg_value(), etc.
             if isinstance(node.func, ast.Attribute):
                 if (isinstance(node.func.value, ast.Name) and
