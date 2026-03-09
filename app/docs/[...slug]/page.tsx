@@ -55,7 +55,7 @@ export default async function DocPage({ params }: { params: Promise<{ slug: stri
             {/* GitHub edit link top-right */}
             <div className="flex justify-end mb-6">
                 <a
-                    href={`https://github.com/pyvax/pyvax-rebrand/edit/main/content/docs/${slugPath}.mdx`}
+                    href={`https://github.com/ShahiTechnovation/pyvax-rebrand/edit/main/content/docs/${slugPath}.mdx`}
                     target="_blank"
                     rel="noopener noreferrer"
                     className="flex items-center gap-2 font-[family-name:var(--font-dm-mono)] text-[11px] text-[#555] hover:text-[#909090] transition-colors"

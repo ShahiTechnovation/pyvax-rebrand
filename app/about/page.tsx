@@ -2,7 +2,7 @@
 
 import Link from 'next/link'
 import { Button } from '@/components/ui/button'
-import { Header } from '@/components/header'
+import { Navbar } from '@/components/navbar'
 import { Footer } from '@/components/footer'
 import { Section, SectionHeading, SectionSubheading } from '@/components/section'
 import { Github, Twitter, MessageCircle, ArrowRight } from 'lucide-react'
@@ -10,7 +10,7 @@ import { Github, Twitter, MessageCircle, ArrowRight } from 'lucide-react'
 export default function About() {
   return (
     <main className="min-h-screen bg-background">
-      <Header />
+      <Navbar />
 
       {/* Hero Section */}
       <Section className="relative overflow-hidden pt-20 md:pt-32">

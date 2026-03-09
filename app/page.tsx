@@ -5,6 +5,7 @@ import Image from 'next/image'
 import { Button } from '@/components/ui/button'
 import { Code2, Zap, Shield, Gamepad2, Github, ChevronRight, Play } from 'lucide-react'
 import { ScrollImageSequence } from '@/components/ScrollImageSequence'
+import { Navbar } from '@/components/navbar'
 
 export default function Home() {
   return (
@@ -12,25 +13,7 @@ export default function Home() {
       <ScrollImageSequence />
 
       {/* Navigation */}
-      <nav className="border-b border-border bg-background/95 backdrop-blur-sm sticky top-0 z-50">
-        <div className="max-w-7xl mx-auto px-4 h-16 flex items-center justify-between">
-          <Link href="/" className="flex items-center gap-2 font-bold text-xl hover:text-primary transition">
-            <Image src="/icon.svg" alt="PyVax Logo" width={32} height={32} className="rounded-sm" />
-            <span>PyVax</span>
-          </Link>
-
-          <div className="hidden md:flex items-center gap-8">
-            <Link href="/docs" className="hover:text-primary transition text-sm">DOCS</Link>
-            <Link href="/pricing" className="hover:text-primary transition text-sm">PRICING</Link>
-            <Link href="#" className="hover:text-primary transition text-sm">GITHUB</Link>
-            <Link href="#" className="hover:text-primary transition text-sm">DISCORD</Link>
-          </div>
-
-          <Link href="/playground" className="bg-primary text-primary-foreground hover:bg-primary/80 text-sm h-9 px-4 py-2 inline-flex items-center justify-center rounded-md font-medium transition-colors">
-            LAUNCH
-          </Link>
-        </div>
-      </nav>
+      <Navbar />
 
       {/* Hero Section */}
       <section className="relative border-b border-border">
@@ -320,7 +303,7 @@ export default function Home() {
               <Play className="w-4 h-4" fill="currentColor" />
               LAUNCH PLAYGROUND
             </Link>
-            <Link href="#" className="w-full sm:w-auto border-[#2A2A2A] text-foreground hover:bg-[#111] hover:text-[#E84142] hover:border-[#1E1E1E] px-8 py-6 text-base font-bold gap-2 rounded-sm border inline-flex items-center justify-center transition-colors">
+            <Link href="https://github.com/ShahiTechnovation/pyvax-rebrand" target="_blank" className="w-full sm:w-auto border-[#2A2A2A] text-foreground hover:bg-[#111] hover:text-[#E84142] hover:border-[#1E1E1E] px-8 py-6 text-base font-bold gap-2 rounded-sm border inline-flex items-center justify-center transition-colors">
               <span className="text-lg leading-none">★</span>
               Star on GitHub
             </Link>
@@ -348,7 +331,7 @@ export default function Home() {
                 <Link href="/docs" className="text-[#555] hover:text-[#E84142] transition-colors">Docs</Link>
                 <Link href="/pricing" className="text-[#555] hover:text-[#E84142] transition-colors">Pricing</Link>
                 <Link href="/docs" className="text-[#555] hover:text-[#E84142] transition-colors">Tutorials</Link>
-                <Link href="#" className="text-[#555] hover:text-[#E84142] transition-colors">Blog</Link>
+                <Link href="https://x.com/PyVax" target="_blank" className="text-[#555] hover:text-[#E84142] transition-colors">Blog</Link>
               </div>
               <div className="flex flex-col gap-3">
                 <span className="text-[#333] font-[family-name:var(--font-dm-mono)] text-[10px] mb-2">TOOLS</span>
@@ -358,17 +341,17 @@ export default function Home() {
               </div>
               <div className="flex flex-col gap-3">
                 <span className="text-[#333] font-[family-name:var(--font-dm-mono)] text-[10px] mb-2">CONNECT</span>
-                <Link href="#" className="text-[#555] hover:text-[#E84142] transition-colors">Community</Link>
-                <Link href="#" className="text-[#555] hover:text-[#E84142] transition-colors">Twitter</Link>
-                <Link href="#" className="text-[#555] hover:text-[#E84142] transition-colors">Discord</Link>
+                <Link href="https://github.com/ShahiTechnovation/pyvax-rebrand" target="_blank" className="text-[#555] hover:text-[#E84142] transition-colors">Community</Link>
+                <Link href="https://x.com/PyVax" target="_blank" className="text-[#555] hover:text-[#E84142] transition-colors">Twitter</Link>
+                <Link href="https://github.com/ShahiTechnovation/pyvax-rebrand" target="_blank" className="text-[#555] hover:text-[#E84142] transition-colors">Discord</Link>
               </div>
             </div>
 
             <div className="flex items-center gap-4 text-[#444]">
-              <Link href="#" className="hover:text-[#E84142] transition-colors">
+              <Link href="https://github.com/ShahiTechnovation/pyvax-rebrand" target="_blank" className="hover:text-[#E84142] transition-colors">
                 <Github className="w-5 h-5" />
               </Link>
-              <Link href="#" className="hover:text-[#E84142] transition-colors">
+              <Link href="https://x.com/PyVax" target="_blank" className="hover:text-[#E84142] transition-colors">
                 <svg className="w-4 h-4" viewBox="0 0 24 24" fill="currentColor"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z" /></svg>
               </Link>
             </div>

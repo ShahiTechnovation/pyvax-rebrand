@@ -3,6 +3,7 @@
 import React, { useState } from 'react'
 import Link from 'next/link'
 import Image from 'next/image'
+import { Navbar } from '@/components/navbar'
 
 const FAQ_ITEMS = [
   { q: 'What counts as an "execution"?', a: 'An execution is any on-chain action initiated by your agents via the PyVax infrastructure. For example, deploying a contract, or an agent calling a function.' },
@@ -22,22 +23,8 @@ export default function PricingPage() {
   return (
     <div className="min-h-screen bg-[#0A0A0A] text-[#F2F2F2] font-[family-name:var(--font-ibm-plex)] selection:bg-[#E84142] selection:text-white">
 
-      {/* NAVBAR MATCHING HOME/DOCS */}
-      <nav className="border-b border-[#1F1F1F] bg-[#0E0E0E]/95 backdrop-blur-sm sticky top-0 z-50">
-        <div className="max-w-7xl mx-auto px-4 h-16 flex items-center justify-between">
-          <Link href="/" className="flex items-center gap-2 font-[family-name:var(--font-press-start)] text-[#E84142] text-[14px]">
-            PYVAX
-          </Link>
-          <div className="hidden md:flex items-center gap-8 font-[family-name:var(--font-dm-mono)] text-[11px] text-[#909090]">
-            <Link href="/docs" className="hover:text-[#E84142] transition">DOCS</Link>
-            <Link href="/pricing" className="text-[#F2F2F2]">PRICING</Link>
-            <Link href="#" className="hover:text-[#E84142] transition">GITHUB</Link>
-          </div>
-          <Link href="/playground" className="hidden md:flex h-[36px] items-center px-4 bg-[#E84142] text-white font-[family-name:var(--font-dm-mono)] text-[11px] font-bold rounded hover:bg-[#FF5555] transition">
-            LAUNCH PLAYGROUND
-          </Link>
-        </div>
-      </nav>
+      {/* NAVBAR */}
+      <Navbar />
 
       {/* 1. HERO SECTION */}
       <section className="relative pt-24 pb-16 px-6 overflow-hidden flex flex-col items-center justify-center text-center">
@@ -388,20 +375,20 @@ export default function PricingPage() {
               <div className="flex flex-col gap-4">
                 <span className="text-[#F2F2F2] font-semibold mb-2">Tools</span>
                 <Link href="/playground" className="text-[#888] hover:text-[#E84142] transition">Playground</Link>
-                <Link href="#" className="text-[#888] hover:text-[#E84142] transition">CLI Transpiler</Link>
+                <Link href="/docs/cli" className="text-[#888] hover:text-[#E84142] transition">CLI Transpiler</Link>
               </div>
               <div className="flex flex-col gap-4">
                 <span className="text-[#F2F2F2] font-semibold mb-2">Connect</span>
-                <Link href="#" className="text-[#888] hover:text-[#E84142] transition">Discord</Link>
-                <Link href="#" className="text-[#888] hover:text-[#E84142] transition">GitHub</Link>
+                <Link href="https://github.com/ShahiTechnovation/pyvax-rebrand" target="_blank" className="text-[#888] hover:text-[#E84142] transition">Discord</Link>
+                <Link href="https://github.com/ShahiTechnovation/pyvax-rebrand" target="_blank" className="text-[#888] hover:text-[#E84142] transition">GitHub</Link>
               </div>
             </div>
           </div>
           <div className="flex flex-col md:flex-row justify-between items-center gap-4 text-[#555] font-[family-name:var(--font-dm-mono)] text-[11px]">
             <p>© 2026 PyVax Protocol. All rights reserved.</p>
             <div className="flex items-center gap-6">
-              <Link href="#" className="hover:text-[#F2F2F2] transition">Twitter / X</Link>
-              <Link href="#" className="hover:text-[#F2F2F2] transition">GitHub</Link>
+              <Link href="https://x.com/PyVax" target="_blank" className="hover:text-[#F2F2F2] transition">Twitter / X</Link>
+              <Link href="https://github.com/ShahiTechnovation/pyvax-rebrand" target="_blank" className="hover:text-[#F2F2F2] transition">GitHub</Link>
             </div>
           </div>
         </div>
