@@ -10,7 +10,6 @@ const NAV_LINKS = [
     { href: '/', label: 'HOME' },
     { href: '/docs', label: 'DOCS' },
     { href: '/pricing', label: 'PRICING' },
-    { href: '/games', label: 'GAMES' },
     { href: '/agent', label: 'AGENT', badge: 'NEW' },
 ]
 
@@ -39,8 +38,8 @@ export function Navbar() {
                             key={link.href}
                             href={link.href}
                             className={`transition flex items-center gap-1.5 ${isActive(link.href)
-                                    ? 'text-[#F2F2F2]'
-                                    : 'hover:text-[#E84142]'
+                                ? 'text-[#F2F2F2]'
+                                : 'hover:text-[#E84142]'
                                 }`}
                         >
                             {link.label}
@@ -84,8 +83,8 @@ export function Navbar() {
                             key={link.href}
                             href={link.href}
                             className={`block px-4 py-2.5 font-[family-name:var(--font-dm-mono)] text-[12px] rounded-lg transition-colors ${isActive(link.href)
-                                    ? 'text-[#F2F2F2] bg-[#1A1A1A]'
-                                    : 'text-[#909090] hover:text-[#E84142] hover:bg-[#111]'
+                                ? 'text-[#F2F2F2] bg-[#1A1A1A]'
+                                : 'text-[#909090] hover:text-[#E84142] hover:bg-[#111]'
                                 }`}
                             onClick={() => setMobileOpen(false)}
                         >

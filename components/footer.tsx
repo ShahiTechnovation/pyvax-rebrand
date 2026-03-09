@@ -55,11 +55,6 @@ export function Footer() {
             <h3 className="font-semibold text-white mb-4">Resources</h3>
             <ul className="space-y-2">
               <li>
-                <Link href="/games" className="text-sm text-gray-400 hover:text-white transition-colors">
-                  Game Development
-                </Link>
-              </li>
-              <li>
                 <Link href="#blog" className="text-sm text-gray-400 hover:text-white transition-colors">
                   Blog
                 </Link>

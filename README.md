@@ -2,7 +2,7 @@
 
 **Write pure Python. Deploy verified smart contracts on Avalanche C-Chain. No Solidity required.**
 
-[![Version](https://img.shields.io/badge/version-v0.3.0-E84142)](https://github.com/ShahiTechnovation/pyvax-rebrand/releases)
+[![Version](https://img.shields.io/badge/version-v0.1.0-E84142)](https://github.com/ShahiTechnovation/pyvax-rebrand/releases)
 [![EVM Target](https://img.shields.io/badge/EVM-Solidity_0.8.27_Equivalent-green)](https://github.com/ShahiTechnovation/pyvax-rebrand)
 [![Python](https://img.shields.io/badge/Python-3.9%2B-yellow)](https://github.com/ShahiTechnovation/pyvax-rebrand)
 [![License](https://img.shields.io/badge/License-MIT-blue)](https://github.com/ShahiTechnovation/pyvax-rebrand)

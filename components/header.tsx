@@ -12,7 +12,6 @@ export function Header() {
     { href: '#product', label: 'Product' },
     { href: '/playground', label: 'Playground' },
     { href: '/docs', label: 'Docs' },
-    { href: '/games', label: 'For Game Devs' },
     { href: '/pricing', label: 'Pricing' },
   ]
 
