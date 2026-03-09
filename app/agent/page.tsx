@@ -762,7 +762,7 @@ export default function AgentPage() {
                                             className="flex flex-col items-center gap-4"
                                         >
                                             <a
-                                                href={`https://x.com/intent/tweet?text=${encodeURIComponent(`🔴 I just joined the @PyVax Agent waitlist — spot #${signupCount}\n\n🐍 The first autonomous on-chain agent powered ENTIRELY by Python is coming.\n\n⛓️ Deploy. Trade. Remember. Never sleep.\nZero Solidity. Full autonomy.\n\n⚡ Only ${spotsRemaining} early access spots left.\nJoin before it's gone 👇`)}&url=${encodeURIComponent('https://pyvax.app/agent')}&hashtags=${encodeURIComponent('PyVax,Web3,Python,AI')}`}
+                                                href={`https://x.com/intent/tweet?text=${encodeURIComponent(`🔴 I just joined the @PyVax Agent waitlist — spot #${signupCount}\n\n🐍 The first autonomous on-chain agent powered ENTIRELY by Python is coming on @avax.\n\n⛓️ Deploy. Trade. Remember. Never sleep.\nZero Solidity. Full autonomy.\n\n⚡ Only ${spotsRemaining} early access spots left.\nJoin before it's gone 👇`)}&url=${encodeURIComponent('https://pyvax.app/agent')}&hashtags=${encodeURIComponent('PyVax,Web3,Python,AI')}`}
                                                 target="_blank"
                                                 rel="noopener noreferrer"
                                                 className="group w-full flex items-center justify-center gap-2 h-[44px] bg-[#111] border border-[#1F1F1F] rounded-lg font-[family-name:var(--font-dm-mono)] text-[12px] text-[#999] hover:text-[#1DA1F2] hover:border-[#1DA1F2]/30 hover:bg-[#1DA1F2]/5 transition-all"
