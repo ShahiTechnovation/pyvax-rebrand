@@ -4,7 +4,7 @@ import fs from "fs";
 import path from "path";
 
 // ─── Resend client ──────────────────────────────────────────────────────────
-const resend = new Resend(process.env.RESEND_API_KEY);
+const resend = process.env.RESEND_API_KEY ? new Resend(process.env.RESEND_API_KEY) : null;
 
 // ─── Waitlist storage (JSON file at project root) ───────────────────────────
 const WAITLIST_FILE = path.join(process.cwd(), "waitlist.json");
@@ -384,16 +384,20 @@ export async function POST(request: NextRequest) {
         writeWaitlist(entries);
 
         // Send welcome email via Resend
-        try {
-            await resend.emails.send({
-                from: "PyVax <dev@pyvax.xyz>",
-                to: [email],
-                subject: `🔴 You're #${position} — Welcome to PyVax Agent Early Access`,
-                html: buildWelcomeEmail(email, position, spotsRemaining),
-            });
-        } catch (emailError: any) {
-            // Log but don't fail the signup if email sending fails
-            console.error("Failed to send welcome email:", emailError?.message || emailError);
+        if (resend) {
+            try {
+                await resend.emails.send({
+                    from: "PyVax <dev@pyvax.xyz>",
+                    to: [email],
+                    subject: `🔴 You're #${position} — Welcome to PyVax Agent Early Access`,
+                    html: buildWelcomeEmail(email, position, spotsRemaining),
+                });
+            } catch (emailError: any) {
+                // Log but don't fail the signup if email sending fails
+                console.error("Failed to send welcome email:", emailError?.message || emailError);
+            }
+        } else {
+            console.warn("RESEND_API_KEY is missing, skipping welcome email.");
         }
 
         return NextResponse.json({
