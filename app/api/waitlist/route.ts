@@ -6,8 +6,12 @@ import path from "path";
 // ─── Resend client ──────────────────────────────────────────────────────────
 const resend = process.env.RESEND_API_KEY ? new Resend(process.env.RESEND_API_KEY) : null;
 
-// ─── Waitlist storage (JSON file at project root) ───────────────────────────
-const WAITLIST_FILE = path.join(process.cwd(), "waitlist.json");
+// ─── Waitlist storage (JSON file at project root, or /tmp on Vercel) ────────
+// Note: /tmp on Vercel is ephemeral (resets between cold starts).
+// For production persistence, use a database like Vercel KV or Supabase.
+const WAITLIST_FILE = process.env.VERCEL
+    ? "/tmp/waitlist.json"
+    : path.join(process.cwd(), "waitlist.json");
 
 interface WaitlistEntry {
     email: string;
@@ -23,13 +27,17 @@ function readWaitlist(): WaitlistEntry[] {
             return JSON.parse(data);
         }
     } catch {
-        // If file is corrupt, start fresh
+        // If file is corrupt or unreadable, start fresh
     }
     return [];
 }
 
 function writeWaitlist(entries: WaitlistEntry[]) {
-    fs.writeFileSync(WAITLIST_FILE, JSON.stringify(entries, null, 2), "utf-8");
+    try {
+        fs.writeFileSync(WAITLIST_FILE, JSON.stringify(entries, null, 2), "utf-8");
+    } catch (err: any) {
+        console.warn("⚠️ Could not write to waitlist file (read-only filesystem):", err.message);
+    }
 }
 
 // ─── Email template ─────────────────────────────────────────────────────────
