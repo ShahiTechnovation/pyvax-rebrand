@@ -102,10 +102,21 @@ export default function AgentPage() {
     const [emailError, setEmailError] = useState('')
 
     useEffect(() => {
-        const stored = localStorage.getItem('pyvax_agent_signups')
-        if (stored) {
-            setSignupCount(Math.max(BASE_SIGNUPS, parseInt(stored, 10)))
-        }
+        // Fetch current waitlist count from API
+        fetch('/api/waitlist')
+            .then(res => res.json())
+            .then(data => {
+                if (data.success && data.count) {
+                    setSignupCount(Math.max(BASE_SIGNUPS, data.count))
+                }
+            })
+            .catch(() => {
+                // Fallback to localStorage if API is unavailable
+                const stored = localStorage.getItem('pyvax_agent_signups')
+                if (stored) {
+                    setSignupCount(Math.max(BASE_SIGNUPS, parseInt(stored, 10)))
+                }
+            })
     }, [])
 
     const handleWaitlistSubmit = async (e: React.FormEvent) => {
@@ -125,14 +136,29 @@ export default function AgentPage() {
 
         setSubmitting(true)
 
-        // Simulate network request
-        await new Promise((resolve) => setTimeout(resolve, 1500))
+        try {
+            const res = await fetch('/api/waitlist', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ email: email.trim() }),
+            })
 
-        const newCount = signupCount + 1
-        setSignupCount(newCount)
-        localStorage.setItem('pyvax_agent_signups', String(newCount))
-        setSubmitted(true)
-        setSubmitting(false)
+            const data = await res.json()
+
+            if (!data.success) {
+                setEmailError(data.error || 'Something went wrong. Please try again.')
+                setSubmitting(false)
+                return
+            }
+
+            setSignupCount(data.count || signupCount + 1)
+            localStorage.setItem('pyvax_agent_signups', String(data.count || signupCount + 1))
+            setSubmitted(true)
+            setSubmitting(false)
+        } catch (err) {
+            setEmailError('Network error. Please try again.')
+            setSubmitting(false)
+        }
     }
 
     const spotsRemaining = Math.max(0, TOTAL_SPOTS - signupCount)

@@ -13,3 +13,6 @@ node_modules/
 
 .vercel
 .env*.local
+
+# Waitlist data (contains user emails)
+waitlist.json
