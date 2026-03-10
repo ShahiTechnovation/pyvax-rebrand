@@ -1,17 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
 import { Resend } from "resend";
-import fs from "fs";
-import path from "path";
+import { kv } from "@vercel/kv";
 
 // ─── Resend client ──────────────────────────────────────────────────────────
 const resend = process.env.RESEND_API_KEY ? new Resend(process.env.RESEND_API_KEY) : null;
-
-// ─── Waitlist storage (JSON file at project root, or /tmp on Vercel) ────────
-// Note: /tmp on Vercel is ephemeral (resets between cold starts).
-// For production persistence, use a database like Vercel KV or Supabase.
-const WAITLIST_FILE = process.env.VERCEL
-    ? "/tmp/waitlist.json"
-    : path.join(process.cwd(), "waitlist.json");
 
 interface WaitlistEntry {
     email: string;
@@ -20,23 +12,23 @@ interface WaitlistEntry {
     ip?: string;
 }
 
-function readWaitlist(): WaitlistEntry[] {
+async function readWaitlist(): Promise<WaitlistEntry[]> {
     try {
-        if (fs.existsSync(WAITLIST_FILE)) {
-            const data = fs.readFileSync(WAITLIST_FILE, "utf-8");
-            return JSON.parse(data);
-        }
-    } catch {
-        // If file is corrupt or unreadable, start fresh
+        // Retrieve the waitlist array from Vercel KV
+        const data = await kv.get<WaitlistEntry[]>("pyvax_waitlist");
+        return data || [];
+    } catch (err) {
+        console.warn("⚠️ KV read error:", err);
+        return [];
     }
-    return [];
 }
 
-function writeWaitlist(entries: WaitlistEntry[]) {
+async function writeWaitlist(entries: WaitlistEntry[]) {
     try {
-        fs.writeFileSync(WAITLIST_FILE, JSON.stringify(entries, null, 2), "utf-8");
-    } catch (err: any) {
-        console.warn("⚠️ Could not write to waitlist file (read-only filesystem):", err.message);
+        // Save the waitlist array to Vercel KV
+        await kv.set("pyvax_waitlist", entries);
+    } catch (err) {
+        console.error("⚠️ KV write error:", err);
     }
 }
 
@@ -320,7 +312,7 @@ function buildWelcomeEmail(email: string, position: number, spotsRemaining: numb
 
 // ─── GET: Return waitlist stats ─────────────────────────────────────────────
 export async function GET() {
-    const entries = readWaitlist();
+    const entries = await readWaitlist();
     const BASE_SIGNUPS = 153;
     const totalCount = BASE_SIGNUPS + entries.length;
 
@@ -353,7 +345,7 @@ export async function POST(request: NextRequest) {
         }
 
         // Read current waitlist
-        const entries = readWaitlist();
+        const entries = await readWaitlist();
         const BASE_SIGNUPS = 153;
 
         // Check for duplicate
@@ -389,7 +381,7 @@ export async function POST(request: NextRequest) {
         };
 
         entries.push(newEntry);
-        writeWaitlist(entries);
+        await writeWaitlist(entries);
 
         // Send welcome email via Resend
         if (resend) {
