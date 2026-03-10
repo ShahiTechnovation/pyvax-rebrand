@@ -1,6 +1,7 @@
 import type { Metadata } from 'next'
 import { Geist, Geist_Mono, Space_Grotesk, Inter, Press_Start_2P, DM_Mono, IBM_Plex_Sans } from 'next/font/google'
 import { Analytics } from '@vercel/analytics/next'
+import { SpeedInsights } from "@vercel/speed-insights/next"
 import './globals.css'
 
 const _geist = Geist({ subsets: ["latin"] });
@@ -78,6 +79,7 @@ export default function RootLayout({
       <body className="font-sans antialiased dark bg-background text-foreground">
         {children}
         <Analytics />
+        <SpeedInsights />
       </body>
     </html>
   )
