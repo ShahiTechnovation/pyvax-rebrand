@@ -281,6 +281,7 @@
 
   .animate-marquee {
     animation: marquee 40s linear infinite;
+    will-change: transform;
   }
 
   .animate-marquee:hover {
@@ -357,17 +358,16 @@
     0%,
     100% {
       opacity: 0.3;
-      transform: scale(1);
     }
 
     50% {
       opacity: 0.6;
-      transform: scale(1.05);
     }
   }
 
   .animate-ambient-pulse {
     animation: ambientPulse 4s ease-in-out infinite;
+    will-change: opacity;
   }
 
   /* Agent Page — Float animation */

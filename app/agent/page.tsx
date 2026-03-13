@@ -1,12 +1,25 @@
 'use client'
 
-import React, { useState, useEffect, useRef } from 'react'
+import React, { useState, useEffect, useRef, memo, useCallback } from 'react'
 import Link from 'next/link'
 import Image from 'next/image'
-import Spline from '@splinetool/react-spline'
+import dynamic from 'next/dynamic'
 import { motion, AnimatePresence } from 'framer-motion'
 import { ChevronDown, Twitter, Github, MessageCircle, Zap, Shield, Brain, Wallet, ArrowRight, Lock, Mail, CheckCircle, Loader2, Users, Sparkles } from 'lucide-react'
 import { Navbar } from '@/components/navbar'
+
+// ─── LAZY-LOAD SPLINE (biggest perf fix: don't block initial render) ─────────
+const Spline = dynamic(() => import('@splinetool/react-spline'), {
+    ssr: false,
+    loading: () => (
+        <div className="absolute inset-0 flex items-center justify-center">
+            <div className="flex flex-col items-center gap-4">
+                <div className="w-12 h-12 border-2 border-[#E84142] border-t-transparent rounded-full animate-spin" />
+                <span className="font-[family-name:var(--font-dm-mono)] text-[11px] text-[#555] tracking-wider">LOADING AGENT...</span>
+            </div>
+        </div>
+    ),
+})
 
 // ─── COUNTDOWN TARGET: 4 weeks from now (April 7, 2026) ─────────────────────
 const LAUNCH_DATE = new Date('2026-04-07T00:00:00Z')
@@ -46,8 +59,72 @@ const MARQUEE_ITEMS = [
     'REAL-TIME EVENTS',
 ]
 
-export default function AgentPage() {
-    // ── Countdown state ──────────────────────────────────────────────────────
+// ─── TERMINAL LINES (static data outside component) ──────────────────────────
+const TERMINAL_LINES = [
+    { addr: '[AGENT-001]', action: 'initializing wallet cluster...', target: '', status: '✓', time: 'ready' },
+    { addr: '[AGENT-001]', action: 'scanning DeFi pools on C-Chain...', target: '', status: '✓', time: '24 pools' },
+    { addr: '[AGENT-001]', action: 'deploying ', target: 'VaultStrategy.py', status: '✓', time: '0xA3f..7c2' },
+    { addr: '[AGENT-001]', action: 'executing ', target: 'rebalance()', status: '✓', time: '$42k TVL' },
+    { addr: '[AGENT-001]', action: 'writing agent_memory to chain...', target: '', status: '✓', time: 'persisted' },
+    { addr: '[AGENT-002]', action: 'sub-agent spawned by AGENT-001', target: '', status: '✓', time: 'autonomous' },
+]
+
+// ─── CAPABILITY CARDS (static data outside component) ────────────────────────
+const CAPABILITY_CARDS = [
+    {
+        icon: 'wallet',
+        tag: 'WALLET',
+        title: 'Autonomous Wallet Management',
+        body: 'Agent generates, manages, and rotates HD wallets autonomously. No seed phrases, no manual signing. Fully programmatic custody.',
+        revealed: true,
+    },
+    {
+        icon: 'zap',
+        tag: 'DEPLOYER',
+        title: 'Smart Contract Deployment',
+        body: 'Write Python — agent deploys, verifies, and indexes contracts on Avalanche C-Chain. One function call. Done.',
+        revealed: true,
+    },
+    {
+        icon: 'brain',
+        tag: 'DeFi',
+        title: 'DeFi Strategy Execution',
+        body: 'Agent monitors liquidity pools, executes swaps, rebalances portfolios, yield farms — all on autopilot with risk parameters you define.',
+        revealed: true,
+    },
+    {
+        icon: 'shield',
+        tag: 'CLASSIFIED',
+        title: '██████████████',
+        body: '████████████████████████████████████████████████████████████████████████',
+        revealed: false,
+    },
+    {
+        icon: 'lock',
+        tag: 'CLASSIFIED',
+        title: '██████████████',
+        body: '████████████████████████████████████████████████████████████████████████',
+        revealed: false,
+    },
+    {
+        icon: 'lock',
+        tag: 'COMING SOON',
+        title: '██████████████',
+        body: '████████████████████████████████████████████████████████████████████████',
+        revealed: false,
+    },
+]
+
+const ICON_MAP: Record<string, React.ReactNode> = {
+    wallet: <Wallet className="w-6 h-6" />,
+    zap: <Zap className="w-6 h-6" />,
+    brain: <Brain className="w-6 h-6" />,
+    shield: <Shield className="w-6 h-6" />,
+    lock: <Lock className="w-6 h-6" />,
+}
+
+// ─── COUNTDOWN COMPONENT (isolated re-renders) ──────────────────────────────
+const CountdownTimer = memo(function CountdownTimer() {
     const [timeLeft, setTimeLeft] = useState(getTimeLeft())
     const [mounted, setMounted] = useState(false)
 
@@ -55,6 +132,57 @@ export default function AgentPage() {
         setMounted(true)
         const timer = setInterval(() => setTimeLeft(getTimeLeft()), 1000)
         return () => clearInterval(timer)
+    }, [])
+
+    const pad = (n: number) => String(n).padStart(2, '0')
+
+    return (
+        <div className="flex items-center gap-3 md:gap-5 mb-10">
+            {[
+                { value: mounted ? pad(timeLeft.days) : '--', label: 'DAYS' },
+                { value: mounted ? pad(timeLeft.hours) : '--', label: 'HOURS' },
+                { value: mounted ? pad(timeLeft.minutes) : '--', label: 'MINS' },
+                { value: mounted ? pad(timeLeft.seconds) : '--', label: 'SECS' },
+            ].map((unit, i) => (
+                <React.Fragment key={unit.label}>
+                    {i > 0 && (
+                        <span className="font-[family-name:var(--font-press-start)] text-[24px] md:text-[36px] text-[#E84142] animate-cursor-blink -mt-6">:</span>
+                    )}
+                    <div className="flex flex-col items-center">
+                        <div className="bg-[#111111] border border-[#1F1F1F] rounded-lg w-[70px] h-[80px] md:w-[100px] md:h-[110px] flex items-center justify-center shadow-[0_0_20px_rgba(232,65,66,0.08)] hover:shadow-[0_0_30px_rgba(232,65,66,0.15)] transition-shadow duration-500">
+                            <span className="font-[family-name:var(--font-press-start)] text-[22px] md:text-[36px] text-[#F2F2F2] tabular-nums">
+                                {unit.value}
+                            </span>
+                        </div>
+                        <span className="font-[family-name:var(--font-dm-mono)] text-[9px] md:text-[10px] text-[#555] mt-2 tracking-wider">{unit.label}</span>
+                    </div>
+                </React.Fragment>
+            ))}
+        </div>
+    )
+})
+
+// ─── MARQUEE COMPONENT (isolated, no re-renders from parent) ─────────────────
+const MarqueeBelt = memo(function MarqueeBelt() {
+    return (
+        <section className="relative border-y border-[#E84142]/20 bg-[#0A0A0A] py-5 overflow-hidden">
+            <div className="flex animate-marquee whitespace-nowrap will-change-transform">
+                {[...MARQUEE_ITEMS, ...MARQUEE_ITEMS].map((item, i) => (
+                    <span key={i} className="font-[family-name:var(--font-dm-mono)] text-[12px] md:text-[14px] text-[#E84142] tracking-[0.15em] uppercase mx-6 md:mx-10 flex items-center gap-3">
+                        <span className="text-[#333]">◆</span>
+                        {item}
+                    </span>
+                ))}
+            </div>
+        </section>
+    )
+})
+
+export default function AgentPage() {
+    const [mounted, setMounted] = useState(false)
+
+    useEffect(() => {
+        setMounted(true)
     }, [])
 
     // ── Tagline cycling ──────────────────────────────────────────────────────
@@ -81,6 +209,7 @@ export default function AgentPage() {
                         setVisibleLines(line)
                         if (line >= 6) clearInterval(interval)
                     }, 400)
+                    observer.disconnect()
                 }
             },
             { threshold: 0.3 }
@@ -91,9 +220,10 @@ export default function AgentPage() {
 
     // ── Spline loaded state ──────────────────────────────────────────────────
     const [splineLoaded, setSplineLoaded] = useState(false)
+    const handleSplineLoad = useCallback(() => setSplineLoaded(true), [])
 
     // ── Waitlist state ──────────────────────────────────────────────────────
-    const BASE_SIGNUPS = 153 // 1000 - 847 remaining = 153 already signed up
+    const BASE_SIGNUPS = 153
     const TOTAL_SPOTS = 1000
     const [email, setEmail] = useState('')
     const [signupCount, setSignupCount] = useState(BASE_SIGNUPS)
@@ -102,7 +232,6 @@ export default function AgentPage() {
     const [emailError, setEmailError] = useState('')
 
     useEffect(() => {
-        // Fetch current waitlist count from API
         fetch('/api/waitlist')
             .then(res => res.json())
             .then(data => {
@@ -111,7 +240,6 @@ export default function AgentPage() {
                 }
             })
             .catch(() => {
-                // Fallback to localStorage if API is unavailable
                 const stored = localStorage.getItem('pyvax_agent_signups')
                 if (stored) {
                     setSignupCount(Math.max(BASE_SIGNUPS, parseInt(stored, 10)))
@@ -123,7 +251,6 @@ export default function AgentPage() {
         e.preventDefault()
         setEmailError('')
 
-        // Basic email validation
         const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
         if (!email.trim()) {
             setEmailError('Please enter your email address')
@@ -164,8 +291,6 @@ export default function AgentPage() {
     const spotsRemaining = Math.max(0, TOTAL_SPOTS - signupCount)
     const progressPercent = Math.min(100, (signupCount / TOTAL_SPOTS) * 100)
 
-    const pad = (n: number) => String(n).padStart(2, '0')
-
     return (
         <div className="min-h-screen bg-[#0A0A0A] text-[#F2F2F2] font-[family-name:var(--font-ibm-plex)] selection:bg-[#E84142] selection:text-white overflow-x-hidden">
 
@@ -178,34 +303,27 @@ export default function AgentPage() {
           SECTION 1: HERO — THE REVEAL
       ═══════════════════════════════════════════════════════════════════ */}
             <section className="relative min-h-screen flex flex-col items-center justify-center overflow-hidden">
-                {/* Ambient red glow behind the scene */}
-                <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] md:w-[900px] md:h-[900px] rounded-full bg-[radial-gradient(circle,rgba(232,65,66,0.15)_0%,transparent_70%)] animate-ambient-pulse pointer-events-none z-0" />
+                {/* Black gradient transition from navbar — settles into dark bg */}
+                <div
+                    className="absolute top-0 left-0 right-0 h-[120px] pointer-events-none z-[1]"
+                    style={{
+                        background: 'linear-gradient(to bottom, rgba(71, 71, 71, 0.8) 0%, rgba(180, 180, 180, 0.63) 30%, rgba(255, 255, 255, 1) 60%, transparent 100%)'
+                    }}
+                />
+                {/* Ambient red glow behind the scene — GPU-optimized */}
+                <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] md:w-[900px] md:h-[900px] rounded-full bg-[radial-gradient(circle,rgba(232,65,66,0.15)_0%,transparent_70%)] animate-ambient-pulse pointer-events-none z-0 will-change-[opacity]" />
 
-                {/* Scanline overlay */}
-                <div className="absolute inset-0 pointer-events-none opacity-[0.03] z-10" style={{
-                    backgroundImage: 'repeating-linear-gradient(0deg, #fff 0px, #fff 1px, transparent 1px, transparent 3px)',
-                    backgroundSize: '100% 3px'
-                }} />
-
-                {/* Grid background */}
+                {/* Grid background — lightweight */}
                 <div className="absolute inset-0 pointer-events-none opacity-[0.04] z-0" style={{
                     backgroundImage: 'linear-gradient(rgba(232,65,66,0.3) 1px, transparent 1px), linear-gradient(90deg, rgba(232,65,66,0.3) 1px, transparent 1px)',
                     backgroundSize: '80px 80px'
                 }} />
 
-                {/* Spline 3D Robot */}
+                {/* Spline 3D Robot — lazy loaded */}
                 <div className="relative w-full h-[50vh] md:h-[65vh] z-[1]">
-                    {!splineLoaded && (
-                        <div className="absolute inset-0 flex items-center justify-center">
-                            <div className="flex flex-col items-center gap-4">
-                                <div className="w-12 h-12 border-2 border-[#E84142] border-t-transparent rounded-full animate-spin" />
-                                <span className="font-[family-name:var(--font-dm-mono)] text-[11px] text-[#555] tracking-wider">LOADING AGENT...</span>
-                            </div>
-                        </div>
-                    )}
                     <Spline
                         scene="https://prod.spline.design/slaEhA9QPh-oSDit/scene.splinecode"
-                        onLoad={() => setSplineLoaded(true)}
+                        onLoad={handleSplineLoad}
                         style={{ width: '100%', height: '100%' }}
                     />
                     {/* Bottom gradient for text readability */}
@@ -221,7 +339,7 @@ export default function AgentPage() {
                         transition={{ delay: 0.3, duration: 0.6 }}
                         className="mb-6"
                     >
-                        <div className="inline-flex items-center gap-2 border border-[#E84142]/40 bg-[#E84142]/5 px-4 py-1.5 rounded-full backdrop-blur-sm">
+                        <div className="inline-flex items-center gap-2 border border-[#E84142]/40 bg-[#E84142]/5 px-4 py-1.5 rounded-full">
                             <Lock className="w-3 h-3 text-[#E84142]" />
                             <span className="font-[family-name:var(--font-dm-mono)] text-[10px] text-[#E84142] uppercase tracking-[0.2em] font-bold">PROJECT CLASSIFIED · COMING SOON</span>
                         </div>
@@ -279,29 +397,8 @@ export default function AgentPage() {
                     <div className="font-[family-name:var(--font-dm-mono)] text-[10px] text-[#E84142] uppercase tracking-[0.12em] mb-3">⚡ LAUNCHING IN</div>
                     <div className="w-[32px] h-px bg-[#E84142] mb-10" />
 
-                    {/* Countdown Digits */}
-                    <div className="flex items-center gap-3 md:gap-5 mb-10">
-                        {[
-                            { value: mounted ? pad(timeLeft.days) : '--', label: 'DAYS' },
-                            { value: mounted ? pad(timeLeft.hours) : '--', label: 'HOURS' },
-                            { value: mounted ? pad(timeLeft.minutes) : '--', label: 'MINS' },
-                            { value: mounted ? pad(timeLeft.seconds) : '--', label: 'SECS' },
-                        ].map((unit, i) => (
-                            <React.Fragment key={unit.label}>
-                                {i > 0 && (
-                                    <span className="font-[family-name:var(--font-press-start)] text-[24px] md:text-[36px] text-[#E84142] animate-cursor-blink -mt-6">:</span>
-                                )}
-                                <div className="flex flex-col items-center">
-                                    <div className="bg-[#111111] border border-[#1F1F1F] rounded-lg w-[70px] h-[80px] md:w-[100px] md:h-[110px] flex items-center justify-center shadow-[0_0_20px_rgba(232,65,66,0.08)] hover:shadow-[0_0_30px_rgba(232,65,66,0.15)] transition-shadow duration-500">
-                                        <span className="font-[family-name:var(--font-press-start)] text-[22px] md:text-[36px] text-[#F2F2F2] tabular-nums">
-                                            {unit.value}
-                                        </span>
-                                    </div>
-                                    <span className="font-[family-name:var(--font-dm-mono)] text-[9px] md:text-[10px] text-[#555] mt-2 tracking-wider">{unit.label}</span>
-                                </div>
-                            </React.Fragment>
-                        ))}
-                    </div>
+                    {/* Isolated Countdown (re-renders only itself every second) */}
+                    <CountdownTimer />
 
                     {/* CTA Button */}
                     <button className="group relative bg-[#E84142] hover:bg-[#FF5555] text-white font-[family-name:var(--font-dm-mono)] text-[12px] font-bold px-8 py-4 rounded-lg transition-all duration-300 shadow-[0_0_20px_rgba(232,65,66,0.3)] hover:shadow-[0_0_40px_rgba(232,65,66,0.5)] transform hover:scale-[1.02] active:scale-95 mb-6">
@@ -320,7 +417,7 @@ export default function AgentPage() {
             {/* ═══════════════════════════════════════════════════════════════════
           SECTION 3: WHAT IT DOES (Capabilities Grid)
       ═══════════════════════════════════════════════════════════════════ */}
-            <section className="bg-[#0E0E0E]/60 backdrop-blur-sm py-20 md:py-28 px-4">
+            <section className="bg-[#0E0E0E] py-20 md:py-28 px-4">
                 <div className="max-w-7xl mx-auto">
                     {/* Section header */}
                     <div className="flex flex-col items-center text-center mb-16">
@@ -336,51 +433,7 @@ export default function AgentPage() {
 
                     {/* Capabilities Grid */}
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5 mb-12">
-                        {/* REVEALED CARDS */}
-                        {[
-                            {
-                                icon: <Wallet className="w-6 h-6" />,
-                                tag: 'WALLET',
-                                title: 'Autonomous Wallet Management',
-                                body: 'Agent generates, manages, and rotates HD wallets autonomously. No seed phrases, no manual signing. Fully programmatic custody.',
-                                revealed: true,
-                            },
-                            {
-                                icon: <Zap className="w-6 h-6" />,
-                                tag: 'DEPLOYER',
-                                title: 'Smart Contract Deployment',
-                                body: 'Write Python — agent deploys, verifies, and indexes contracts on Avalanche C-Chain. One function call. Done.',
-                                revealed: true,
-                            },
-                            {
-                                icon: <Brain className="w-6 h-6" />,
-                                tag: 'DeFi',
-                                title: 'DeFi Strategy Execution',
-                                body: 'Agent monitors liquidity pools, executes swaps, rebalances portfolios, yield farms — all on autopilot with risk parameters you define.',
-                                revealed: true,
-                            },
-                            {
-                                icon: <Shield className="w-6 h-6" />,
-                                tag: 'CLASSIFIED',
-                                title: '██████████████',
-                                body: '████████████████████████████████████████████████████████████████████████',
-                                revealed: false,
-                            },
-                            {
-                                icon: <Lock className="w-6 h-6" />,
-                                tag: 'CLASSIFIED',
-                                title: '██████████████',
-                                body: '████████████████████████████████████████████████████████████████████████',
-                                revealed: false,
-                            },
-                            {
-                                icon: <Lock className="w-6 h-6" />,
-                                tag: 'COMING SOON',
-                                title: '██████████████',
-                                body: '████████████████████████████████████████████████████████████████████████',
-                                revealed: false,
-                            },
-                        ].map((card, i) => (
+                        {CAPABILITY_CARDS.map((card, i) => (
                             <motion.div
                                 key={i}
                                 initial={{ opacity: 0, y: 30 }}
@@ -398,7 +451,7 @@ export default function AgentPage() {
                                     </div>
                                 )}
                                 <div className={`mb-4 ${card.revealed ? 'text-[#E84142]' : 'text-[#333]'}`}>
-                                    {card.icon}
+                                    {ICON_MAP[card.icon]}
                                 </div>
                                 <h3 className={`font-[family-name:var(--font-syne)] font-semibold text-[18px] mb-2 ${card.revealed ? 'text-[#F0F0F0]' : 'text-[#333] redacted-block'
                                     }`}>
@@ -425,14 +478,7 @@ export default function AgentPage() {
                             <span className="ml-auto text-[#333] text-[9px]">v0.1.0-alpha</span>
                         </div>
                         <div className="font-[family-name:var(--font-dm-mono)] text-[12px] md:text-[13px] leading-[2] whitespace-nowrap overflow-x-auto pb-2 space-y-0">
-                            {[
-                                { addr: '[AGENT-001]', action: 'initializing wallet cluster...', target: '', status: '✓', time: 'ready' },
-                                { addr: '[AGENT-001]', action: 'scanning DeFi pools on C-Chain...', target: '', status: '✓', time: '24 pools' },
-                                { addr: '[AGENT-001]', action: 'deploying ', target: 'VaultStrategy.py', status: '✓', time: '0xA3f..7c2' },
-                                { addr: '[AGENT-001]', action: 'executing ', target: 'rebalance()', status: '✓', time: '$42k TVL' },
-                                { addr: '[AGENT-001]', action: 'writing agent_memory to chain...', target: '', status: '✓', time: 'persisted' },
-                                { addr: '[AGENT-002]', action: 'sub-agent spawned by AGENT-001', target: '', status: '✓', time: 'autonomous' },
-                            ].map((line, i) => (
+                            {TERMINAL_LINES.map((line, i) => (
                                 <div
                                     key={i}
                                     className={`transition-all duration-500 ${i < visibleLines ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-2'}`}
@@ -453,7 +499,7 @@ export default function AgentPage() {
             {/* ═══════════════════════════════════════════════════════════════════
           SECTION 4: PYTHON-NATIVE
       ═══════════════════════════════════════════════════════════════════ */}
-            <section className="bg-[#0A0A0A]/60 border-t border-[#1A1A1A] backdrop-blur-sm py-20 md:py-28 px-4">
+            <section className="bg-[#0A0A0A] border-t border-[#1A1A1A] py-20 md:py-28 px-4">
                 <div className="max-w-7xl mx-auto">
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-12 md:gap-16 items-center">
                         {/* Left — Code Preview */}
@@ -544,30 +590,14 @@ export default function AgentPage() {
             {/* ═══════════════════════════════════════════════════════════════════
           SECTION 5: THE HYPE BELT (Infinite Marquee)
       ═══════════════════════════════════════════════════════════════════ */}
-            <section className="relative border-y border-[#E84142]/20 bg-[#0A0A0A] py-5 overflow-hidden">
-                <div className="flex animate-marquee whitespace-nowrap">
-                    {/* Duplicate the items for seamless loop */}
-                    {[...MARQUEE_ITEMS, ...MARQUEE_ITEMS].map((item, i) => (
-                        <span key={i} className="font-[family-name:var(--font-dm-mono)] text-[12px] md:text-[14px] text-[#E84142] tracking-[0.15em] uppercase mx-6 md:mx-10 flex items-center gap-3">
-                            <span className="text-[#333]">◆</span>
-                            {item}
-                        </span>
-                    ))}
-                </div>
-            </section>
+            <MarqueeBelt />
 
             {/* ═══════════════════════════════════════════════════════════════════
           SECTION 6: EARLY ACCESS CTA
       ═══════════════════════════════════════════════════════════════════ */}
             <section className="relative bg-[#080808] py-24 md:py-32 px-4 overflow-hidden">
-                {/* Background effects */}
+                {/* Background effects — reduced from 4 overlays to 1 */}
                 <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_50%,rgba(232,65,66,0.08)_0%,transparent_50%)] pointer-events-none" />
-                <div className="absolute inset-0 bg-[radial-gradient(circle_at_20%_80%,rgba(232,65,66,0.04)_0%,transparent_40%)] pointer-events-none" />
-                <div className="absolute inset-0 bg-[radial-gradient(circle_at_80%_20%,rgba(232,65,66,0.04)_0%,transparent_40%)] pointer-events-none" />
-                <div className="absolute inset-0 pointer-events-none opacity-[0.015]" style={{
-                    backgroundImage: 'repeating-linear-gradient(0deg, #fff 0px, #fff 1px, transparent 1px, transparent 3px)',
-                    backgroundSize: '100% 3px'
-                }} />
 
                 <div className="max-w-2xl mx-auto relative z-10">
                     {/* Section header */}
@@ -637,14 +667,6 @@ export default function AgentPage() {
                                                     }}
                                                     initial={{ width: 0 }}
                                                     whileInView={{ width: `${progressPercent}%` }}
-                                                    viewport={{ once: true }}
-                                                    transition={{ duration: 1.5, ease: 'easeOut', delay: 0.3 }}
-                                                />
-                                                {/* Glow effect on progress tip */}
-                                                <motion.div
-                                                    className="absolute top-1/2 -translate-y-1/2 w-3 h-3 rounded-full bg-[#E84142] blur-[6px]"
-                                                    initial={{ left: 0 }}
-                                                    whileInView={{ left: `${progressPercent}%` }}
                                                     viewport={{ once: true }}
                                                     transition={{ duration: 1.5, ease: 'easeOut', delay: 0.3 }}
                                                 />
