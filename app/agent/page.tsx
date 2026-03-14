@@ -307,7 +307,7 @@ export default function AgentPage() {
                 <div
                     className="absolute top-0 left-0 right-0 h-[120px] pointer-events-none z-[1]"
                     style={{
-                        background: 'linear-gradient(to bottom, rgba(71, 71, 71, 0.8) 0%, rgba(180, 180, 180, 0.63) 30%, rgba(255, 255, 255, 1) 60%, transparent 100%)'
+                        background: 'linear-gradient(to bottom, rgba(162, 162, 162, 0.8) 0%, rgba(255, 255, 255, 0.63) 30%, rgba(255, 255, 255, 1) 60%, transparent 100%)'
                     }}
                 />
                 {/* Ambient red glow behind the scene — GPU-optimized */}
