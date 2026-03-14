@@ -1,5 +1,5 @@
 [build]
-dockerfile = "Dockerfile"
+dockerfilePath = "railway-backend/Dockerfile"
 
 [deploy]
 healthcheckPath = "/api/cli"

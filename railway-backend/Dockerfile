@@ -2,13 +2,16 @@ FROM python:3.9-slim
 
 WORKDIR /app
 
-COPY requirements.txt .
+# Install Python dependencies
+COPY railway-backend/requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
-COPY . .
+# Copy the canonical avax_cli package (single source of truth)
+COPY avax_cli/ ./avax_cli/
 
-# Expose port (Railway sets PORT automatically, but we define default 8000 here)
+# Copy the FastAPI server
+COPY railway-backend/main.py .
+
 EXPOSE 8000
 
-# Run uvicorn server on host 0.0.0.0 and port $PORT
 CMD ["sh", "-c", "uvicorn main:app --host 0.0.0.0 --port ${PORT:-8000}"]
