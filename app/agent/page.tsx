@@ -223,10 +223,9 @@ export default function AgentPage() {
     const handleSplineLoad = useCallback(() => setSplineLoaded(true), [])
 
     // ── Waitlist state ──────────────────────────────────────────────────────
-    const BASE_SIGNUPS = 153
     const TOTAL_SPOTS = 1000
     const [email, setEmail] = useState('')
-    const [signupCount, setSignupCount] = useState(BASE_SIGNUPS)
+    const [signupCount, setSignupCount] = useState(0)
     const [submitted, setSubmitted] = useState(false)
     const [submitting, setSubmitting] = useState(false)
     const [emailError, setEmailError] = useState('')
@@ -235,14 +234,14 @@ export default function AgentPage() {
         fetch('/api/waitlist')
             .then(res => res.json())
             .then(data => {
-                if (data.success && data.count) {
-                    setSignupCount(Math.max(BASE_SIGNUPS, data.count))
+                if (data.success && typeof data.count === 'number') {
+                    setSignupCount(data.count)
                 }
             })
             .catch(() => {
                 const stored = localStorage.getItem('pyvax_agent_signups')
                 if (stored) {
-                    setSignupCount(Math.max(BASE_SIGNUPS, parseInt(stored, 10)))
+                    setSignupCount(parseInt(stored, 10))
                 }
             })
     }, [])

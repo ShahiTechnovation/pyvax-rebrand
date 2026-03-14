@@ -313,8 +313,7 @@ function buildWelcomeEmail(email: string, position: number, spotsRemaining: numb
 // ─── GET: Return waitlist stats ─────────────────────────────────────────────
 export async function GET() {
     const entries = await readWaitlist();
-    const BASE_SIGNUPS = 153;
-    const totalCount = BASE_SIGNUPS + entries.length;
+    const totalCount = entries.length;
 
     return NextResponse.json({
         success: true,
@@ -346,7 +345,6 @@ export async function POST(request: NextRequest) {
 
         // Read current waitlist
         const entries = await readWaitlist();
-        const BASE_SIGNUPS = 153;
 
         // Check for duplicate
         if (entries.some((e) => e.email === email)) {
@@ -355,14 +353,14 @@ export async function POST(request: NextRequest) {
                 success: true,
                 message: "You're already on the waitlist!",
                 position: existing.position,
-                count: BASE_SIGNUPS + entries.length,
-                spotsRemaining: Math.max(0, 1000 - (BASE_SIGNUPS + entries.length)),
+                count: entries.length,
+                spotsRemaining: Math.max(0, 1000 - entries.length),
                 alreadyJoined: true,
             });
         }
 
         // Check if waitlist is full
-        const totalCount = BASE_SIGNUPS + entries.length;
+        const totalCount = entries.length;
         if (totalCount >= 1000) {
             return NextResponse.json(
                 { success: false, error: "Waitlist is full! All 1,000 spots have been claimed." },
