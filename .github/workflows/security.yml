@@ -28,8 +28,8 @@ jobs:
 
       - name: Run Bandit (static analysis)
         run: |
-          bandit -r avax_cli/ classified_agent/ -f json -o bandit-report.json --severity-level medium || true
-          bandit -r avax_cli/ classified_agent/ --severity-level medium
+          bandit -r avax_cli/ -f json -o bandit-report.json --severity-level medium || true
+          bandit -r avax_cli/ --severity-level medium
         continue-on-error: false
 
       - name: Run Safety (dependency check)
@@ -69,4 +69,4 @@ jobs:
 
       - name: Run full test suite
         run: |
-          pytest tests/ classified_agent/tests/ -v --tb=short
+          pytest tests/ -v --tb=short
