@@ -14,11 +14,14 @@ const SPONSORS = [
 
 // Terminal typewriter lines
 const TERMINAL_LINES = [
-  { text: '$ pyvax-agent join-synthesis', delay: 0 },
-  { text: '✓ Connected to Synthesis Network', delay: 0.8 },
-  { text: '✓ Agent registered: classified-001', delay: 1.4 },
-  { text: '✓ Entry submitted for $75K prizes', delay: 2.0 },
-  { text: '🏆 You\'re in! Check your dashboard.', delay: 2.6 },
+  { text: '$ pip install classified-agent', delay: 0 },
+  { text: '✓ classified-agent v1.1.0 installed', delay: 0.6 },
+  { text: '$ classified-agent init DeFiBot', delay: 1.2 },
+  { text: '✓ agent.toml + workspace created', delay: 1.8 },
+  { text: '$ classified-agent run', delay: 2.3 },
+  { text: '✓ Skill.md fetched → Claude building...', delay: 2.9 },
+  { text: '✓ PyVax compiled → 12kb WASM', delay: 3.4 },
+  { text: '🎉 SUBMITTED → $75K unlocked!', delay: 4.0 },
 ]
 
 export function Hero() {
@@ -143,8 +146,8 @@ export function Hero() {
           transition={{ delay: 0.8, duration: 0.6 }}
           className="font-[family-name:var(--font-ibm-plex)] text-[16px] sm:text-[20px] md:text-[24px] text-[#999] mb-10 max-w-2xl leading-relaxed"
         >
-          Unlock <span className="text-[#FFD700] font-bold">$75K</span> Synthesis Prizes —{' '}
-          <span className="text-[#FF1493]">1 Command Entry</span>
+          <span className="text-[#FFD700] font-bold">$75K</span> Synthesis × Classified Hackathon —{' '}
+          <span className="text-[#FF1493]">pip install → run → submit</span>
         </motion.p>
 
         {/* CTA Button */}
@@ -152,13 +155,24 @@ export function Hero() {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 1, duration: 0.6 }}
-          onClick={scrollToSteps}
-          className="group relative bg-gradient-to-r from-[#FF1493] to-[#8B008B] hover:from-[#FF1493] hover:to-[#FF1493] text-white font-[family-name:var(--font-press-start)] text-[11px] sm:text-[13px] px-10 py-5 rounded-xl transition-all duration-300 shadow-[0_0_30px_rgba(255,20,147,0.4)] hover:shadow-[0_0_60px_rgba(255,20,147,0.6)] transform hover:scale-[1.03] active:scale-95 mb-12"
+          onClick={() => window.open('https://unstop.com/o/nfj1CVW?lb=TUn3UTaD', '_blank')}
+          className="group relative bg-gradient-to-r from-[#FF1493] to-[#8B008B] hover:from-[#FF1493] hover:to-[#FF1493] text-white font-[family-name:var(--font-press-start)] text-[11px] sm:text-[13px] px-10 py-5 rounded-xl transition-all duration-300 shadow-[0_0_30px_rgba(255,20,147,0.4)] hover:shadow-[0_0_60px_rgba(255,20,147,0.6)] transform hover:scale-[1.03] active:scale-95 mb-4"
         >
           <span className="flex items-center gap-3">
-            JOIN SYNTHESIS AGENT HACK
+            JOIN CLASSIFIED HACKATHON
             <ArrowDown className="w-4 h-4 group-hover:translate-y-1 transition-transform" />
           </span>
+        </motion.button>
+
+        {/* Secondary CTA */}
+        <motion.button
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 1.1, duration: 0.5 }}
+          onClick={scrollToSteps}
+          className="font-[family-name:var(--font-dm-mono)] text-[11px] text-[#888] hover:text-[#FF1493] transition-colors tracking-wider mb-12 cursor-pointer"
+        >
+          ↓ SEE THE 6-STEP WORKFLOW
         </motion.button>
 
         {/* Agent Terminal Demo */}

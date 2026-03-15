@@ -61,21 +61,31 @@ export function FooterCTA() {
           transition={{ delay: 0.2, duration: 0.6 }}
         >
           <h2 className="font-[family-name:var(--font-press-start)] text-[18px] sm:text-[24px] md:text-[32px] text-white mb-4 leading-relaxed">
-            DON&apos;T MISS OUT
+            DON&apos;T MISS $75K
           </h2>
           <p className="font-[family-name:var(--font-ibm-plex)] text-[15px] text-[#777] mb-8 max-w-md mx-auto">
-            Join the classified hackathon. Build with PyVax. Win $75K.
+            Join the Classified Hackathon. Build with PyVax. Win Synthesis prizes.
           </p>
 
           <a
-            href="https://pyvax.xyz/agent"
+            href="https://unstop.com/o/nfj1CVW?lb=TUn3UTaD"
             target="_blank"
             rel="noopener noreferrer"
-            className="group inline-flex items-center gap-3 bg-gradient-to-r from-[#FF1493] to-[#8B008B] hover:from-[#FF1493] hover:to-[#FF1493] text-white font-[family-name:var(--font-press-start)] text-[11px] sm:text-[13px] px-10 py-5 rounded-xl transition-all duration-300 shadow-[0_0_30px_rgba(255,20,147,0.4)] hover:shadow-[0_0_60px_rgba(255,20,147,0.6)] transform hover:scale-[1.03] active:scale-95"
+            className="group inline-flex items-center gap-3 bg-gradient-to-r from-[#FF1493] to-[#8B008B] hover:from-[#FF1493] hover:to-[#FF1493] text-white font-[family-name:var(--font-press-start)] text-[11px] sm:text-[13px] px-10 py-5 rounded-xl transition-all duration-300 shadow-[0_0_30px_rgba(255,20,147,0.4)] hover:shadow-[0_0_60px_rgba(255,20,147,0.6)] transform hover:scale-[1.03] active:scale-95 mb-4"
           >
-            GET YOUR CODE NOW
+            JOIN CLASSIFIED HACKATHON
             <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
           </a>
+          <div className="mt-3">
+            <a
+              href="https://pypi.org/project/classified-agent/"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="font-[family-name:var(--font-dm-mono)] text-[11px] text-[#888] hover:text-[#4CAF50] transition-colors tracking-wide"
+            >
+              pip install classified-agent →
+            </a>
+          </div>
         </motion.div>
 
         {/* Social links */}
@@ -130,7 +140,7 @@ export function FooterCTA() {
           className="mt-10 space-y-2"
         >
           <p className="font-[family-name:var(--font-dm-mono)] text-[11px] text-[#444] tracking-wide">
-            Hosted by <span className="text-[#FF1493]">PyVax</span> — Python to Agent Economy
+            Powered by <span className="text-[#FF1493]">PyVax</span> · <a href="https://github.com/ShahiTechnovation/pyvax-rebrand" target="_blank" rel="noopener noreferrer" className="hover:text-[#FF1493] transition-colors">github.com/ShahiTechnovation/pyvax-rebrand</a>
           </p>
           <p className="font-[family-name:var(--font-dm-mono)] text-[9px] text-[#333] tracking-wider">
             © 2026 PyVax. All rights reserved.

@@ -6,30 +6,25 @@ import { Terminal } from 'lucide-react'
 
 const DEMO_LINES = [
   { text: '$ pip install classified-agent', type: 'command', pause: 800 },
-  { text: 'Successfully installed classified-agent-0.1.0', type: 'output', pause: 600 },
+  { text: 'Successfully installed classified-agent-1.1.0', type: 'output', pause: 600 },
   { text: '', type: 'blank', pause: 300 },
-  { text: '$ classified-agent init', type: 'command', pause: 700 },
-  { text: '? Enter agent name: DeFiBot', type: 'prompt', pause: 500 },
-  { text: '? Select track: open', type: 'prompt', pause: 400 },
-  { text: '✓ Created agent.toml', type: 'success', pause: 500 },
+  { text: '$ classified-agent init DeFiBot', type: 'command', pause: 700 },
+  { text: '✓ Created classified.toml', type: 'success', pause: 400 },
+  { text: '✓ Workspace scaffolded', type: 'success', pause: 400 },
   { text: '', type: 'blank', pause: 300 },
-  { text: '$ nano agent.toml', type: 'command', pause: 600 },
-  { text: '[agent]', type: 'config', pause: 300 },
-  { text: 'name = "DeFiBot"', type: 'config', pause: 300 },
-  { text: 'version = "0.1.0"', type: 'config', pause: 300 },
+  { text: '$ export ANTHROPIC_API_KEY=sk-ant-...', type: 'command', pause: 500 },
   { text: '', type: 'blank', pause: 200 },
-  { text: '[synthesis]', type: 'config', pause: 300 },
-  { text: 'track = "open"', type: 'config', pause: 300 },
-  { text: 'entry = "src/main.py"', type: 'config', pause: 400 },
-  { text: '', type: 'blank', pause: 300 },
   { text: '$ classified-agent run', type: 'command', pause: 800 },
-  { text: '▸ Building agent...', type: 'progress', pause: 600 },
-  { text: '▸ Running test suite...', type: 'progress', pause: 700 },
-  { text: '✓ Registered @synthesis_md', type: 'success', pause: 400 },
-  { text: '✓ Built DeFi optimizer', type: 'success', pause: 400 },
-  { text: '✓ Submitted for $75K prizes', type: 'success', pause: 500 },
+  { text: '▸ Fetching https://synthesis.md/skill.md...', type: 'progress', pause: 700 },
+  { text: '✓ Skill cached (2.4kb)', type: 'success', pause: 400 },
+  { text: '▸ Claude 3.5 Sonnet building agent...', type: 'progress', pause: 900 },
+  { text: '▸ PyVax compiling → 12kb WASM', type: 'progress', pause: 700 },
+  { text: '✓ Compiled via PyVax (fallback: solidity ready)', type: 'success', pause: 500 },
+  { text: '✓ Registered @synthesis_md: agent_id synth_7f3a', type: 'success', pause: 500 },
+  { text: '✓ GitHub: github.com/user/DeFiBot-synthesis', type: 'success', pause: 500 },
+  { text: '✓ Twitter proof posted!', type: 'success', pause: 400 },
   { text: '', type: 'blank', pause: 300 },
-  { text: '🏆 Entry confirmed! Good luck, agent.', type: 'final', pause: 0 },
+  { text: '🎉 CLASSIFIED HACKATHON SUBMITTED → $75K!', type: 'final', pause: 0 },
 ]
 
 const LINE_COLORS: Record<string, string> = {
@@ -116,7 +111,7 @@ export function TerminalDemo() {
               </div>
               <div className="flex items-center gap-1.5 ml-auto">
                 <Terminal className="w-3 h-3 text-[#4CAF50]/50" />
-                <span className="font-[family-name:var(--font-dm-mono)] text-[10px] text-[#555]">classified-agent v0.1.0</span>
+                <span className="font-[family-name:var(--font-dm-mono)] text-[10px] text-[#555]">classified-agent v1.1.0</span>
               </div>
             </div>
 

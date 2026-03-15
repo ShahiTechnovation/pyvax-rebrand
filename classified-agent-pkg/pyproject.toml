@@ -1,0 +1,89 @@
+[build-system]
+requires = ["setuptools>=65.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "classified-agent"
+version = "1.1.0"
+description = "Classified Agent CLI — Synthesis Hackathon ($75K Prizes). Build + submit AI agents in 60s. PyVax-powered Web3 scaffolding."
+readme = "README.md"
+license = {text = "MIT"}
+requires-python = ">=3.10"
+authors = [
+    {name = "PyVax Team", email = "team@pyvax.io"},
+]
+keywords = [
+    "synthesis", "hackathon", "agent", "web3", "pyvax",
+    "avalanche", "evm", "ai-agent", "cli", "blockchain",
+]
+classifiers = [
+    "Development Status :: 5 - Production/Stable",
+    "Environment :: Console",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Topic :: Software Development :: Code Generators",
+    "Topic :: Software Development :: Libraries :: Application Frameworks",
+]
+
+dependencies = [
+    "typer[all]>=0.9.0",
+    "rich>=13.0.0",
+    "pydantic>=2.0.0",
+    'tomli>=2.0.0;python_version<"3.11"',
+    "tomli-w>=1.0.0",
+    "anthropic>=0.30.0",
+    "httpx>=0.25.0",
+    "web3>=6.0.0",
+    "pycryptodome>=3.15.0",
+    "python-dotenv>=1.0.0",
+    "cryptography>=41.0.0",
+    "eth-account>=0.10.0",
+    "requests>=2.28.0",
+]
+
+[project.optional-dependencies]
+solidity = [
+    "py-solc-x>=2.0.0",
+]
+dev = [
+    "pytest>=7.0.0",
+    "pytest-cov>=4.0.0",
+    "pytest-asyncio>=0.23.0",
+    "black>=23.0.0",
+    "ruff>=0.1.0",
+]
+
+[project.scripts]
+classified-agent = "classified_agent.cli.main:main"
+
+[project.urls]
+Homepage = "https://pyvax.xyz"
+Repository = "https://github.com/ShahiTechnovation/classified-agent"
+Documentation = "https://pyvax.xyz/agent"
+"Synthesis Hackathon" = "https://synthesis.md"
+Issues = "https://github.com/ShahiTechnovation/classified-agent/issues"
+
+[tool.setuptools.packages.find]
+include = ["classified_agent*"]
+exclude = ["tests*", "docs*"]
+
+[tool.setuptools.package-data]
+classified_agent = ["py.typed", "examples/*.toml"]
+
+[tool.pytest.ini_options]
+testpaths = ["classified_agent/tests"]
+python_files = "test_*.py"
+python_functions = "test_*"
+
+[tool.black]
+line-length = 100
+target-version = ["py310"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py310"

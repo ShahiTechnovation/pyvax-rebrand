@@ -73,8 +73,8 @@ export default function ClassifiedPage() {
             <nav className="fixed top-0 left-0 right-0 z-50 bg-[#0a0510]/80 backdrop-blur-xl border-b border-[#FF1493]/10">
               <div className="max-w-7xl mx-auto px-4 h-14 flex items-center justify-between">
                 <div className="flex items-center gap-3">
-                  <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-[#FF1493] to-[#8B008B] flex items-center justify-center text-[10px] font-bold text-white font-[family-name:var(--font-press-start)]">
-                    Py
+                  <div className="w-8 h-8 flex items-center justify-center">
+                    <img src="/logo.png" alt="PyVax Logo" className="w-full h-full object-contain filter drop-shadow-[0_0_10px_rgba(255,20,147,0.4)]" />
                   </div>
                   <span className="font-[family-name:var(--font-press-start)] text-[10px] text-[#FF1493] tracking-[0.2em]">
                     CLASSIFIED
@@ -88,12 +88,12 @@ export default function ClassifiedPage() {
                     PRIZES
                   </a>
                   <a
-                    href="https://pyvax.xyz/agent"
+                    href="https://unstop.com/o/nfj1CVW?lb=TUn3UTaD"
                     target="_blank"
                     rel="noopener noreferrer"
                     className="bg-gradient-to-r from-[#FF1493] to-[#8B008B] text-white font-[family-name:var(--font-dm-mono)] text-[9px] font-bold tracking-wider px-4 py-2 rounded-lg hover:shadow-[0_0_20px_rgba(255,20,147,0.3)] transition-shadow"
                   >
-                    GET CODE
+                    REGISTER NOW
                   </a>
                 </div>
               </div>

@@ -33,14 +33,14 @@ async function writeWaitlist(entries: WaitlistEntry[]) {
 }
 
 // ─── Email template ─────────────────────────────────────────────────────────
-function buildWelcomeEmail(email: string, position: number, spotsRemaining: number): string {
+function buildWelcomeEmail(email: string, position: number, spotsRemaining: number, accessCode: string): string {
     return `<!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <meta http-equiv="X-UA-Compatible" content="IE=edge">
-<title>Welcome to PyVax</title>
+<title>Classified Access: Synthesis Hackathon</title>
 <!--[if mso]>
 <noscript>
 <xml>
@@ -51,42 +51,42 @@ function buildWelcomeEmail(email: string, position: number, spotsRemaining: numb
 </noscript>
 <![endif]-->
 </head>
-<body style="margin:0;padding:0;background-color:#050505;font-family:'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;-webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale;">
+<body style="margin:0;padding:0;background-color:#0a0510;font-family:'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;-webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale;">
 
 <!-- Preheader text (hidden) -->
-<div style="display:none;font-size:1px;color:#050505;line-height:1px;max-height:0px;max-width:0px;opacity:0;overflow:hidden;">
-    You're #${position} on the PyVax Agent waitlist — the first autonomous on-chain agent powered entirely by Python is coming.
+<div style="display:none;font-size:1px;color:#0a0510;line-height:1px;max-height:0px;max-width:0px;opacity:0;overflow:hidden;">
+    Your agent classified access code is inside. Participate in the Synthesis Hackathon for $75K in prizes.
 </div>
 
 <!-- Outer wrapper -->
-<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background-color:#050505;">
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background-color:#0a0510;">
 <tr><td align="center" style="padding:32px 16px;">
 
 <!-- Main card -->
-<table role="presentation" width="600" cellpadding="0" cellspacing="0" border="0" style="max-width:600px;width:100%;background-color:#0A0A0A;border:1px solid #1A1A1A;border-radius:16px;overflow:hidden;">
+<table role="presentation" width="600" cellpadding="0" cellspacing="0" border="0" style="max-width:600px;width:100%;background-color:#110a18;border:1px solid rgba(255,20,147,0.2);border-radius:16px;overflow:hidden;box-shadow:0 0 30px rgba(255,20,147,0.1);">
 
 <!-- HERO IMAGE SECTION -->
 <tr>
 <td style="padding:0;position:relative;">
-    <div style="background:linear-gradient(135deg, #0A0A0A 0%, #1a0505 30%, #0A0A0A 60%, #150808 100%);padding:48px 40px 40px;text-align:center;position:relative;">
-        <!-- Red glow effect -->
-        <div style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:300px;height:300px;background:radial-gradient(circle,rgba(232,65,66,0.15) 0%,transparent 70%);pointer-events:none;"></div>
+    <div style="background:linear-gradient(135deg, #110a18 0%, #1a0510 50%, #110a18 100%);padding:48px 40px 40px;text-align:center;position:relative;">
+        <!-- Pink glow effect -->
+        <div style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:300px;height:300px;background:radial-gradient(circle,rgba(255,20,147,0.15) 0%,transparent 70%);pointer-events:none;"></div>
         
         <!-- Logo -->
         <table role="presentation" cellpadding="0" cellspacing="0" border="0" style="margin:0 auto 24px;">
         <tr>
-            <td style="background:linear-gradient(135deg,#E84142,#FF6B6B);width:48px;height:48px;border-radius:12px;text-align:center;vertical-align:middle;font-size:24px;color:#fff;font-weight:800;letter-spacing:-1px;">
-                Py
+            <td style="text-align:center;vertical-align:middle;">
+                <img src="https://pyvax.xyz/logo.png" alt="PyVax Logo" width="64" height="64" style="display:block;border:none;outline:none;text-decoration:none;filter:drop-shadow(0 0 10px rgba(255,20,147,0.4));" />
             </td>
         </tr>
         </table>
         
         <!-- Brand name -->
-        <div style="font-family:'Courier New',monospace;font-size:28px;font-weight:800;color:#FFFFFF;letter-spacing:6px;margin-bottom:8px;">
-            PYVAX
+        <div style="font-family:'Courier New',monospace;font-size:14px;color:#FF1493;letter-spacing:4px;text-transform:uppercase;margin-bottom:8px;">
+            PROJECT CLASSIFIED
         </div>
-        <div style="font-family:'Courier New',monospace;font-size:10px;color:#E84142;letter-spacing:4px;text-transform:uppercase;">
-            AGENT PROGRAM · CLASSIFIED
+        <div style="font-family:'Courier New',monospace;font-size:24px;font-weight:800;color:#FFFFFF;letter-spacing:2px;margin-bottom:8px;">
+            SYNTHESIS HACKATHON
         </div>
     </div>
 </td>
@@ -95,116 +95,79 @@ function buildWelcomeEmail(email: string, position: number, spotsRemaining: numb
 <!-- DIVIDER LINE -->
 <tr>
 <td style="padding:0 40px;">
-    <div style="height:1px;background:linear-gradient(90deg,transparent,#E84142,transparent);"></div>
+    <div style="height:1px;background:linear-gradient(90deg,transparent,rgba(255,20,147,0.5),transparent);"></div>
 </td>
 </tr>
 
 <!-- WELCOME MESSAGE -->
 <tr>
 <td style="padding:40px 40px 16px;">
-    <div style="font-family:'Courier New',monospace;font-size:10px;color:#E84142;letter-spacing:3px;text-transform:uppercase;margin-bottom:20px;">
-        ⚡ ACCESS CONFIRMED
+    <div style="font-family:'Courier New',monospace;font-size:10px;color:#4CAF50;letter-spacing:3px;text-transform:uppercase;margin-bottom:20px;">
+        ✓ ACCESS GRANTED
     </div>
-    <h1 style="margin:0 0 16px;font-family:'Segoe UI',Roboto,sans-serif;font-size:32px;font-weight:800;color:#FFFFFF;line-height:1.2;">
-        You're In.
+    <h1 style="margin:0 0 16px;font-family:'Segoe UI',Roboto,sans-serif;font-size:28px;font-weight:800;color:#FFFFFF;line-height:1.2;">
+        Your Agent is Ready.
     </h1>
-    <p style="margin:0;font-family:'Segoe UI',Roboto,sans-serif;font-size:16px;color:#888888;line-height:1.7;">
-        Welcome to the PyVax Agent early access program. You've secured your spot among the first developers to control the blockchain with <span style="color:#E84142;font-weight:600;">pure Python</span>.
+    <p style="margin:0;font-family:'Segoe UI',Roboto,sans-serif;font-size:15px;color:#a09bb0;line-height:1.7;">
+        Welcome to PyVax Classified. You've unlocked the portal to build autonomous Python agents for the Synthesis Hackathon. Compete for a massive <strong style="color:#FFD700;">$75,000 prize pool</strong>.
     </p>
 </td>
 </tr>
 
-<!-- POSITION CARD -->
+<!-- ACCESS CODE BLOCK -->
 <tr>
-<td style="padding:16px 40px 32px;">
-    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background-color:#111111;border:1px solid #1F1F1F;border-radius:12px;">
-    <tr>
-        <td style="padding:24px 28px;">
-            <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
-            <tr>
-                <!-- Position -->
-                <td style="width:50%;vertical-align:top;">
-                    <div style="font-family:'Courier New',monospace;font-size:9px;color:#555;letter-spacing:2px;text-transform:uppercase;margin-bottom:8px;">YOUR POSITION</div>
-                    <div style="font-family:'Courier New',monospace;font-size:36px;font-weight:800;color:#E84142;line-height:1;">#${position}</div>
-                </td>
-                <!-- Spots left -->
-                <td style="width:50%;vertical-align:top;text-align:right;">
-                    <div style="font-family:'Courier New',monospace;font-size:9px;color:#555;letter-spacing:2px;text-transform:uppercase;margin-bottom:8px;">SPOTS LEFT</div>
-                    <div style="font-family:'Courier New',monospace;font-size:36px;font-weight:800;color:#F2F2F2;line-height:1;">${spotsRemaining}</div>
-                </td>
-            </tr>
-            </table>
-            
-            <!-- Progress bar -->
-            <div style="margin-top:20px;">
-                <div style="width:100%;height:4px;background-color:#1A1A1A;border-radius:4px;overflow:hidden;">
-                    <div style="width:${Math.min(100, (position / 1000) * 100)}%;height:100%;background:linear-gradient(90deg,#E84142,#FF6B6B);border-radius:4px;"></div>
-                </div>
-                <div style="font-family:'Courier New',monospace;font-size:9px;color:#444;margin-top:6px;text-align:right;">
-                    ${position}/1,000 early access slots filled
-                </div>
-            </div>
-        </td>
-    </tr>
-    </table>
+<td style="padding:16px 40px 16px;">
+    <div style="background:linear-gradient(135deg,rgba(255,20,147,0.1),rgba(139,0,139,0.1));border:1px solid rgba(255,20,147,0.3);border-radius:12px;padding:32px 24px;text-align:center;">
+        <div style="font-family:'Courier New',monospace;font-size:11px;color:#FF1493;letter-spacing:2px;text-transform:uppercase;margin-bottom:12px;font-weight:bold;">YOUR UNIQUE ACCESS CODE</div>
+        <div style="font-family:'Courier New',monospace;font-size:36px;font-weight:800;color:#FFD700;letter-spacing:8px;margin-bottom:24px;text-shadow:0 0 10px rgba(255,215,0,0.3);">${accessCode}</div>
+        <a href="https://classified.pyvax.xyz" style="display:inline-block;background:linear-gradient(90deg,#FF1493,#8B008B);color:#FFF;text-decoration:none;font-family:'Courier New',monospace;font-size:13px;font-weight:bold;padding:16px 32px;border-radius:8px;letter-spacing:2px;box-shadow:0 0 20px rgba(255,20,147,0.4);">ENTER THE VAULT →</a>
+    </div>
 </td>
 </tr>
 
-<!-- WHAT'S COMING SECTION -->
+<!-- WHAT TO DO NEXT -->
 <tr>
-<td style="padding:0 40px 32px;">
-    <div style="font-family:'Courier New',monospace;font-size:10px;color:#E84142;letter-spacing:3px;text-transform:uppercase;margin-bottom:20px;">
-        ◆ WHAT YOU'RE GETTING
+<td style="padding:24px 40px 32px;">
+    <div style="font-family:'Courier New',monospace;font-size:10px;color:#FF1493;letter-spacing:3px;text-transform:uppercase;margin-bottom:20px;">
+        ◆ YOUR NEXT STEPS
     </div>
     
-    <!-- Feature 1 -->
-    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="margin-bottom:16px;">
+    <!-- Step 1 -->
+    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="margin-bottom:20px;">
     <tr>
-        <td style="width:44px;vertical-align:top;padding-top:2px;">
-            <div style="width:36px;height:36px;background:rgba(232,65,66,0.1);border:1px solid rgba(232,65,66,0.25);border-radius:8px;text-align:center;line-height:36px;font-size:16px;">🐍</div>
+        <td style="width:40px;vertical-align:top;padding-top:2px;">
+            <div style="width:28px;height:28px;background:rgba(255,215,0,0.1);border:1px solid rgba(255,215,0,0.3);border-radius:6px;text-align:center;line-height:28px;color:#FFD700;font-family:'Courier New',monospace;font-weight:bold;font-size:14px;">1</div>
         </td>
-        <td style="vertical-align:top;padding-left:12px;">
-            <div style="font-family:'Segoe UI',Roboto,sans-serif;font-size:15px;font-weight:700;color:#F0F0F0;margin-bottom:3px;">100% Python Smart Contracts</div>
-            <div style="font-family:'Segoe UI',Roboto,sans-serif;font-size:13px;color:#777;line-height:1.5;">Write, deploy, and verify contracts with zero Solidity. Your Python runs directly on Avalanche C-Chain.</div>
+        <td style="vertical-align:top;padding-left:16px;">
+            <div style="font-family:'Segoe UI',Roboto,sans-serif;font-size:16px;font-weight:700;color:#F0F0F0;margin-bottom:4px;">Install the CLI</div>
+            <div style="font-family:'Courier New',monospace;font-size:12px;color:#FF1493;background:#0a0510;padding:8px 12px;border-radius:4px;border:1px solid rgba(255,20,147,0.2);margin-top:8px;">$ pip install classified-agent</div>
         </td>
     </tr>
     </table>
     
-    <!-- Feature 2 -->
-    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="margin-bottom:16px;">
+    <!-- Step 2 -->
+    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="margin-bottom:20px;">
     <tr>
-        <td style="width:44px;vertical-align:top;padding-top:2px;">
-            <div style="width:36px;height:36px;background:rgba(232,65,66,0.1);border:1px solid rgba(232,65,66,0.25);border-radius:8px;text-align:center;line-height:36px;font-size:16px;">🤖</div>
+        <td style="width:40px;vertical-align:top;padding-top:2px;">
+            <div style="width:28px;height:28px;background:rgba(255,215,0,0.1);border:1px solid rgba(255,215,0,0.3);border-radius:6px;text-align:center;line-height:28px;color:#FFD700;font-family:'Courier New',monospace;font-weight:bold;font-size:14px;">2</div>
         </td>
-        <td style="vertical-align:top;padding-left:12px;">
-            <div style="font-family:'Segoe UI',Roboto,sans-serif;font-size:15px;font-weight:700;color:#F0F0F0;margin-bottom:3px;">Autonomous Agent Runtime</div>
-            <div style="font-family:'Segoe UI',Roboto,sans-serif;font-size:13px;color:#777;line-height:1.5;">Your agent deploys, trades, manages wallets, and remembers — fully autonomous, fully onchain.</div>
+        <td style="vertical-align:top;padding-left:16px;">
+            <div style="font-family:'Segoe UI',Roboto,sans-serif;font-size:16px;font-weight:700;color:#F0F0F0;margin-bottom:4px;">Register on Unstop</div>
+            <div style="font-family:'Segoe UI',Roboto,sans-serif;font-size:14px;color:#a09bb0;line-height:1.5;">Make sure your team is officially registered for the Synthesis Hackathon.</div>
+            <a href="https://unstop.com" style="display:inline-block;color:#FF1493;font-size:13px;font-weight:bold;text-decoration:none;margin-top:8px;">Register Here →</a>
         </td>
     </tr>
     </table>
     
-    <!-- Feature 3 -->
-    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="margin-bottom:16px;">
-    <tr>
-        <td style="width:44px;vertical-align:top;padding-top:2px;">
-            <div style="width:36px;height:36px;background:rgba(232,65,66,0.1);border:1px solid rgba(232,65,66,0.25);border-radius:8px;text-align:center;line-height:36px;font-size:16px;">⛓️</div>
-        </td>
-        <td style="vertical-align:top;padding-left:12px;">
-            <div style="font-family:'Segoe UI',Roboto,sans-serif;font-size:15px;font-weight:700;color:#F0F0F0;margin-bottom:3px;">On-Chain Memory</div>
-            <div style="font-family:'Segoe UI',Roboto,sans-serif;font-size:13px;color:#777;line-height:1.5;">Persistent, verifiable state written directly to the blockchain. Your agent never forgets.</div>
-        </td>
-    </tr>
-    </table>
-    
-    <!-- Feature 4 -->
+    <!-- Step 3 -->
     <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
     <tr>
-        <td style="width:44px;vertical-align:top;padding-top:2px;">
-            <div style="width:36px;height:36px;background:rgba(232,65,66,0.1);border:1px solid rgba(232,65,66,0.25);border-radius:8px;text-align:center;line-height:36px;font-size:16px;">⚡</div>
+        <td style="width:40px;vertical-align:top;padding-top:2px;">
+            <div style="width:28px;height:28px;background:rgba(255,215,0,0.1);border:1px solid rgba(255,215,0,0.3);border-radius:6px;text-align:center;line-height:28px;color:#FFD700;font-family:'Courier New',monospace;font-weight:bold;font-size:14px;">3</div>
         </td>
-        <td style="vertical-align:top;padding-left:12px;">
-            <div style="font-family:'Segoe UI',Roboto,sans-serif;font-size:15px;font-weight:700;color:#F0F0F0;margin-bottom:3px;">Priority Access & Early Drops</div>
-            <div style="font-family:'Segoe UI',Roboto,sans-serif;font-size:13px;color:#777;line-height:1.5;">Be the first to get SDK access, agent templates, and exclusive dev previews before public launch.</div>
+        <td style="vertical-align:top;padding-left:16px;">
+            <div style="font-family:'Segoe UI',Roboto,sans-serif;font-size:16px;font-weight:700;color:#F0F0F0;margin-bottom:4px;">Build & Submit</div>
+            <div style="font-family:'Segoe UI',Roboto,sans-serif;font-size:14px;color:#a09bb0;line-height:1.5;">Use <span style="font-family:'Courier New',monospace;color:#FFF;">classified-agent run</span> to test and submit your on-chain agent.</div>
         </td>
     </tr>
     </table>
@@ -214,53 +177,17 @@ function buildWelcomeEmail(email: string, position: number, spotsRemaining: numb
 <!-- DIVIDER -->
 <tr>
 <td style="padding:0 40px;">
-    <div style="height:1px;background-color:#1A1A1A;"></div>
-</td>
-</tr>
-
-<!-- CODE PREVIEW -->
-<tr>
-<td style="padding:32px 40px;">
-    <div style="font-family:'Courier New',monospace;font-size:10px;color:#E84142;letter-spacing:3px;text-transform:uppercase;margin-bottom:16px;">
-        ▸ PREVIEW
-    </div>
-    <div style="background-color:#080808;border:1px solid #1C1C1C;border-radius:8px;padding:20px 24px;overflow:hidden;">
-        <div style="font-family:'Courier New',monospace;font-size:12px;line-height:2;color:#888;">
-            <div><span style="color:#E84142;">from</span> <span style="color:#D0D0D0;">pyvax.agent</span> <span style="color:#E84142;">import</span> <span style="color:#D0D0D0;">Agent</span></div>
-            <div style="height:4px;"></div>
-            <div><span style="color:#444;"># Your agent, your rules</span></div>
-            <div><span style="color:#D0D0D0;">agent = Agent(</span><span style="color:#7EC8A4;">"alpha-1"</span><span style="color:#D0D0D0;">)</span></div>
-            <div><span style="color:#D0D0D0;">agent.deploy()</span> <span style="color:#4CAF50;">✓</span></div>
-        </div>
-    </div>
-</td>
-</tr>
-
-<!-- CTA BUTTON -->
-<tr>
-<td style="padding:0 40px 32px;text-align:center;">
-    <table role="presentation" cellpadding="0" cellspacing="0" border="0" style="margin:0 auto;">
-    <tr>
-        <td style="background:linear-gradient(135deg,#E84142,#c0302f);border-radius:10px;padding:16px 48px;text-align:center;">
-            <a href="https://pyvax.app/agent" target="_blank" style="font-family:'Courier New',monospace;font-size:13px;font-weight:800;color:#FFFFFF;text-decoration:none;letter-spacing:2px;text-transform:uppercase;">
-                VIEW YOUR SPOT →
-            </a>
-        </td>
-    </tr>
-    </table>
-    <div style="font-family:'Courier New',monospace;font-size:10px;color:#444;margin-top:12px;">
-        Share with your developer friends — spots are limited
-    </div>
+    <div style="height:1px;background-color:rgba(255,255,255,0.05);"></div>
 </td>
 </tr>
 
 <!-- SHARE ON X -->
 <tr>
-<td style="padding:0 40px 32px;text-align:center;">
+<td style="padding:32px 40px 32px;text-align:center;">
     <table role="presentation" cellpadding="0" cellspacing="0" border="0" style="margin:0 auto;">
     <tr>
-        <td style="background-color:#111;border:1px solid #1F1F1F;border-radius:8px;padding:12px 32px;text-align:center;">
-            <a href="https://x.com/intent/tweet?text=${encodeURIComponent(`🔴 I just joined the @PyVax Agent waitlist\n\n🐍 The first autonomous on-chain agent powered ENTIRELY by Python is coming on @avax.\n\n⛓️ Deploy. Trade. Remember. Never sleep.\nZero Solidity. Full autonomy.\n\nJoin before it's gone 👇`)}&url=${encodeURIComponent('https://pyvax.app/agent')}&hashtags=${encodeURIComponent('PyVax,Web3,Python')}" target="_blank" style="font-family:'Courier New',monospace;font-size:11px;color:#999;text-decoration:none;letter-spacing:1px;">
+        <td style="background-color:#111;border:1px solid rgba(255,255,255,0.1);border-radius:8px;padding:12px 32px;text-align:center;">
+            <a href="https://x.com/intent/tweet?text=${encodeURIComponent(`🔴 I just unlocked classified access for the @PyVax #SynthesisHackathon\n\nBuilding an autonomous on-chain agent entirely in Python for $75K in prizes ⚡\n\nGet your code 👇`)}&url=${encodeURIComponent('https://classified.pyvax.xyz')}&hashtags=${encodeURIComponent('PyVax,ClassifiedHack,AgentEconomy')}" target="_blank" style="font-family:'Courier New',monospace;font-size:12px;color:#a09bb0;text-decoration:none;letter-spacing:1px;font-weight:bold;">
                 𝕏 SHARE ON TWITTER
             </a>
         </td>
@@ -269,32 +196,25 @@ function buildWelcomeEmail(email: string, position: number, spotsRemaining: numb
 </td>
 </tr>
 
-<!-- BOTTOM DIVIDER -->
-<tr>
-<td style="padding:0 40px;">
-    <div style="height:1px;background:linear-gradient(90deg,transparent,#1A1A1A,transparent);"></div>
-</td>
-</tr>
-
 <!-- FOOTER -->
 <tr>
-<td style="padding:32px 40px 40px;text-align:center;">
-    <div style="font-family:'Courier New',monospace;font-size:11px;color:#555;margin-bottom:8px;">
-        PYVAX — Smart contracts for the agent era
+<td style="padding:16px 40px 48px;text-align:center;">
+    <div style="font-family:'Courier New',monospace;font-size:11px;color:#FF1493;margin-bottom:8px;letter-spacing:1px;">
+        CLASSIFIED.PYVAX.XYZ
     </div>
-    <div style="font-family:'Segoe UI',Roboto,sans-serif;font-size:11px;color:#333;margin-bottom:16px;">
-        Built on Avalanche · 100% Python-native · Open Source
+    <div style="font-family:'Segoe UI',Roboto,sans-serif;font-size:11px;color:#666;margin-bottom:16px;">
+        Autonomous Python Agents on Avalanche
     </div>
     <div style="margin-bottom:16px;">
-        <a href="https://pyvax.app" style="font-family:'Courier New',monospace;font-size:10px;color:#555;text-decoration:none;margin:0 8px;">Website</a>
-        <span style="color:#222;">·</span>
-        <a href="https://x.com/PyVax" style="font-family:'Courier New',monospace;font-size:10px;color:#555;text-decoration:none;margin:0 8px;">Twitter</a>
-        <span style="color:#222;">·</span>
-        <a href="https://github.com/ShahiTechnovation/pyvax-rebrand" style="font-family:'Courier New',monospace;font-size:10px;color:#555;text-decoration:none;margin:0 8px;">GitHub</a>
+        <a href="https://pyvax.xyz" style="font-family:'Courier New',monospace;font-size:10px;color:#888;text-decoration:none;margin:0 8px;">Website</a>
+        <span style="color:#333;">·</span>
+        <a href="https://x.com/PyVax" style="font-family:'Courier New',monospace;font-size:10px;color:#888;text-decoration:none;margin:0 8px;">Twitter</a>
+        <span style="color:#333;">·</span>
+        <a href="https://discord.gg/pyvax" style="font-family:'Courier New',monospace;font-size:10px;color:#888;text-decoration:none;margin:0 8px;">Discord</a>
     </div>
-    <div style="font-family:'Segoe UI',Roboto,sans-serif;font-size:10px;color:#2A2A2A;line-height:1.6;">
-        You're receiving this because you signed up for PyVax Agent early access.<br>
-        © 2025 PyVax. All rights reserved.
+    <div style="font-family:'Segoe UI',Roboto,sans-serif;font-size:10px;color:#444;line-height:1.6;">
+        You're receiving this because you signed up for PyVax Agent access.<br>
+        © 2026 PyVax. All rights reserved.
     </div>
 </td>
 </tr>
@@ -381,6 +301,10 @@ export async function POST(request: NextRequest) {
         entries.push(newEntry);
         await writeWaitlist(entries);
 
+        // Generate and store classified code
+        const accessCode = crypto.randomUUID().split('-')[0].toUpperCase();
+        await kv.set(`classified:${accessCode}`, email, { ex: 30 * 24 * 3600 }); // 30 day TTL
+
         // Send welcome email via Resend
         if (resend) {
             try {
@@ -388,7 +312,7 @@ export async function POST(request: NextRequest) {
                     from: "PyVax <dev@pyvax.xyz>",
                     to: [email],
                     subject: `🔴 You're #${position} — Welcome to PyVax Agent Early Access`,
-                    html: buildWelcomeEmail(email, position, spotsRemaining),
+                    html: buildWelcomeEmail(email, position, spotsRemaining, accessCode),
                 });
             } catch (emailError: any) {
                 // Log but don't fail the signup if email sending fails

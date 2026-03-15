@@ -50,3 +50,9 @@ waitlist.json
 # ── Classified / internal (NEVER push to GitHub) ──────
 classified_agent/
 workspace/
+
+# ── PyPI package build artifacts ──────────────────────
+classified-agent-pkg/dist/
+classified-agent-pkg/build/
+classified-agent-pkg/*.egg-info/
+test-venv/
