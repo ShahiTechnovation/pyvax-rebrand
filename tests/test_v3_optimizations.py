@@ -132,9 +132,9 @@ class TestBasicTranspilation:
         result = transpile_python_contract(VAULT_SRC)
         assert len(result["abi"]) > 0
 
-    def test_version_is_0_3_0(self):
+    def test_version_is_1_0_0(self):
         result = transpile_python_contract(VAULT_SRC)
-        assert result["metadata"]["version"] == "0.3.0"
+        assert result["metadata"]["version"] == "1.0.0"
 
     def test_overflow_safe_enabled(self):
         result = transpile_python_contract(VAULT_SRC)
