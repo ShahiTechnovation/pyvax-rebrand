@@ -145,7 +145,6 @@ function buildWelcomeEmail(email: string, position: number, spotsRemaining: numb
     </tr>
     </table>
     
-    <!-- Step 2 -->
     <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="margin-bottom:20px;">
     <tr>
         <td style="width:40px;vertical-align:top;padding-top:2px;">
@@ -154,7 +153,7 @@ function buildWelcomeEmail(email: string, position: number, spotsRemaining: numb
         <td style="vertical-align:top;padding-left:16px;">
             <div style="font-family:'Segoe UI',Roboto,sans-serif;font-size:16px;font-weight:700;color:#F0F0F0;margin-bottom:4px;">Register on Unstop</div>
             <div style="font-family:'Segoe UI',Roboto,sans-serif;font-size:14px;color:#a09bb0;line-height:1.5;">Make sure your team is officially registered for the Synthesis Hackathon.</div>
-            <a href="https://unstop.com" style="display:inline-block;color:#FF1493;font-size:13px;font-weight:bold;text-decoration:none;margin-top:8px;">Register Here →</a>
+            <a href="https://unstop.com/o/nfj1CVW?lb=TUn3UTaD" style="display:inline-block;color:#FF1493;font-size:13px;font-weight:bold;text-decoration:none;margin-top:8px;">Register Here →</a>
         </td>
     </tr>
     </table>
