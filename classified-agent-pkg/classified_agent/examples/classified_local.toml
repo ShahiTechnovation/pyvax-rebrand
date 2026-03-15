@@ -1,0 +1,32 @@
+# ── Project Classified: Local Toy Task ─────────────────────────────
+# Use this example to test the agent with a simple local task.
+# Copy to classified.toml and edit as needed.
+
+[agent]
+name = "local-demo"
+description = "A minimal local agent for testing — no blockchain, no Synthesis"
+workspace_dir = "./workspace"
+max_steps = 10
+
+[llm]
+provider = "anthropic"
+model = "claude-sonnet-4-20250514"
+api_key_env = "ANTHROPIC_API_KEY"
+
+[wallet]
+backend = "mock"
+default_chain = "avalanche_fuji"
+rpc_url = "https://api.avax-test.network/ext/bc/C/rpc"
+
+[wallet.policy]
+max_native_per_tx = "0.0"
+max_native_per_day = "0.0"
+allowed_contracts = []
+allowed_methods = []
+
+[synthesis]
+enabled = false
+
+[logging]
+level = "DEBUG"
+log_dir = "./logs"

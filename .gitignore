@@ -48,7 +48,7 @@ pyvax_key.json
 waitlist.json
 
 # ── Classified / internal (NEVER push to GitHub) ──────
-classified_agent/
+/classified_agent/
 workspace/
 
 # ── PyPI package build artifacts ──────────────────────

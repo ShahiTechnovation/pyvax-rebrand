@@ -1,0 +1,2 @@
+[console_scripts]
+classified-agent = classified_agent.cli.main:main
