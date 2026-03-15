@@ -21,19 +21,6 @@ const Spline = dynamic(() => import('@splinetool/react-spline'), {
     ),
 })
 
-// ─── COUNTDOWN TARGET: 4 weeks from now (April 7, 2026) ─────────────────────
-const LAUNCH_DATE = new Date('2026-04-07T00:00:00Z')
-
-function getTimeLeft() {
-    const diff = Math.max(0, LAUNCH_DATE.getTime() - Date.now())
-    return {
-        days: Math.floor(diff / (1000 * 60 * 60 * 24)),
-        hours: Math.floor((diff / (1000 * 60 * 60)) % 24),
-        minutes: Math.floor((diff / (1000 * 60)) % 60),
-        seconds: Math.floor((diff / 1000) % 60),
-    }
-}
-
 // ─── TAGLINES for typewriter ─────────────────────────────────────────────────
 const TAGLINES = [
     'It deploys. It trades. It remembers. It never sleeps.',
@@ -122,45 +109,6 @@ const ICON_MAP: Record<string, React.ReactNode> = {
     shield: <Shield className="w-6 h-6" />,
     lock: <Lock className="w-6 h-6" />,
 }
-
-// ─── COUNTDOWN COMPONENT (isolated re-renders) ──────────────────────────────
-const CountdownTimer = memo(function CountdownTimer() {
-    const [timeLeft, setTimeLeft] = useState(getTimeLeft())
-    const [mounted, setMounted] = useState(false)
-
-    useEffect(() => {
-        setMounted(true)
-        const timer = setInterval(() => setTimeLeft(getTimeLeft()), 1000)
-        return () => clearInterval(timer)
-    }, [])
-
-    const pad = (n: number) => String(n).padStart(2, '0')
-
-    return (
-        <div className="flex items-center gap-3 md:gap-5 mb-10">
-            {[
-                { value: mounted ? pad(timeLeft.days) : '--', label: 'DAYS' },
-                { value: mounted ? pad(timeLeft.hours) : '--', label: 'HOURS' },
-                { value: mounted ? pad(timeLeft.minutes) : '--', label: 'MINS' },
-                { value: mounted ? pad(timeLeft.seconds) : '--', label: 'SECS' },
-            ].map((unit, i) => (
-                <React.Fragment key={unit.label}>
-                    {i > 0 && (
-                        <span className="font-[family-name:var(--font-press-start)] text-[24px] md:text-[36px] text-[#E84142] animate-cursor-blink -mt-6">:</span>
-                    )}
-                    <div className="flex flex-col items-center">
-                        <div className="bg-[#111111] border border-[#1F1F1F] rounded-lg w-[70px] h-[80px] md:w-[100px] md:h-[110px] flex items-center justify-center shadow-[0_0_20px_rgba(232,65,66,0.08)] hover:shadow-[0_0_30px_rgba(232,65,66,0.15)] transition-shadow duration-500">
-                            <span className="font-[family-name:var(--font-press-start)] text-[22px] md:text-[36px] text-[#F2F2F2] tabular-nums">
-                                {unit.value}
-                            </span>
-                        </div>
-                        <span className="font-[family-name:var(--font-dm-mono)] text-[9px] md:text-[10px] text-[#555] mt-2 tracking-wider">{unit.label}</span>
-                    </div>
-                </React.Fragment>
-            ))}
-        </div>
-    )
-})
 
 // ─── MARQUEE COMPONENT (isolated, no re-renders from parent) ─────────────────
 const MarqueeBelt = memo(function MarqueeBelt() {
@@ -340,7 +288,7 @@ export default function AgentPage() {
                     >
                         <div className="inline-flex items-center gap-2 border border-[#E84142]/40 bg-[#E84142]/5 px-4 py-1.5 rounded-full">
                             <Lock className="w-3 h-3 text-[#E84142]" />
-                            <span className="font-[family-name:var(--font-dm-mono)] text-[10px] text-[#E84142] uppercase tracking-[0.2em] font-bold">PROJECT CLASSIFIED · COMING SOON</span>
+                            <span className="font-[family-name:var(--font-dm-mono)] text-[10px] text-[#E84142] uppercase tracking-[0.2em] font-bold">PROJECT CLASSIFIED · EARLY ACCESS</span>
                         </div>
                     </motion.div>
 
@@ -352,7 +300,7 @@ export default function AgentPage() {
                         className="font-[family-name:var(--font-press-start)] text-[24px] md:text-[40px] lg:text-[56px] leading-[1.3] mb-6"
                     >
                         <span className="block text-[#FFFFFF]">YOUR AGENT</span>
-                        <span className="block text-[#E84142] drop-shadow-[0_0_30px_rgba(232,65,66,0.5)]">IS COMING.</span>
+                        <span className="block text-[#E84142] drop-shadow-[0_0_30px_rgba(232,65,66,0.5)]">IS READY FOR EARLY ACCESS.</span>
                     </motion.h1>
 
                     {/* Cycling Tagline */}
@@ -383,213 +331,6 @@ export default function AgentPage() {
                     </motion.div>
                 </div>
             </section>
-
-            {/* ═══════════════════════════════════════════════════════════════════
-          SECTION 2: THE COUNTDOWN
-      ═══════════════════════════════════════════════════════════════════ */}
-            <section className="relative bg-[#080808] border-y border-[#1A1A1A] py-20 md:py-28 px-4">
-                {/* Ambient glow */}
-                <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[500px] h-[300px] bg-[radial-gradient(ellipse,rgba(232,65,66,0.08)_0%,transparent_70%)] pointer-events-none" />
-
-                <div className="max-w-4xl mx-auto flex flex-col items-center text-center relative z-10">
-                    {/* Section label */}
-                    <div className="font-[family-name:var(--font-dm-mono)] text-[10px] text-[#E84142] uppercase tracking-[0.12em] mb-3">⚡ LAUNCHING IN</div>
-                    <div className="w-[32px] h-px bg-[#E84142] mb-10" />
-
-                    {/* Isolated Countdown (re-renders only itself every second) */}
-                    <CountdownTimer />
-
-                    {/* CTA Button */}
-                    <button className="group relative bg-[#E84142] hover:bg-[#FF5555] text-white font-[family-name:var(--font-dm-mono)] text-[12px] font-bold px-8 py-4 rounded-lg transition-all duration-300 shadow-[0_0_20px_rgba(232,65,66,0.3)] hover:shadow-[0_0_40px_rgba(232,65,66,0.5)] transform hover:scale-[1.02] active:scale-95 mb-6">
-                        <span className="flex items-center gap-2">
-                            🔔 NOTIFY ME AT LAUNCH
-                            <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
-                        </span>
-                    </button>
-
-                    <p className="font-[family-name:var(--font-dm-mono)] text-[11px] text-[#555]">
-                        Limited early access for the first <span className="text-[#E84142] font-bold">1,000</span> developers
-                    </p>
-                </div>
-            </section>
-
-            {/* ═══════════════════════════════════════════════════════════════════
-          SECTION 3: WHAT IT DOES (Capabilities Grid)
-      ═══════════════════════════════════════════════════════════════════ */}
-            <section className="bg-[#0E0E0E] py-20 md:py-28 px-4">
-                <div className="max-w-7xl mx-auto">
-                    {/* Section header */}
-                    <div className="flex flex-col items-center text-center mb-16">
-                        <div className="font-[family-name:var(--font-dm-mono)] text-[10px] text-[#E84142] uppercase tracking-[0.12em]">01 · CAPABILITIES</div>
-                        <div className="w-[32px] h-px bg-[#E84142] my-3" />
-                        <h2 className="font-[family-name:var(--font-syne)] font-bold text-[32px] md:text-[42px] text-[#F2F2F2] leading-[1.1] mb-4">
-                            What Your Agent Can Do
-                        </h2>
-                        <p className="font-[family-name:var(--font-ibm-plex)] text-[15px] text-[#909090] leading-relaxed max-w-lg">
-                            A glimpse of what&apos;s coming. Some capabilities remain classified until launch.
-                        </p>
-                    </div>
-
-                    {/* Capabilities Grid */}
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5 mb-12">
-                        {CAPABILITY_CARDS.map((card, i) => (
-                            <motion.div
-                                key={i}
-                                initial={{ opacity: 0, y: 30 }}
-                                whileInView={{ opacity: 1, y: 0 }}
-                                viewport={{ once: true, margin: '-50px' }}
-                                transition={{ delay: i * 0.1, duration: 0.5 }}
-                                className={`relative bg-[#131313] border rounded-lg p-7 transition-all duration-300 ${card.revealed
-                                    ? 'border-[#1F1F1F] hover:border-[rgba(232,65,66,0.28)] hover:bg-[#181818] hover:shadow-[0_0_28px_rgba(232,65,66,0.07)]'
-                                    : 'border-[#1A1A1A] opacity-60 hover:opacity-80'
-                                    }`}
-                            >
-                                {!card.revealed && (
-                                    <div className="absolute top-3 right-3">
-                                        <Lock className="w-3.5 h-3.5 text-[#333]" />
-                                    </div>
-                                )}
-                                <div className={`mb-4 ${card.revealed ? 'text-[#E84142]' : 'text-[#333]'}`}>
-                                    {ICON_MAP[card.icon]}
-                                </div>
-                                <h3 className={`font-[family-name:var(--font-syne)] font-semibold text-[18px] mb-2 ${card.revealed ? 'text-[#F0F0F0]' : 'text-[#333] redacted-block'
-                                    }`}>
-                                    {card.title}
-                                </h3>
-                                <p className={`font-[family-name:var(--font-ibm-plex)] text-[14px] leading-relaxed mb-6 min-h-[84px] ${card.revealed ? 'text-[#909090]' : 'text-[#222] redacted-block'
-                                    }`}>
-                                    {card.body}
-                                </p>
-                                <span className={`font-[family-name:var(--font-dm-mono)] text-[10px] tracking-wide px-2 py-1 rounded ${card.revealed
-                                    ? 'bg-[rgba(232,65,66,0.10)] border border-[rgba(232,65,66,0.25)] text-[#E84142]'
-                                    : 'bg-[#1A1A1A] border border-[#222] text-[#444]'
-                                    }`}>
-                                    {card.tag}
-                                </span>
-                            </motion.div>
-                        ))}
-                    </div>
-
-                    {/* Agent Terminal */}
-                    <div ref={terminalRef} className="bg-[#080808] border border-[#1C1C1C] rounded-lg p-6 md:p-8 overflow-hidden">
-                        <div className="font-[family-name:var(--font-dm-mono)] text-[11px] text-[#E84142] mb-6 flex items-center gap-2">
-                            <span className="animate-cursor-blink">●</span> AGENT RUNTIME — PREVIEW
-                            <span className="ml-auto text-[#333] text-[9px]">v0.1.0-alpha</span>
-                        </div>
-                        <div className="font-[family-name:var(--font-dm-mono)] text-[12px] md:text-[13px] leading-[2] whitespace-nowrap overflow-x-auto pb-2 space-y-0">
-                            {TERMINAL_LINES.map((line, i) => (
-                                <div
-                                    key={i}
-                                    className={`transition-all duration-500 ${i < visibleLines ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-2'}`}
-                                >
-                                    <span className="text-[#6B8CAE]">{line.addr}</span>
-                                    <span className="text-[#333] mx-2">→</span>
-                                    <span className="text-[#888]">{line.action}</span>
-                                    {line.target && <span className="text-[#E84142]">{line.target}</span>}
-                                    <span className="text-[#4CAF50] ml-3">{line.status}</span>
-                                    <span className="text-[#555] ml-2">{line.time}</span>
-                                </div>
-                            ))}
-                        </div>
-                    </div>
-                </div>
-            </section>
-
-            {/* ═══════════════════════════════════════════════════════════════════
-          SECTION 4: PYTHON-NATIVE
-      ═══════════════════════════════════════════════════════════════════ */}
-            <section className="bg-[#0A0A0A] border-t border-[#1A1A1A] py-20 md:py-28 px-4">
-                <div className="max-w-7xl mx-auto">
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-12 md:gap-16 items-center">
-                        {/* Left — Code Preview */}
-                        <motion.div
-                            initial={{ opacity: 0, x: -30 }}
-                            whileInView={{ opacity: 1, x: 0 }}
-                            viewport={{ once: true }}
-                            transition={{ duration: 0.6 }}
-                        >
-                            <div className="bg-[#090909] border border-[#1F1F1F] rounded-lg overflow-hidden">
-                                {/* Window chrome */}
-                                <div className="flex items-center px-4 py-3 border-b border-[#1A1A1A] bg-[#0D0D0D]">
-                                    <div className="flex gap-1.5">
-                                        <div className="w-2.5 h-2.5 rounded-full bg-[#E84142]" />
-                                        <div className="w-2.5 h-2.5 rounded-full bg-[#333]" />
-                                        <div className="w-2.5 h-2.5 rounded-full bg-[#333]" />
-                                    </div>
-                                    <div className="font-[family-name:var(--font-dm-mono)] text-[11px] text-[#555] ml-auto">agent.py</div>
-                                </div>
-
-                                {/* Code content */}
-                                <div className="p-6 font-[family-name:var(--font-dm-mono)] text-[13px] leading-[1.8]">
-                                    <div><span className="text-[#E84142]">from</span> <span className="text-[#D0D0D0]">pyvax.agent</span> <span className="text-[#E84142]">import</span> <span className="text-[#D0D0D0]">Agent</span></div>
-                                    <div><span className="text-[#E84142]">from</span> <span className="text-[#D0D0D0]">pyvax</span> <span className="text-[#E84142]">import</span> <span className="text-[#D0D0D0]">network</span></div>
-                                    <br />
-                                    <div className="text-[#444]"># Initialize your autonomous agent</div>
-                                    <div><span className="text-[#D0D0D0]">agent = Agent(</span><span className="text-[#7EC8A4]">&quot;alpha-1&quot;</span><span className="text-[#D0D0D0]">)</span></div>
-                                    <div><span className="text-[#D0D0D0]">agent.connect(network.AVALAN</span><span className="redacted-block px-6 py-0.5 mx-1 text-[10px]">&nbsp;</span><span className="text-[#D0D0D0]">)</span></div>
-                                    <br />
-                                    <div className="text-[#444]"># Configure strategy</div>
-                                    <div><span className="text-[#D0D0D0]">agent.</span><span className="redacted-block px-20 py-0.5 mx-1 text-[10px]">&nbsp;</span></div>
-                                    <div><span className="text-[#D0D0D0]">agent.</span><span className="redacted-block px-24 py-0.5 mx-1 text-[10px]">&nbsp;</span></div>
-                                    <br />
-                                    <div className="text-[#444]"># Deploy and forget</div>
-                                    <div><span className="text-[#D0D0D0]">agent.</span><span className="redacted-block px-14 py-0.5 mx-1 text-[10px]">&nbsp;</span><span className="text-[#D0D0D0]">()</span></div>
-                                    <div><span className="redacted-block px-32 py-0.5 text-[10px]">&nbsp;</span></div>
-
-                                    <div className="flex items-center gap-2 mt-6 pt-4 border-t border-[#1A1A1A] text-[11px] text-[#555]">
-                                        <span className="text-[#4CAF50] text-[10px]">●</span>
-                                        Agent deployed · <span className="text-[#E84142]">0 lines of Solidity</span>
-                                    </div>
-                                </div>
-                            </div>
-                        </motion.div>
-
-                        {/* Right — Text + Stats */}
-                        <motion.div
-                            initial={{ opacity: 0, x: 30 }}
-                            whileInView={{ opacity: 1, x: 0 }}
-                            viewport={{ once: true }}
-                            transition={{ duration: 0.6, delay: 0.2 }}
-                            className="space-y-8"
-                        >
-                            <div>
-                                <div className="font-[family-name:var(--font-dm-mono)] text-[10px] text-[#E84142] uppercase tracking-[0.12em]">02 · LANGUAGE</div>
-                                <div className="w-[32px] h-px bg-[#E84142] my-3" />
-                                <h2 className="font-[family-name:var(--font-syne)] font-bold text-[32px] md:text-[42px] text-[#F2F2F2] leading-[1.1] mb-4">
-                                    One Language.<br />Full Autonomy.
-                                </h2>
-                                <p className="font-[family-name:var(--font-ibm-plex)] text-[15px] text-[#909090] leading-relaxed max-w-md">
-                                    Your agent speaks Python — the world&apos;s most popular programming language. No Solidity. No JavaScript. No compromises.
-                                </p>
-                            </div>
-
-                            {/* Stats */}
-                            <div className="grid grid-cols-2 gap-4">
-                                {[
-                                    { value: '0', label: 'Lines of Solidity', color: '#E84142' },
-                                    { value: '100%', label: 'Python-Native', color: '#4CAF50' },
-                                    { value: '<1s', label: 'Finality', color: '#F2F2F2' },
-                                    { value: '∞', label: 'Agents Per Wallet', color: '#E84142' },
-                                ].map((stat, i) => (
-                                    <div key={i} className="bg-[#131313] border border-[#1F1F1F] rounded-lg p-5 hover:border-[rgba(232,65,66,0.2)] transition-colors">
-                                        <div className="font-[family-name:var(--font-press-start)] text-[20px] md:text-[24px] mb-1" style={{ color: stat.color }}>
-                                            {stat.value}
-                                        </div>
-                                        <div className="font-[family-name:var(--font-dm-mono)] text-[10px] text-[#555] tracking-wider uppercase">
-                                            {stat.label}
-                                        </div>
-                                    </div>
-                                ))}
-                            </div>
-                        </motion.div>
-                    </div>
-                </div>
-            </section>
-
-            {/* ═══════════════════════════════════════════════════════════════════
-          SECTION 5: THE HYPE BELT (Infinite Marquee)
-      ═══════════════════════════════════════════════════════════════════ */}
-            <MarqueeBelt />
 
             {/* ═══════════════════════════════════════════════════════════════════
           SECTION 6: EARLY ACCESS CTA
@@ -834,6 +575,184 @@ export default function AgentPage() {
                     </motion.div>
                 </div>
             </section>
+
+            {/* ═══════════════════════════════════════════════════════════════════
+          SECTION 3: WHAT IT DOES (Capabilities Grid)
+      ═══════════════════════════════════════════════════════════════════ */}
+            <section className="bg-[#0E0E0E] py-20 md:py-28 px-4">
+                <div className="max-w-7xl mx-auto">
+                    {/* Section header */}
+                    <div className="flex flex-col items-center text-center mb-16">
+                        <div className="font-[family-name:var(--font-dm-mono)] text-[10px] text-[#E84142] uppercase tracking-[0.12em]">01 · CAPABILITIES</div>
+                        <div className="w-[32px] h-px bg-[#E84142] my-3" />
+                        <h2 className="font-[family-name:var(--font-syne)] font-bold text-[32px] md:text-[42px] text-[#F2F2F2] leading-[1.1] mb-4">
+                            What Your Agent Can Do
+                        </h2>
+                        <p className="font-[family-name:var(--font-ibm-plex)] text-[15px] text-[#909090] leading-relaxed max-w-lg">
+                            A glimpse of what&apos;s coming. Some capabilities remain classified until launch.
+                        </p>
+                    </div>
+
+                    {/* Capabilities Grid */}
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5 mb-12">
+                        {CAPABILITY_CARDS.map((card, i) => (
+                            <motion.div
+                                key={i}
+                                initial={{ opacity: 0, y: 30 }}
+                                whileInView={{ opacity: 1, y: 0 }}
+                                viewport={{ once: true, margin: '-50px' }}
+                                transition={{ delay: i * 0.1, duration: 0.5 }}
+                                className={`relative bg-[#131313] border rounded-lg p-7 transition-all duration-300 ${card.revealed
+                                    ? 'border-[#1F1F1F] hover:border-[rgba(232,65,66,0.28)] hover:bg-[#181818] hover:shadow-[0_0_28px_rgba(232,65,66,0.07)]'
+                                    : 'border-[#1A1A1A] opacity-60 hover:opacity-80'
+                                    }`}
+                            >
+                                {!card.revealed && (
+                                    <div className="absolute top-3 right-3">
+                                        <Lock className="w-3.5 h-3.5 text-[#333]" />
+                                    </div>
+                                )}
+                                <div className={`mb-4 ${card.revealed ? 'text-[#E84142]' : 'text-[#333]'}`}>
+                                    {ICON_MAP[card.icon]}
+                                </div>
+                                <h3 className={`font-[family-name:var(--font-syne)] font-semibold text-[18px] mb-2 ${card.revealed ? 'text-[#F0F0F0]' : 'text-[#333] redacted-block'
+                                    }`}>
+                                    {card.title}
+                                </h3>
+                                <p className={`font-[family-name:var(--font-ibm-plex)] text-[14px] leading-relaxed mb-6 min-h-[84px] ${card.revealed ? 'text-[#909090]' : 'text-[#222] redacted-block'
+                                    }`}>
+                                    {card.body}
+                                </p>
+                                <span className={`font-[family-name:var(--font-dm-mono)] text-[10px] tracking-wide px-2 py-1 rounded ${card.revealed
+                                    ? 'bg-[rgba(232,65,66,0.10)] border border-[rgba(232,65,66,0.25)] text-[#E84142]'
+                                    : 'bg-[#1A1A1A] border border-[#222] text-[#444]'
+                                    }`}>
+                                    {card.tag}
+                                </span>
+                            </motion.div>
+                        ))}
+                    </div>
+
+                    {/* Agent Terminal */}
+                    <div ref={terminalRef} className="bg-[#080808] border border-[#1C1C1C] rounded-lg p-6 md:p-8 overflow-hidden">
+                        <div className="font-[family-name:var(--font-dm-mono)] text-[11px] text-[#E84142] mb-6 flex items-center gap-2">
+                            <span className="animate-cursor-blink">●</span> AGENT RUNTIME — PREVIEW
+                            <span className="ml-auto text-[#333] text-[9px]">v0.1.0-alpha</span>
+                        </div>
+                        <div className="font-[family-name:var(--font-dm-mono)] text-[12px] md:text-[13px] leading-[2] whitespace-nowrap overflow-x-auto pb-2 space-y-0">
+                            {TERMINAL_LINES.map((line, i) => (
+                                <div
+                                    key={i}
+                                    className={`transition-all duration-500 ${i < visibleLines ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-2'}`}
+                                >
+                                    <span className="text-[#6B8CAE]">{line.addr}</span>
+                                    <span className="text-[#333] mx-2">→</span>
+                                    <span className="text-[#888]">{line.action}</span>
+                                    {line.target && <span className="text-[#E84142]">{line.target}</span>}
+                                    <span className="text-[#4CAF50] ml-3">{line.status}</span>
+                                    <span className="text-[#555] ml-2">{line.time}</span>
+                                </div>
+                            ))}
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            {/* ═══════════════════════════════════════════════════════════════════
+          SECTION 4: PYTHON-NATIVE
+      ═══════════════════════════════════════════════════════════════════ */}
+            <section className="bg-[#0A0A0A] border-t border-[#1A1A1A] py-20 md:py-28 px-4">
+                <div className="max-w-7xl mx-auto">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-12 md:gap-16 items-center">
+                        {/* Left — Code Preview */}
+                        <motion.div
+                            initial={{ opacity: 0, x: -30 }}
+                            whileInView={{ opacity: 1, x: 0 }}
+                            viewport={{ once: true }}
+                            transition={{ duration: 0.6 }}
+                        >
+                            <div className="bg-[#090909] border border-[#1F1F1F] rounded-lg overflow-hidden">
+                                {/* Window chrome */}
+                                <div className="flex items-center px-4 py-3 border-b border-[#1A1A1A] bg-[#0D0D0D]">
+                                    <div className="flex gap-1.5">
+                                        <div className="w-2.5 h-2.5 rounded-full bg-[#E84142]" />
+                                        <div className="w-2.5 h-2.5 rounded-full bg-[#333]" />
+                                        <div className="w-2.5 h-2.5 rounded-full bg-[#333]" />
+                                    </div>
+                                    <div className="font-[family-name:var(--font-dm-mono)] text-[11px] text-[#555] ml-auto">agent.py</div>
+                                </div>
+
+                                {/* Code content */}
+                                <div className="p-6 font-[family-name:var(--font-dm-mono)] text-[13px] leading-[1.8]">
+                                    <div><span className="text-[#E84142]">from</span> <span className="text-[#D0D0D0]">pyvax.agent</span> <span className="text-[#E84142]">import</span> <span className="text-[#D0D0D0]">Agent</span></div>
+                                    <div><span className="text-[#E84142]">from</span> <span className="text-[#D0D0D0]">pyvax</span> <span className="text-[#E84142]">import</span> <span className="text-[#D0D0D0]">network</span></div>
+                                    <br />
+                                    <div className="text-[#444]"># Initialize your autonomous agent</div>
+                                    <div><span className="text-[#D0D0D0]">agent = Agent(</span><span className="text-[#7EC8A4]">&quot;alpha-1&quot;</span><span className="text-[#D0D0D0]">)</span></div>
+                                    <div><span className="text-[#D0D0D0]">agent.connect(network.AVALAN</span><span className="redacted-block px-6 py-0.5 mx-1 text-[10px]">&nbsp;</span><span className="text-[#D0D0D0]">)</span></div>
+                                    <br />
+                                    <div className="text-[#444]"># Configure strategy</div>
+                                    <div><span className="text-[#D0D0D0]">agent.</span><span className="redacted-block px-20 py-0.5 mx-1 text-[10px]">&nbsp;</span></div>
+                                    <div><span className="text-[#D0D0D0]">agent.</span><span className="redacted-block px-24 py-0.5 mx-1 text-[10px]">&nbsp;</span></div>
+                                    <br />
+                                    <div className="text-[#444]"># Deploy and forget</div>
+                                    <div><span className="text-[#D0D0D0]">agent.</span><span className="redacted-block px-14 py-0.5 mx-1 text-[10px]">&nbsp;</span><span className="text-[#D0D0D0]">()</span></div>
+                                    <div><span className="redacted-block px-32 py-0.5 text-[10px]">&nbsp;</span></div>
+
+                                    <div className="flex items-center gap-2 mt-6 pt-4 border-t border-[#1A1A1A] text-[11px] text-[#555]">
+                                        <span className="text-[#4CAF50] text-[10px]">●</span>
+                                        Agent deployed · <span className="text-[#E84142]">0 lines of Solidity</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </motion.div>
+
+                        {/* Right — Text + Stats */}
+                        <motion.div
+                            initial={{ opacity: 0, x: 30 }}
+                            whileInView={{ opacity: 1, x: 0 }}
+                            viewport={{ once: true }}
+                            transition={{ duration: 0.6, delay: 0.2 }}
+                            className="space-y-8"
+                        >
+                            <div>
+                                <div className="font-[family-name:var(--font-dm-mono)] text-[10px] text-[#E84142] uppercase tracking-[0.12em]">02 · LANGUAGE</div>
+                                <div className="w-[32px] h-px bg-[#E84142] my-3" />
+                                <h2 className="font-[family-name:var(--font-syne)] font-bold text-[32px] md:text-[42px] text-[#F2F2F2] leading-[1.1] mb-4">
+                                    One Language.<br />Full Autonomy.
+                                </h2>
+                                <p className="font-[family-name:var(--font-ibm-plex)] text-[15px] text-[#909090] leading-relaxed max-w-md">
+                                    Your agent speaks Python — the world&apos;s most popular programming language. No Solidity. No JavaScript. No compromises.
+                                </p>
+                            </div>
+
+                            {/* Stats */}
+                            <div className="grid grid-cols-2 gap-4">
+                                {[
+                                    { value: '0', label: 'Lines of Solidity', color: '#E84142' },
+                                    { value: '100%', label: 'Python-Native', color: '#4CAF50' },
+                                    { value: '<1s', label: 'Finality', color: '#F2F2F2' },
+                                    { value: '∞', label: 'Agents Per Wallet', color: '#E84142' },
+                                ].map((stat, i) => (
+                                    <div key={i} className="bg-[#131313] border border-[#1F1F1F] rounded-lg p-5 hover:border-[rgba(232,65,66,0.2)] transition-colors">
+                                        <div className="font-[family-name:var(--font-press-start)] text-[20px] md:text-[24px] mb-1" style={{ color: stat.color }}>
+                                            {stat.value}
+                                        </div>
+                                        <div className="font-[family-name:var(--font-dm-mono)] text-[10px] text-[#555] tracking-wider uppercase">
+                                            {stat.label}
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                        </motion.div>
+                    </div>
+                </div>
+            </section>
+
+            {/* ═══════════════════════════════════════════════════════════════════
+          SECTION 5: THE HYPE BELT (Infinite Marquee)
+      ═══════════════════════════════════════════════════════════════════ */}
+            <MarqueeBelt />
 
             {/* ═══════════════════════════════════════════════════════════════════
           FOOTER
