@@ -23,11 +23,18 @@ setup(
         "cryptography>=41.0.0",
         "eth-account>=0.10.0",
         "requests>=2.28.0",
+        # Project Classified deps
+        "pydantic>=2.0.0",
+        'tomli>=2.0.0;python_version<"3.11"',
+        "tomli-w>=1.0.0",
+        "anthropic>=0.30.0",
+        "httpx>=0.25.0",
     ],
     extras_require={
         "dev": [
             "pytest>=7.0.0",
             "pytest-cov>=4.0.0",
+            "pytest-asyncio>=0.23.0",
             "black>=23.0.0",
             "ruff>=0.1.0",
         ],
@@ -35,6 +42,7 @@ setup(
     entry_points={
         "console_scripts": [
             "pyvax=avax_cli.cli:main",
+            "classified-agent=classified_agent.cli.main:main",
         ],
     },
     classifiers=[

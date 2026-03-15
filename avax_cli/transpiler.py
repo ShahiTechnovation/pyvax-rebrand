@@ -1667,6 +1667,74 @@ def generate_abi(state: ContractState) -> List[Dict[str, Any]]:
 # Top-level transpile entry point
 # ─────────────────────────────────────────────────────────
 
+def _validate_ast_sandbox(source_code: str) -> None:
+    """Validate that source code doesn't contain dangerous patterns.
+
+    Defense-in-depth: the transpiler only uses ast.parse() (no eval/exec),
+    but we reject clearly malicious patterns before they enter the pipeline.
+
+    Raises:
+        ValueError: If dangerous imports or builtins are found.
+    """
+    # Blocked module imports
+    BLOCKED_MODULES = frozenset({
+        "os", "sys", "subprocess", "shutil", "socket", "signal",
+        "ctypes", "multiprocessing", "threading", "importlib",
+        "pathlib", "io", "tempfile", "glob", "fnmatch",
+        "pickle", "shelve", "marshal", "code", "codeop",
+        "pty", "pipes", "resource", "syslog",
+    })
+    # Blocked builtin function names
+    BLOCKED_BUILTINS = frozenset({
+        "eval", "exec", "compile", "__import__",
+        "globals", "locals", "getattr", "setattr", "delattr",
+        "open", "breakpoint", "exit", "quit",
+    })
+    # Allowed import prefixes
+    ALLOWED_IMPORT_PREFIXES = ("pyvax",)
+
+    tree = ast.parse(source_code)
+
+    for node in ast.walk(tree):
+        # Check import statements
+        if isinstance(node, ast.Import):
+            for alias in node.names:
+                module = alias.name.split(".")[0]
+                if module in BLOCKED_MODULES:
+                    raise ValueError(
+                        f"Blocked import: '{alias.name}' — "
+                        f"smart contracts cannot import '{module}'"
+                    )
+        elif isinstance(node, ast.ImportFrom):
+            if node.module:
+                module = node.module.split(".")[0]
+                if module in BLOCKED_MODULES:
+                    raise ValueError(
+                        f"Blocked import: 'from {node.module} import ...' — "
+                        f"smart contracts cannot import '{module}'"
+                    )
+
+        # Check function calls for blocked builtins
+        elif isinstance(node, ast.Call):
+            func_name = None
+            if isinstance(node.func, ast.Name):
+                func_name = node.func.id
+            elif isinstance(node.func, ast.Attribute):
+                func_name = node.func.attr
+            if func_name and func_name in BLOCKED_BUILTINS:
+                raise ValueError(
+                    f"Blocked builtin: '{func_name}()' — "
+                    f"smart contracts cannot use '{func_name}'"
+                )
+
+        # Check Name nodes for __import__
+        elif isinstance(node, ast.Name):
+            if node.id == "__import__":
+                raise ValueError(
+                    "Blocked: '__import__' — smart contracts cannot use dynamic imports"
+                )
+
+
 def transpile_python_contract(
     source_code: str,
     overflow_safe: bool = True,
@@ -1683,6 +1751,9 @@ def transpile_python_contract(
     Returns:
         dict with keys: bytecode (hex str), abi (list), metadata (dict)
     """
+    # ── AST sandbox validation (defense-in-depth) ─────────────────
+    _validate_ast_sandbox(source_code)
+
     console.print("[bold cyan]Starting PyVax transpilation...[/bold cyan]")
 
     analyzer = PythonASTAnalyzer()

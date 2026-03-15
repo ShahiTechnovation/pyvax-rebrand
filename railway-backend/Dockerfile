@@ -1,13 +1,18 @@
-FROM python:3.9-slim
+FROM python:3.13-slim
 
 WORKDIR /app
 
-# Install Python dependencies
-COPY railway-backend/requirements.txt .
-RUN pip install --no-cache-dir -r requirements.txt
-
-# Copy the canonical avax_cli package (single source of truth)
+# Copy project files for package install
+COPY pyproject.toml setup.py README.md ./
 COPY avax_cli/ ./avax_cli/
+
+# Install the full pyvax-cli package with verify extras
+RUN pip install --no-cache-dir --upgrade pip && \
+    pip install --no-cache-dir -e ".[verify]"
+
+# Install FastAPI server dependencies
+COPY railway-backend/requirements.txt ./railway-requirements.txt
+RUN pip install --no-cache-dir -r railway-requirements.txt
 
 # Copy the FastAPI server
 COPY railway-backend/main.py .

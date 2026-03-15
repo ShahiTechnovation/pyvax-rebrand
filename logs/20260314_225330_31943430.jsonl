@@ -1,0 +1,2 @@
+{"ts": "2026-03-14T22:53:30.518204+00:00", "level": "INFO", "logger": "classified", "msg": "Logger initialised \u2014 run_id=20260314_225330_31943430  log_file=P:\\pyvax-rebrand\\logs\\20260314_225330_31943430.jsonl"}
+{"ts": "2026-03-14T22:53:30.523289+00:00", "level": "INFO", "logger": "classified", "msg": "Agent 'classified-001' starting (dry_run=True)"}

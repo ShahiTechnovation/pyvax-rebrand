@@ -38,6 +38,7 @@ from io import StringIO
 from contextlib import redirect_stdout, redirect_stderr
 from .transpiler import transpile_python_contract
 from .templates import TEMPLATES
+from .transformer import python_to_verified_solidity
 
 
 # ─── Command Parser ──────────────────────────────────────────────────────────
@@ -275,6 +276,7 @@ def execute_help():
             "  pyvax compile [contract]     Transpile Python → EVM bytecode\n"
             "  pyvax test [contract]        Run compilation tests\n"
             "  pyvax deploy <name>          Deploy to Avalanche (dry-run)\n"
+            "  pyvax transform <file>        Transform Python → Solidity source\n"
             "  pyvax version                Show version info\n"
             "  pyvax templates              List available templates\n\n"
             "Options:\n"
@@ -313,6 +315,110 @@ def execute_unknown(command):
             "Run 'pyvax help' for more information.\n"
         ),
     }
+
+
+
+def execute_transform(source_code, contract_name="Contract"):
+    """Transform Python source to verified Solidity source code + Snowtrace payload."""
+    stdout_capture = StringIO()
+    stderr_capture = StringIO()
+
+    try:
+        with redirect_stdout(stdout_capture), redirect_stderr(stderr_capture):
+            result = python_to_verified_solidity(
+                source_code,
+                contract_name=contract_name if contract_name != "Contract" else None,
+            )
+
+        sol_source = result["solidity"]
+        sol_lines = len(sol_source.strip().split("\n"))
+
+        # Generate Snowtrace-compatible verification payload
+        from .snowtrace import generate_snowtrace_payload
+
+        snowtrace_payload = generate_snowtrace_payload(
+            source=sol_source,
+            contract_name=result["contract_name"],
+            compiler_version="v0.8.24+commit.e11b9ed9",
+            optimization_runs=result["optimization_runs"],
+            evm_version=result["evm_version"],
+        )
+
+        transform_stdout = (
+            f"Transforming: {result['contract_name']}.py → Solidity\n"
+            f"✓ {result['contract_name']}: {sol_lines} lines, "
+            f"{len(sol_source)} chars\n\n"
+            f"Transformation Results:\n"
+            f"  Contract:     {result['contract_name']}\n"
+            f"  Status:       OK\n"
+            f"  Solidity:     {sol_lines} lines\n"
+            f"  ABI entries:  {len(result['abi'])}\n"
+            f"  Compiler:     solc {result['compiler_version']}\n"
+            f"  Optimizer:    {result['optimization_runs']} runs\n"
+            f"  EVM version:  {result['evm_version']}\n\n"
+            f"Verified Solidity generated successfully!\n"
+            f"Snowtrace payload ready — deploy then POST /api/verify\n"
+        )
+
+        return {
+            "success": True,
+            "command": "transform",
+            "contract": result["contract_name"],
+            "solidity": sol_source,
+            "abi": result["abi"],
+            "contract_name": result["contract_name"],
+            "compiler_version": result["compiler_version"],
+            "optimization_runs": result["optimization_runs"],
+            "evm_version": result["evm_version"],
+            "snowtrace_payload": snowtrace_payload,
+            "deploy_ready": True,
+            "stdout": transform_stdout,
+            "stderr": stderr_capture.getvalue(),
+        }
+
+    except Exception as e:
+        return {
+            "success": False,
+            "command": "transform",
+            "contract": contract_name,
+            "error": str(e),
+            "traceback": traceback.format_exc(),
+            "stdout": stdout_capture.getvalue(),
+            "stderr": stderr_capture.getvalue(),
+        }
+
+
+def execute_verify(address, payload, chain="fuji"):
+    """Submit a Snowtrace verification payload for a deployed contract."""
+    from .snowtrace import snowtrace_verify
+
+    try:
+        result = snowtrace_verify(
+            address=address,
+            payload=payload,
+            chain=chain,
+        )
+        success = result.get("status") == "1"
+        return {
+            "success": success,
+            "command": "verify",
+            "status": result.get("status"),
+            "message": result.get("result", result.get("message", "")),
+            "guid": result.get("result") if success else None,
+            "stdout": (
+                f"Verification {'submitted' if success else 'failed'} for {address}\n"
+                f"  Status: {result.get('status')}\n"
+                f"  Message: {result.get('result', result.get('message', ''))}\n"
+            ),
+        }
+    except Exception as e:
+        return {
+            "success": False,
+            "command": "verify",
+            "error": str(e),
+            "traceback": traceback.format_exc(),
+            "stdout": f"Verification error: {str(e)}\n",
+        }
 
 
 # ─── Main Entry Point ────────────────────────────────────────────────────────
@@ -372,6 +478,12 @@ def main():
 
         elif command == "help":
             result = execute_help()
+
+        elif command == "transform":
+            if not source_code:
+                result = {"success": False, "error": "No source code provided for transformation"}
+            else:
+                result = execute_transform(source_code, contract_name)
 
         else:
             result = execute_unknown(command)

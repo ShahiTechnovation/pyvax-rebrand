@@ -2,5 +2,10 @@
 dockerfilePath = "railway-backend/Dockerfile"
 
 [deploy]
+startCommand = "uvicorn main:app --host 0.0.0.0 --port ${PORT:-8000}"
 healthcheckPath = "/api/cli"
 restartPolicyType = "ON_FAILURE"
+
+[env]
+SNOWTRACE_API_KEY = "${{SNOWTRACE_API_KEY}}"
+CORS_ORIGINS = "https://pyvax.xyz,https://pyvax.io,https://pyvax-rebrand.vercel.app,http://localhost:3000"

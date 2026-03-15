@@ -30,6 +30,14 @@ interface CompileResult {
   estimated_gas?: number
   stdout?: string
   error?: string
+  // Transformer fields
+  solidity?: string
+  contract_name?: string
+  compiler_version?: string
+  optimization_runs?: number
+  evm_version?: string
+  snowtrace_payload?: any
+  deploy_ready?: boolean
 }
 
 // ─── Contract Templates ─────────────────────────────────────────────────────
@@ -691,13 +699,18 @@ function PlaygroundInner() {
     { text: '', type: '' },
   ])
   const [cmdInput, setCmdInput] = useState('')
-  const [activeTab, setActiveTab] = useState<'output' | 'bytecode' | 'abi'>('output')
+  const [activeTab, setActiveTab] = useState<'output' | 'bytecode' | 'abi' | 'solidity'>('output')
   const [optimizerLevel, setOptimizerLevel] = useState(1)
   const [showNewFileMenu, setShowNewFileMenu] = useState(false)
   const [deployedContracts, setDeployedContracts] = useState<{ address: string; name: string; chain: string; txHash: string }[]>([])
   const [deployedAddress, setDeployedAddress] = useState<string | null>(null)
   const [rightPanelTab, setRightPanelTab] = useState<'deploy' | 'interact'>('deploy')
   const [backendStatus, setBackendStatus] = useState<'checking' | 'connected' | 'error'>('checking')
+  const [soliditySource, setSoliditySource] = useState<string | null>(null)
+  const [isVerified, setIsVerified] = useState(false)
+  const [isTransforming, setIsTransforming] = useState(false)
+  const [snowtracePayload, setSnowtracePayload] = useState<any>(null)
+  const [copyFeedback, setCopyFeedback] = useState('')
 
   // Refs
   const terminalRef = useRef<HTMLDivElement>(null)
@@ -828,8 +841,29 @@ function PlaygroundInner() {
         termPrint(`✗ Error: ${result.error}`, 'error')
       }
 
-      if (result.success && ['compile', 'deploy', 'test'].includes(result.command)) {
+      if (result.success && ['compile', 'deploy', 'test', 'transform'].includes(result.command)) {
         setLastResult(result)
+
+        // Handle transform result
+        if (result.command === 'transform' && result.solidity) {
+          setSoliditySource(result.solidity)
+          setIsVerified(true)
+          setActiveTab('solidity')
+          if (result.snowtrace_payload) {
+            setSnowtracePayload(result.snowtrace_payload)
+            termPrint('  ✓ Snowtrace verification payload ready', 'success')
+          }
+          const name = contractName(activeFile)
+          setFiles(prev => {
+            const next = {
+              ...prev,
+              [`build/${name}.sol`]: result.solidity!,
+            }
+            set('pyvax-files-v2', next).catch(console.error)
+            return next
+          })
+          termPrint(`  → Solidity saved: build/${name}.sol`, 'success')
+        }
 
         if (result.command === 'compile' && result.bytecode) {
           const name = contractName(activeFile)
@@ -847,6 +881,41 @@ function PlaygroundInner() {
             return next
           })
           termPrint(`  → Artifact saved: build/${name}.json`, 'success')
+
+          // Auto-trigger transform after successful compile
+          setIsTransforming(true)
+          termPrint('  ⚡ Auto-generating verified Solidity...', 'info')
+          try {
+            const src = editorSourceRef.current || files[activeFile] || ''
+            const transformResult = await callAPI('transform', src)
+            if (transformResult.success && transformResult.solidity) {
+              setSoliditySource(transformResult.solidity)
+              setIsVerified(true)
+              if (transformResult.snowtrace_payload) {
+                setSnowtracePayload(transformResult.snowtrace_payload)
+              }
+              setLastResult(prev => prev ? { ...prev, solidity: transformResult.solidity, compiler_version: transformResult.compiler_version, snowtrace_payload: transformResult.snowtrace_payload } : prev)
+              const tName = contractName(activeFile)
+              setFiles(prev => {
+                const next = { ...prev, [`build/${tName}.sol`]: transformResult.solidity! }
+                set('pyvax-files-v2', next).catch(console.error)
+                return next
+              })
+              termPrint(`  ✓ Verified Solidity generated (solc ${transformResult.compiler_version || 'v0.8.24'})`, 'success')
+              termPrint(`  → Saved: build/${tName}.sol`, 'success')
+              if (transformResult.snowtrace_payload) {
+                termPrint('  ✓ Snowtrace payload ready — copy from SOLIDITY tab', 'success')
+              }
+            } else {
+              termPrint(`  ⚠ Transform: ${transformResult.error || 'failed'}`, 'warning')
+              setIsVerified(false)
+            }
+          } catch {
+            termPrint('  ⚠ Transform unavailable', 'warning')
+            setIsVerified(false)
+          } finally {
+            setIsTransforming(false)
+          }
         }
       }
 
@@ -975,16 +1044,28 @@ function PlaygroundInner() {
         <div className="w-px h-4 bg-[#1C1C1F] mx-1" />
         <ToolBtn icon="📋" label="ABI" onClick={() => setActiveTab('abi')} disabled={!lastResult?.abi} />
         <ToolBtn icon="⬡" label="BYTECODE" onClick={() => setActiveTab('bytecode')} disabled={!lastResult?.bytecode} />
+        <ToolBtn icon="◈" label="SOLIDITY" onClick={() => setActiveTab('solidity')} disabled={!soliditySource} />
         <div className="flex-1" />
-        {isExecuting && (
+        {isTransforming && (
+          <div className="flex items-center gap-2 text-[10px] text-[#60A5FA] tracking-wider font-bold animate-pulse">
+            <div className="w-3 h-3 border border-[#27272A] border-t-[#60A5FA] rounded-full animate-spin" />
+            VERIFYING...
+          </div>
+        )}
+        {isExecuting && !isTransforming && (
           <div className="flex items-center gap-2 text-[10px] text-[#E84142] tracking-wider font-bold animate-pulse">
             <div className="w-3 h-3 border border-[#27272A] border-t-[#E84142] rounded-full animate-spin" />
             TRANSPILING...
           </div>
         )}
-        {lastResult?.success && !isExecuting && (
-          <div className="flex items-center gap-2 text-[10px] text-[#22C55E] tracking-wider font-bold">
-            <span>✓</span>
+        {lastResult?.success && !isExecuting && !isTransforming && (
+          <div className="flex items-center gap-2 text-[10px] tracking-wider font-bold">
+            {isVerified && (
+              <span className="flex items-center gap-1 text-[#22C55E] bg-[#22C55E]/10 px-2 py-0.5 rounded-full border border-[#22C55E]/20">
+                <span className="text-[8px]">✓</span> VERIFIED
+              </span>
+            )}
+            <span className="text-[#22C55E]">✓</span>
             {lastResult.size_bytes && <span className="text-[#52525B]">{lastResult.size_bytes}B</span>}
             {lastResult.metadata?.gas_estimate && <span className="text-[#52525B]">{lastResult.metadata.gas_estimate.toLocaleString()} gas</span>}
           </div>
@@ -1142,13 +1223,19 @@ function PlaygroundInner() {
             <ResizablePanel defaultSize={35} minSize={15}>
               <div className="h-full flex flex-col bg-[#09090B]">
                 <div className="h-[28px] shrink-0 flex items-center px-3 border-b border-[#1C1C1F] gap-3">
-                  {(['output', 'bytecode', 'abi'] as const).map(tab => (
+                  {(['output', 'bytecode', 'abi', 'solidity'] as const).map(tab => (
                     <button
                       key={tab}
                       onClick={() => setActiveTab(tab)}
-                      className={`text-[9px] tracking-widest font-bold h-full flex items-center transition-colors ${activeTab === tab ? 'text-[#E84142] border-b border-[#E84142]' : 'text-[#3F3F46] hover:text-[#71717A]'}`}
+                      className={`text-[9px] tracking-widest font-bold h-full flex items-center transition-colors ${
+                        activeTab === tab
+                          ? tab === 'solidity' && isVerified
+                            ? 'text-[#22C55E] border-b border-[#22C55E]'
+                            : 'text-[#E84142] border-b border-[#E84142]'
+                          : 'text-[#3F3F46] hover:text-[#71717A]'
+                      }`}
                     >
-                      {tab.toUpperCase()}
+                      {tab === 'solidity' && isVerified ? '✓ SOLIDITY' : tab.toUpperCase()}
                     </button>
                   ))}
                   <div className="flex-1" />
@@ -1234,6 +1321,50 @@ function PlaygroundInner() {
                         </div>
                       ) : (
                         <div className="text-[#3F3F46] text-[11px] mt-4 text-center">Compile a contract to view ABI.</div>
+                      )}
+                    </div>
+                  )}
+
+                  {activeTab === 'solidity' && (
+                    <div className="flex-1 overflow-y-auto px-3 py-2">
+                      {soliditySource ? (
+                        <div>
+                          <div className="flex items-center justify-between mb-2">
+                            <div className="flex items-center gap-2">
+                              <span className="text-[9px] text-[#3F3F46] tracking-widest font-bold">SOLIDITY SOURCE</span>
+                              {isVerified && (
+                                <span className="text-[8px] text-[#22C55E] bg-[#22C55E]/10 px-1.5 py-0.5 rounded-full border border-[#22C55E]/20 font-bold tracking-wider">✓ VERIFIED</span>
+                              )}
+                              {lastResult?.compiler_version && (
+                                <span className="text-[8px] text-[#52525B] tracking-wider">solc {lastResult.compiler_version}</span>
+                              )}
+                            </div>
+                            <div className="flex items-center gap-2">
+                              <button
+                                onClick={() => { navigator.clipboard.writeText(soliditySource || ''); setCopyFeedback('sol'); setTimeout(() => setCopyFeedback(''), 1500) }}
+                                className="text-[9px] text-[#52525B] hover:text-[#E84142] tracking-wider font-bold transition-colors"
+                              >{copyFeedback === 'sol' ? '✓ COPIED' : '📋 COPY SOL'}</button>
+                              {snowtracePayload && (
+                                <button
+                                  onClick={() => { navigator.clipboard.writeText(JSON.stringify(snowtracePayload, null, 2)); setCopyFeedback('json'); setTimeout(() => setCopyFeedback(''), 1500) }}
+                                  className="text-[9px] text-[#22C55E]/70 hover:text-[#22C55E] tracking-wider font-bold transition-colors bg-[#22C55E]/5 px-1.5 py-0.5 rounded border border-[#22C55E]/20"
+                                >{copyFeedback === 'json' ? '✓ COPIED' : '📋 SNOWTRACE JSON'}</button>
+                              )}
+                            </div>
+                          </div>
+                          <pre className="text-[10px] font-mono text-[#7EC8A4] leading-[1.7] bg-[#0C0C0E] border border-[#1C1C1F] rounded-lg p-3 whitespace-pre overflow-x-auto">{soliditySource}</pre>
+                          {snowtracePayload && (
+                            <div className="mt-3">
+                              <div className="flex items-center justify-between mb-2">
+                                <span className="text-[9px] text-[#3F3F46] tracking-widest font-bold">SNOWTRACE VERIFICATION JSON</span>
+                                <span className="text-[8px] text-[#22C55E]/60 tracking-wider">evmVersion: paris • solc v0.8.24</span>
+                              </div>
+                              <pre className="text-[9px] font-mono text-[#60A5FA] leading-[1.6] bg-[#0C0C0E] border border-[#22C55E]/20 rounded-lg p-3 whitespace-pre overflow-x-auto max-h-[200px]">{JSON.stringify(snowtracePayload, null, 2)}</pre>
+                            </div>
+                          )}
+                        </div>
+                      ) : (
+                        <div className="text-[#3F3F46] text-[11px] mt-4 text-center">Compile a contract to generate verified Solidity source.</div>
                       )}
                     </div>
                   )}

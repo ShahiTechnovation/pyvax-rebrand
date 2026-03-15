@@ -230,6 +230,7 @@ export async function GET() {
             "compile",
             "test",
             "deploy",
+            "transform",
             "help",
             "version",
             "templates",

@@ -1,0 +1,51 @@
+# ╔══════════════════════════════════════════════════════════════════╗
+# ║  Project Classified — Agent Configuration                       ║
+# ║  https://github.com/ShahiTechnovation/pyvax-rebrand             ║
+# ╚══════════════════════════════════════════════════════════════════╝
+#
+# This file is the single source of truth for the agent runtime.
+# Edit the values below and run:  classified-agent run
+
+# ── Agent identity & runtime bounds ──────────────────────────────
+
+[agent]
+name = "classified-001"
+description = "A web3-native AI agent powered by PyVax"
+workspace_dir = "./workspace"
+# max_tokens_per_thought = 4096      # uncomment to cap LLM response length
+max_steps = 50                        # hard limit on agent loop iterations
+
+# ── LLM provider ──────────────────────────────────────────────────
+
+[llm]
+provider = "anthropic"           # Keep this             # "anthropic" | "openai" | "custom"
+model = "anthropic/claude-3.5-sonnet"
+api_key_env = "OPENROUTER_API_KEY"     # name of env var (NOT the key itself)
+base_url = "https://openrouter.ai/api/v1"  # OpenRouter endpoint
+
+# ── Wallet ────────────────────────────────────────────────────────
+
+[wallet]
+backend = "pyvax_local"              # "pyvax_local" | "managed_vincent" | "managed_sequence" | "mock"
+default_chain = "avalanche_fuji"     # "avalanche_fuji" | "avalanche_mainnet" | "ethereum_mainnet"
+rpc_url = "https://api.avax-test.network/ext/bc/C/rpc"
+
+[wallet.policy]
+max_native_per_tx = "0.1"            # max AVAX/ETH per single transaction
+max_native_per_day = "1.0"           # daily spend cap across all transactions
+allowed_contracts = []               # empty = no restriction; add "0x..." addresses
+allowed_methods = []                 # empty = no restriction; add method names or 4-byte selectors
+
+# ── Synthesis.md hackathon ────────────────────────────────────────
+
+[synthesis]
+enabled = false
+skill_url = "https://synthesis.md/skill.md"
+track = "open"                       # "open" or a partner-track string
+agent_profile = ""                   # e.g. "DeFi yield optimizer on Avalanche"
+
+# ── Logging ───────────────────────────────────────────────────────
+
+[logging]
+level = "INFO"                       # "DEBUG" | "INFO" | "WARN"
+log_dir = "./logs"

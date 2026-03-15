@@ -277,6 +277,115 @@ def compile(
         raise typer.Exit(1)
 
 
+# --- pyvax transform ---
+
+@app.command()
+def transform(
+    source_file: str = typer.Argument(
+        ..., help="Python contract file to transform"
+    ),
+    output: Optional[str] = typer.Option(
+        None, "--output", "-o", help="Output .sol file path"
+    ),
+    name: Optional[str] = typer.Option(
+        None, "--name", "-n", help="Override Solidity contract name"
+    ),
+    verify: bool = typer.Option(
+        False, "--verify", help="Submit for Snowtrace verification after deploy"
+    ),
+    chain: str = typer.Option(
+        "fuji", "--chain", "-c", help="Chain for verification: fuji | mainnet"
+    ),
+    address: Optional[str] = typer.Option(
+        None, "--address", help="Deployed contract address (for --verify)"
+    ),
+) -> None:
+    """Transform a Python contract to verified Solidity source.
+
+    Generates a flattened .sol file ready for Snowtrace/Etherscan verification.
+
+    Examples:
+        pyvax transform contracts/Token.py                     # Generate .sol
+        pyvax transform contracts/Token.py -o Token.sol        # Custom output path
+        pyvax transform contracts/Token.py --verify --address 0x...  # Verify on Snowtrace
+    """
+    source_path = Path(source_file)
+    if not source_path.exists():
+        console.print(f"[red]Error:[/red] File '{source_file}' not found.")
+        raise typer.Exit(1)
+
+    try:
+        from .transformer import python_to_verified_solidity
+
+        python_source = source_path.read_text(encoding="utf-8")
+
+        with console.status("[bold green]Transforming Python → Solidity..."):
+            result = python_to_verified_solidity(
+                python_source,
+                contract_name=name,
+            )
+
+        sol_source = result["solidity"]
+        contract_name_out = result["contract_name"]
+
+        # Write .sol output
+        if output:
+            out_path = Path(output)
+        else:
+            out_path = source_path.with_suffix(".sol")
+
+        out_path.write_text(sol_source, encoding="utf-8")
+
+        # Show results
+        console.print(Panel(
+            f"[green]Solidity generated successfully![/green]\n\n"
+            f"[cyan]Contract:[/cyan]  {contract_name_out}\n"
+            f"[cyan]Compiler:[/cyan]  solc {result['compiler_version']}\n"
+            f"[cyan]Source:[/cyan]    {len(sol_source)} chars\n"
+            f"[cyan]ABI:[/cyan]      {len(result['abi'])} entries\n"
+            f"[cyan]Output:[/cyan]   {out_path}\n\n"
+            f"[dim]Optimization: {result['optimization_runs']} runs, "
+            f"EVM: {result['evm_version']}[/dim]",
+            title="Python → Solidity ✓",
+            border_style="green",
+        ))
+
+        # Verification
+        if verify:
+            if not address:
+                console.print("[yellow]Skipping verification: --address is required.[/yellow]")
+                console.print("[dim]Deploy first, then re-run with --verify --address 0x...[/dim]")
+            else:
+                from .snowtrace import SnowtraceVerifier
+
+                api_key = os.environ.get("SNOWTRACE_API_KEY", "")
+                if not api_key:
+                    console.print(
+                        "[yellow]Warning:[/yellow] SNOWTRACE_API_KEY not set. "
+                        "Verification may fail."
+                    )
+
+                verifier = SnowtraceVerifier(
+                    api_key=api_key,
+                    chain=chain,
+                    compiler_version=result["compiler_version"],
+                )
+                vresult = verifier.submit_and_wait(
+                    address=address,
+                    source=sol_source,
+                    contract_name=contract_name_out,
+                )
+                if vresult.success:
+                    console.print(f"\n[bold green]✓ Verified on Snowtrace![/bold green]")
+                    console.print(f"  [cyan]{vresult.explorer_url}[/cyan]")
+                else:
+                    console.print(f"\n[yellow]Verification: {vresult.message}[/yellow]")
+
+    except Exception as e:
+        console.print(f"[red]Transform failed:[/red] {str(e)}")
+        raise typer.Exit(1)
+
+
 def _show_gas_report(results: dict) -> None:
     """Display per-function gas estimates from compilation metadata."""
     gas_table = Table(title="Gas Report")
