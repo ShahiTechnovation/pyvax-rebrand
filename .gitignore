@@ -46,3 +46,7 @@ pyvax_key.json
 
 # ── Waitlist data (contains user emails) ──────────────
 waitlist.json
+
+# ── Classified / internal (NEVER push to GitHub) ──────
+classified_agent/
+workspace/

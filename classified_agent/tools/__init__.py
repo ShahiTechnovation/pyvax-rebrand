@@ -1,1 +1,0 @@
-"""Tool definitions and registry."""
