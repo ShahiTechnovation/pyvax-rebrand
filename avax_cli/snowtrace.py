@@ -290,6 +290,47 @@ def generate_snowtrace_payload(
     }
 
 
+def generate_snowtrace_single_file(
+    source: str,
+    contract_name: str = "PyVaxContract",
+    compiler_version: str = "v0.8.24+commit.e11b9ed9",
+    optimization_runs: int = 200,
+    evm_version: str = "paris",
+    license_type: int = 1,
+) -> dict:
+    """Generate Snowtrace-compatible single-file verification payload.
+
+    Uses ``codeformat: "solidity-single-file"`` which is the simplest
+    format accepted by Snowtrace / Etherscan.  The source code is sent
+    as a raw string (not JSON-wrapped) and the contract name is just the
+    plain name without a ``Filename:ContractName`` prefix.
+
+    Args:
+        source: Complete flattened Solidity source code
+        contract_name: Contract name as it appears in source
+        compiler_version: Full solc version string
+        optimization_runs: Number of optimizer runs
+        evm_version: EVM target version — MUST be "paris" for Avalanche C-Chain
+        license_type: SPDX license identifier (1 = MIT)
+
+    Returns:
+        Dict ready to POST to Snowtrace verification API
+    """
+    return {
+        "module": "contract",
+        "action": "verifysourcecode",
+        "codeformat": "solidity-single-file",
+        "contractaddress": None,        # Client fills post-deploy
+        "compilerversion": compiler_version,
+        "contractname": contract_name,  # Plain name (no filename prefix)
+        "licenseType": license_type,
+        "sourceCode": source,           # Raw .sol text
+        "optimizationUsed": "1",
+        "runs": str(optimization_runs),
+        "evmversion": evm_version,      # AVALANCHE C-CHAIN: "paris"
+    }
+
+
 def snowtrace_verify(
     address: str,
     payload: dict,

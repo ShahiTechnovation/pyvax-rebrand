@@ -397,4 +397,141 @@
       background-position: -200% 0;
     }
   }
+
+  /* ═══════════════════════════════════════════════════════════════════
+     CLASSIFIED PAGE — Pink Cyberpunk Design System
+     ═══════════════════════════════════════════════════════════════════ */
+
+  /* Classified Colors */
+  .classified-pink { color: #FF1493; }
+  .classified-magenta { color: #8B008B; }
+  .classified-gold { color: #FFD700; }
+
+  /* Pink Glassmorphism */
+  .glass-pink {
+    background: rgba(255, 20, 147, 0.06);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    border: 1px solid rgba(255, 20, 147, 0.15);
+  }
+
+  .glass-pink-hover {
+    background: rgba(255, 20, 147, 0.06);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    border: 1px solid rgba(255, 20, 147, 0.15);
+    transition: all 300ms ease-out;
+  }
+
+  .glass-pink-hover:hover {
+    background: rgba(255, 20, 147, 0.12);
+    border-color: rgba(255, 20, 147, 0.3);
+    box-shadow: 0 0 30px rgba(255, 20, 147, 0.15);
+  }
+
+  /* Gold text stroke */
+  .text-gold-stroke {
+    -webkit-text-stroke: 2px #FFD700;
+    color: transparent;
+  }
+
+  /* Pink glow utilities */
+  .glow-pink-sm { box-shadow: 0 0 8px rgba(255, 20, 147, 0.3); }
+  .glow-pink-md { box-shadow: 0 0 20px rgba(255, 20, 147, 0.4); }
+  .glow-pink-lg { box-shadow: 0 0 40px rgba(255, 20, 147, 0.5); }
+
+  /* Scanner sweep */
+  @keyframes scannerSweep {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+  }
+
+  .animate-scanner {
+    animation: scannerSweep 3s linear infinite;
+  }
+
+  /* Float orb */
+  @keyframes floatOrb {
+    0%, 100% { transform: translate(0, 0) scale(1); }
+    25% { transform: translate(15px, -20px) scale(1.05); }
+    50% { transform: translate(-10px, -35px) scale(0.95); }
+    75% { transform: translate(20px, -15px) scale(1.02); }
+  }
+
+  .animate-float-orb {
+    animation: floatOrb 8s ease-in-out infinite;
+  }
+
+  /* Intense glitch for classified */
+  @keyframes glitchIntense {
+    0%, 100% { transform: translate(0); filter: hue-rotate(0deg); }
+    10% { transform: translate(-3px, 2px); filter: hue-rotate(90deg); }
+    20% { transform: translate(3px, -2px); filter: hue-rotate(180deg); }
+    30% { transform: translate(0); filter: hue-rotate(0deg); }
+    40% { transform: translate(-2px, -1px); filter: hue-rotate(270deg); }
+    50% { transform: translate(2px, 1px); filter: hue-rotate(0deg); }
+    60%, 100% { transform: translate(0); filter: hue-rotate(0deg); }
+  }
+
+  .animate-glitch-intense {
+    animation: glitchIntense 3s ease-in-out infinite;
+  }
+
+  /* Halftone pulse */
+  @keyframes halftonePulse {
+    0%, 100% { opacity: 0.03; }
+    50% { opacity: 0.08; }
+  }
+
+  .animate-halftone-pulse {
+    animation: halftonePulse 4s ease-in-out infinite;
+  }
+
+  /* Pink ambient pulse */
+  @keyframes pinkPulse {
+    0%, 100% { opacity: 0.15; }
+    50% { opacity: 0.35; }
+  }
+
+  .animate-pink-pulse {
+    animation: pinkPulse 4s ease-in-out infinite;
+    will-change: opacity;
+  }
+
+  /* Counter tick animation */
+  @keyframes counterTick {
+    0% { transform: translateY(0); }
+    50% { transform: translateY(-2px); }
+    100% { transform: translateY(0); }
+  }
+
+  .animate-counter-tick {
+    animation: counterTick 0.3s ease-out;
+  }
+
+  /* Typewriter cursor for terminal */
+  @keyframes terminalCursor {
+    0%, 50% { border-color: #4CAF50; }
+    51%, 100% { border-color: transparent; }
+  }
+
+  .animate-terminal-cursor {
+    border-right: 2px solid #4CAF50;
+    animation: terminalCursor 1s step-end infinite;
+  }
+
+  /* Pink trail cursor effect */
+  .classified-cursor {
+    cursor: crosshair;
+  }
+
+  /* Horizontal scroll snap */
+  .scroll-snap-x {
+    scroll-snap-type: x mandatory;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .scroll-snap-center {
+    scroll-snap-align: center;
+  }
 }

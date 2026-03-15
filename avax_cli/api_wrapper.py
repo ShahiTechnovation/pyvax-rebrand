@@ -334,7 +334,7 @@ def execute_transform(source_code, contract_name="Contract"):
         sol_lines = len(sol_source.strip().split("\n"))
 
         # Generate Snowtrace-compatible verification payload
-        from .snowtrace import generate_snowtrace_payload
+        from .snowtrace import generate_snowtrace_payload, generate_snowtrace_single_file
 
         snowtrace_payload = generate_snowtrace_payload(
             source=sol_source,
@@ -343,6 +343,28 @@ def execute_transform(source_code, contract_name="Contract"):
             optimization_runs=result["optimization_runs"],
             evm_version=result["evm_version"],
         )
+
+        snowtrace_single_file = generate_snowtrace_single_file(
+            source=sol_source,
+            contract_name=result["contract_name"],
+            compiler_version="v0.8.24+commit.e11b9ed9",
+            optimization_runs=result["optimization_runs"],
+            evm_version=result["evm_version"],
+        )
+
+        # Check if contract has ERC20-like patterns for approve-flow docs
+        has_approve = any(
+            e.get("name") in ("approve", "transferFrom", "allowance")
+            for e in result["abi"] if e.get("type") == "function"
+        )
+        approve_note = ""
+        if has_approve:
+            approve_note = (
+                "\n💡 ERC20 Approve Flow:\n"
+                "  This contract uses token approvals (not AVAX transfers).\n"
+                "  Users must call approve(spender, amount) before transferFrom().\n"
+                "  Deploy value should be 0 AVAX — tokens are minted, not deposited.\n"
+            )
 
         transform_stdout = (
             f"Transforming: {result['contract_name']}.py → Solidity\n"
@@ -355,7 +377,8 @@ def execute_transform(source_code, contract_name="Contract"):
             f"  ABI entries:  {len(result['abi'])}\n"
             f"  Compiler:     solc {result['compiler_version']}\n"
             f"  Optimizer:    {result['optimization_runs']} runs\n"
-            f"  EVM version:  {result['evm_version']}\n\n"
+            f"  EVM version:  {result['evm_version']}\n"
+            f"{approve_note}\n"
             f"Verified Solidity generated successfully!\n"
             f"Snowtrace payload ready — deploy then POST /api/verify\n"
         )
@@ -371,6 +394,7 @@ def execute_transform(source_code, contract_name="Contract"):
             "optimization_runs": result["optimization_runs"],
             "evm_version": result["evm_version"],
             "snowtrace_payload": snowtrace_payload,
+            "snowtrace_single_file": snowtrace_single_file,
             "deploy_ready": True,
             "stdout": transform_stdout,
             "stderr": stderr_capture.getvalue(),

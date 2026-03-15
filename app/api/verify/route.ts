@@ -3,14 +3,23 @@ import { keccak256 } from "js-sha3";
 
 // ─── PyVax Snowtrace Verification Engine ────────────────────────────────────
 //
-// Strategy:
+// Strategy (Production — Railway backend available):
+//  1. Proxy to /api/verify on Railway backend
+//     The backend has the full transformer pipeline with evmVersion: "paris"
+//
+// Strategy (Fallback — no Railway backend):
 //  1. Register function + event signatures → 4byte, openchain, sourcify
-//  2. Submit Solidity INTERFACE to Snowtrace → real solc v0.8.20
-//     (interface has matching selectors, Snowtrace gets the ABI)
+//  2. Submit Solidity INTERFACE to Snowtrace → real solc v0.8.24
 //  3. Also register standard ERC signatures in bulk
 // ─────────────────────────────────────────────────────────────────────────────
 
 const SNOWTRACE_API_KEY = process.env.SNOWTRACE_API_KEY || "";
+const BACKEND_URL = process.env.RAILWAY_BACKEND_URL || "";
+
+function getVerifyUrl(): string {
+    if (!BACKEND_URL) return "";
+    return BACKEND_URL.replace(/\/api\/cli\/?$/, "/api/verify");
+}
 
 const APIS: Record<number, string> = {
     43113: "https://api-testnet.snowtrace.io/api",
@@ -66,30 +75,40 @@ export async function POST(request: NextRequest) {
             abi = [],
             bytecode = "",
             chainId = 43113,
+            // New: accept snowtrace_payload from transform pipeline
+            payload = null,
+            chain = "fuji",
         } = body;
 
+        // ─── Path 1: Pipeline-based verification (preferred) ────────
+        // If a snowtrace_payload is provided (from /api/transform), proxy to Railway
+        if (payload && address) {
+            return await proxyToRailway(address, payload, chain);
+        }
+
+        // ─── Path 2: Legacy ABI-based verification ──────────────────
         if (!address || !abi?.length) {
             return NextResponse.json(
-                { success: false, error: "address and abi required" },
+                { success: false, error: "address and abi required (or provide payload from /api/transform)" },
                 { status: 400 }
             );
         }
 
         const explorer = EXPLORERS[chainId] || EXPLORERS[43113];
 
-        // ─── Step 1: Register ALL signatures (contract + standards) ─────
+        // Step 1: Register ALL signatures (contract + standards)
         const sigResults = await registerAllSignatures(abi);
 
-        // ─── Step 2: Generate Solidity interface ────────────────────────
+        // Step 2: Generate Solidity interface
         const solInterface = generateSolidityInterface(contractName, abi);
 
-        // ─── Step 3: Submit to Snowtrace with REAL solc version ─────────
+        // Step 3: Submit to Snowtrace with REAL solc version
         let snowtrace: { verified: boolean; guid?: string; error?: string } | null = null;
         if (SNOWTRACE_API_KEY) {
             snowtrace = await submitToSnowtrace(
                 address,
-                solInterface,        // Solidity source (the interface)
-                `I${contractName}`,  // Contract name (the interface name)
+                solInterface,
+                `I${contractName}`,
                 chainId
             );
         }
@@ -110,6 +129,94 @@ export async function POST(request: NextRequest) {
             { success: false, error: error.message },
             { status: 500 }
         );
+    }
+}
+
+// ─── Pipeline proxy to Railway backend ──────────────────────────────────────
+async function proxyToRailway(
+    address: string,
+    payload: any,
+    chain: string
+): Promise<NextResponse> {
+    const verifyUrl = getVerifyUrl();
+    if (!verifyUrl) {
+        // No Railway backend — try direct Snowtrace submission
+        return await directSnowtrace(address, payload);
+    }
+
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 15000);
+
+    try {
+        const res = await fetch(verifyUrl, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ address, payload, chain }),
+            signal: controller.signal,
+            cache: "no-store",
+        });
+
+        clearTimeout(timeout);
+        const result = await res.json();
+        return NextResponse.json(result);
+    } catch (err: any) {
+        clearTimeout(timeout);
+        // Fallback: try direct Snowtrace submission
+        return await directSnowtrace(address, payload);
+    }
+}
+
+// ─── Direct Snowtrace submission (when Railway is unavailable) ──────────────
+async function directSnowtrace(
+    address: string,
+    payload: any
+): Promise<NextResponse> {
+    if (!SNOWTRACE_API_KEY) {
+        return NextResponse.json({
+            success: false,
+            error: "No SNOWTRACE_API_KEY configured and Railway backend unavailable",
+        }, { status: 503 });
+    }
+
+    const chainId = payload.chainId || 43113;
+    const apiUrl = APIS[chainId] || APIS[43113];
+    const explorer = EXPLORERS[chainId] || EXPLORERS[43113];
+
+    try {
+        const submit = { ...payload };
+        submit.contractaddress = address;
+        submit.apikey = SNOWTRACE_API_KEY;
+
+        const res = await fetch(apiUrl, {
+            method: "POST",
+            headers: { "Content-Type": "application/x-www-form-urlencoded" },
+            body: new URLSearchParams(submit).toString(),
+            signal: AbortSignal.timeout(15000),
+        });
+
+        const data = await res.json();
+
+        if (data.status === "1") {
+            return NextResponse.json({
+                success: true,
+                verified: true,
+                guid: data.result,
+                explorerUrl: `${explorer}/address/${address}#code`,
+                message: "Verification submitted to Snowtrace",
+            });
+        }
+
+        return NextResponse.json({
+            success: false,
+            verified: false,
+            error: data.result || data.message || "Unknown error",
+            explorerUrl: `${explorer}/address/${address}`,
+        });
+    } catch (err: any) {
+        return NextResponse.json({
+            success: false,
+            error: `Direct Snowtrace submission failed: ${err.message}`,
+        }, { status: 502 });
     }
 }
 
@@ -167,7 +274,7 @@ async function submitToSnowtrace(
             sourceCode: soliditySource,
             codeformat: "solidity-single-file",
             contractname: contractName,
-            compilerversion: "v0.8.20+commit.a1b79de6",
+            compilerversion: "v0.8.24+commit.e11b9ed9",
             optimizationUsed: "0",
             runs: "200",
             evmversion: "paris",
@@ -233,7 +340,7 @@ async function registerAllSignatures(abi: any[]): Promise<SigResult> {
     ];
 
     // Build per-signature results (contract sigs only, with correct selectors)
-    const signatures = fnSigs.map(sig => ({
+    const signatures: { sig: string; type: "function" | "event"; selector: string }[] = fnSigs.map(sig => ({
         sig,
         type: "function" as const,
         selector: "0x" + keccak256(sig).slice(0, 8),
@@ -331,7 +438,7 @@ function generateSolidityInterface(name: string, abi: any[]): string {
         `// SPDX-License-Identifier: MIT`,
         `// PyVax-generated interface for ${name}`,
         `// Selectors match the deployed contract.`,
-        `pragma solidity ^0.8.20;`,
+        `pragma solidity ^0.8.24;`,
         ``,
         `interface I${name} {`,
     ];

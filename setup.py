@@ -38,6 +38,9 @@ setup(
             "black>=23.0.0",
             "ruff>=0.1.0",
         ],
+        "verify": [
+            "py-solc-x>=2.0.0",
+        ],
     },
     entry_points={
         "console_scripts": [
