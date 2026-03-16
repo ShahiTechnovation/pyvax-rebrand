@@ -76,7 +76,7 @@ function buildWelcomeEmail(email: string, position: number, spotsRemaining: numb
         <table role="presentation" cellpadding="0" cellspacing="0" border="0" style="margin:0 auto 24px;">
         <tr>
             <td style="text-align:center;vertical-align:middle;">
-                <img src="https://raw.githubusercontent.com/ShahiTechnovation/pyvax-rebrand/main/public/logo.png" alt="PyVax Logo" width="64" height="64" style="display:block;border:none;outline:none;text-decoration:none;filter:drop-shadow(0 0 10px rgba(255,20,147,0.4));" />
+                <img src="https://pyvax.xyz/logo.png" alt="PyVax Logo" width="64" height="64" style="display:block;border:none;outline:none;text-decoration:none;filter:drop-shadow(0 0 10px rgba(255,20,147,0.4));" />
             </td>
         </tr>
         </table>
