@@ -76,7 +76,7 @@ function buildWelcomeEmail(email: string, position: number, spotsRemaining: numb
         <table role="presentation" cellpadding="0" cellspacing="0" border="0" style="margin:0 auto 24px;">
         <tr>
             <td style="text-align:center;vertical-align:middle;">
-                <img src="https://pyvax.xyz/logo.png" alt="PyVax Logo" width="64" height="64" style="display:block;border:none;outline:none;text-decoration:none;filter:drop-shadow(0 0 10px rgba(255,20,147,0.4));" />
+                <img src="https://raw.githubusercontent.com/ShahiTechnovation/pyvax-rebrand/main/public/logo.png" alt="PyVax Logo" width="64" height="64" style="display:block;border:none;outline:none;text-decoration:none;filter:drop-shadow(0 0 10px rgba(255,20,147,0.4));" />
             </td>
         </tr>
         </table>
@@ -120,7 +120,7 @@ function buildWelcomeEmail(email: string, position: number, spotsRemaining: numb
     <div style="background:linear-gradient(135deg,rgba(255,20,147,0.1),rgba(139,0,139,0.1));border:1px solid rgba(255,20,147,0.3);border-radius:12px;padding:32px 24px;text-align:center;">
         <div style="font-family:'Courier New',monospace;font-size:11px;color:#FF1493;letter-spacing:2px;text-transform:uppercase;margin-bottom:12px;font-weight:bold;">YOUR UNIQUE ACCESS CODE</div>
         <div style="font-family:'Courier New',monospace;font-size:36px;font-weight:800;color:#FFD700;letter-spacing:8px;margin-bottom:24px;text-shadow:0 0 10px rgba(255,215,0,0.3);">${accessCode}</div>
-        <a href="https://classified.pyvax.xyz" style="display:inline-block;background:linear-gradient(90deg,#FF1493,#8B008B);color:#FFF;text-decoration:none;font-family:'Courier New',monospace;font-size:13px;font-weight:bold;padding:16px 32px;border-radius:8px;letter-spacing:2px;box-shadow:0 0 20px rgba(255,20,147,0.4);">ENTER THE VAULT →</a>
+        <a href="https://pyvax.xyz/classified" style="display:inline-block;background:linear-gradient(90deg,#FF1493,#8B008B);color:#FFF;text-decoration:none;font-family:'Courier New',monospace;font-size:13px;font-weight:bold;padding:16px 32px;border-radius:8px;letter-spacing:2px;box-shadow:0 0 20px rgba(255,20,147,0.4);">ENTER THE VAULT →</a>
     </div>
 </td>
 </tr>
@@ -153,7 +153,7 @@ function buildWelcomeEmail(email: string, position: number, spotsRemaining: numb
         <td style="vertical-align:top;padding-left:16px;">
             <div style="font-family:'Segoe UI',Roboto,sans-serif;font-size:16px;font-weight:700;color:#F0F0F0;margin-bottom:4px;">Register on Unstop</div>
             <div style="font-family:'Segoe UI',Roboto,sans-serif;font-size:14px;color:#a09bb0;line-height:1.5;">Make sure your team is officially registered for the Synthesis Hackathon.</div>
-            <a href="https://unstop.com/o/nfj1CVW?lb=TUn3UTaD" style="display:inline-block;color:#FF1493;font-size:13px;font-weight:bold;text-decoration:none;margin-top:8px;">Register Here →</a>
+            <a href="https://pyvax.xyz/unstop" style="display:inline-block;color:#FF1493;font-size:13px;font-weight:bold;text-decoration:none;margin-top:8px;">Register Here →</a>
         </td>
     </tr>
     </table>
@@ -186,7 +186,7 @@ function buildWelcomeEmail(email: string, position: number, spotsRemaining: numb
     <table role="presentation" cellpadding="0" cellspacing="0" border="0" style="margin:0 auto;">
     <tr>
         <td style="background-color:#111;border:1px solid rgba(255,255,255,0.1);border-radius:8px;padding:12px 32px;text-align:center;">
-            <a href="https://x.com/intent/tweet?text=${encodeURIComponent(`🔴 I just unlocked classified access for the @PyVax #SynthesisHackathon\n\nBuilding an autonomous on-chain agent entirely in Python for $75K in prizes ⚡\n\nGet your code 👇`)}&url=${encodeURIComponent('https://classified.pyvax.xyz')}&hashtags=${encodeURIComponent('PyVax,ClassifiedHack,AgentEconomy')}" target="_blank" style="font-family:'Courier New',monospace;font-size:12px;color:#a09bb0;text-decoration:none;letter-spacing:1px;font-weight:bold;">
+            <a href="https://pyvax.xyz/twitter-share" target="_blank" style="font-family:'Courier New',monospace;font-size:12px;color:#a09bb0;text-decoration:none;letter-spacing:1px;font-weight:bold;">
                 𝕏 SHARE ON TWITTER
             </a>
         </td>
@@ -207,9 +207,7 @@ function buildWelcomeEmail(email: string, position: number, spotsRemaining: numb
     <div style="margin-bottom:16px;">
         <a href="https://pyvax.xyz" style="font-family:'Courier New',monospace;font-size:10px;color:#888;text-decoration:none;margin:0 8px;">Website</a>
         <span style="color:#333;">·</span>
-        <a href="https://x.com/PyVax" style="font-family:'Courier New',monospace;font-size:10px;color:#888;text-decoration:none;margin:0 8px;">Twitter</a>
-        <span style="color:#333;">·</span>
-        <a href="https://discord.gg/pyvax" style="font-family:'Courier New',monospace;font-size:10px;color:#888;text-decoration:none;margin:0 8px;">Discord</a>
+        <a href="https://pyvax.xyz/twitter" style="font-family:'Courier New',monospace;font-size:10px;color:#888;text-decoration:none;margin:0 8px;">Twitter</a>
     </div>
     <div style="font-family:'Segoe UI',Roboto,sans-serif;font-size:10px;color:#444;line-height:1.6;">
         You're receiving this because you signed up for PyVax Agent access.<br>
