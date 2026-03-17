@@ -1,0 +1,75 @@
+---
+title: Classified Access Codes
+---
+
+# Access Codes
+
+Access codes are single-use unlock keys that grant you entry to the [Project Classified](/classified) vault. Every developer who joins the PyVax early access waitlist automatically receives one.
+
+## How You Get One
+
+1. **Navigate to [/agent](/agent)** — the PyVax Agent early access page.
+2. **Enter your email** and click **GET EARLY ACCESS**.
+3. Within seconds, an email arrives from `dev@pyvax.xyz` with the subject line **"You're #N — Welcome to PyVax Agent Early Access"**.
+4. Inside the email you'll find your **unique access code** (e.g. `A3F9B2C1`) displayed in large gold text.
+
+<Callout title="Email not arriving?">
+Check your spam/junk folder. The email is sent from `dev@pyvax.xyz` via Resend. Make sure you entered the correct email address. Each email address can only sign up once.
+</Callout>
+
+## Code Format
+
+Codes are derived from a random UUID:
+
+```
+crypto.randomUUID().split('-')[0].toUpperCase()
+// example output: "A3F9B2C1"
+```
+
+This gives you an 8-character uppercase hexadecimal string. They are **globally unique** — no two waitlist members receive the same code.
+
+## Using Your Code
+
+1. Go to [/classified](/classified) — you'll see a cinematic loading screen, then the **Access Gate**.
+2. Type your code into the input field.
+3. Click **AUTHENTICATE** (or press Enter).
+4. If valid, the full portal instantly unlocks.
+
+## Session Persistence
+
+Your session is stored in `sessionStorage` under the key `classified_code`. This means:
+
+| Scenario | Behaviour |
+|---|---|
+| Same browser tab / session | Auto-authenticated — no re-entry needed |
+| New tab, same browser | Re-authenticated silently on page load |
+| Different device | Must re-enter your code |
+| After 30 days | Code expires server-side — contact us to reissue |
+
+## How Validation Works
+
+When you enter a code, the gate sends a `POST` request to `/api/classified/validate`:
+
+```json
+// Request
+{ "code": "A3F9B2C1" }
+
+// Valid response
+{ "valid": true }
+
+// Invalid / expired response
+{ "valid": false }
+```
+
+On the server, codes are stored in **Vercel KV** with a **30-day TTL**. Each code is mapped to the email address that generated it. This prevents code sharing: a code is tied to exactly one email.
+
+## FAQ
+
+**Can I share my code with a teammate?**
+Codes are per-email. Teammate should sign up independently at [/agent](/agent) to get their own code.
+
+**What if my code doesn't work?**
+Codes expire 30 days after generation. If you're past that window, rejoin the waitlist with a fresh email or contact us on [X / Twitter](https://x.com/PyVax).
+
+**Does it work on mobile?**
+Yes — enter your code on any device and the portal unlocks for that session.

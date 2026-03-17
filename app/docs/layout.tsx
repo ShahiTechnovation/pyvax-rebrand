@@ -50,6 +50,13 @@ const NAV_MENU = [
             { name: "Testing Suite", href: "/docs/advanced/testing" },
             { name: "Debugging", href: "/docs/advanced/debugging" }
         ]
+    },
+    {
+        category: "PROJECT CLASSIFIED",
+        items: [
+            { name: "Overview", href: "/docs/classified/overview" },
+            { name: "Access Codes", href: "/docs/classified/access-codes" },
+        ]
     }
 ]
 
