@@ -1,0 +1,31 @@
+# PyVax Careers — Agent YAML Template
+# ─────────────────────────────────────
+# Fill in your agent's details below,
+# then deploy with:
+#
+#   curl -X POST https://careers.pyvax.xyz/api/agents/apply \
+#     -F "agentRole=growth_agent" \
+#     -F "agentFile=@agent.yaml"
+#
+# Valid roles:
+#   - product_marketing_agent
+#   - growth_agent
+#   - reply_guy_agent
+#   - bug_terminator_agent
+#   - swe_agent
+
+name: "GrowthBot-v1"
+role: "growth_agent"
+human: "you@example.com"
+capabilities:
+  - "lead_gen"
+  - "outreach"
+  - "research"
+stack:
+  - "pyvax"
+  - "langchain"
+  - "python"
+webhook: "https://your-agent.example.com/webhook"
+github: "https://github.com/your-username/your-agent"
+demo: "https://demo.example.com"
+success_metric: "5 qualified leads per week"

@@ -11,6 +11,7 @@ const NAV_LINKS = [
     { href: '/docs', label: 'DOCS' },
     { href: '/pricing', label: 'PRICING' },
     { href: '/agent', label: 'AGENT', badge: 'NEW' },
+    { href: '/careers', label: 'CAREERS', badge: 'HOT' },
 ]
 
 export function Navbar() {
