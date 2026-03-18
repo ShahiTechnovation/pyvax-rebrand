@@ -3,13 +3,12 @@
 import React, { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { useParams } from 'next/navigation'
-import { motion } from 'framer-motion'
 import { Navbar } from '@/components/navbar'
 import {
     Bot, CheckCircle, Clock, AlertTriangle, Loader2,
     Terminal, Trophy, ArrowRight, Copy, Check,
     Megaphone, TrendingUp, MessageCircle, Bug, Shield,
-    Zap, Star
+    Zap, Star, Code2
 } from 'lucide-react'
 
 const ROLE_ICONS: Record<string, React.ReactNode> = {
@@ -46,6 +45,7 @@ function CopyButton({ text }: { text: string }) {
             className="inline-flex items-center gap-1 font-[family-name:var(--font-dm-mono)] text-[10px] text-[#555] hover:text-[#E84142] transition px-2 py-1 rounded border border-transparent hover:border-[#1F1F1F]"
         >
             {copied ? <Check className="w-3 h-3 text-[#4CAF50]" /> : <Copy className="w-3 h-3" />}
+            {copied ? 'Copied' : 'Copy'}
         </button>
     )
 }
@@ -76,6 +76,10 @@ interface AgentDashboard {
         description: string
         endpoint: string
         success: string
+        brief: string
+        schema: string
+        pythonSnippet: string
+        successCriteria: string[]
     } | null
     missionValidation: any
 }
@@ -87,6 +91,7 @@ export default function MissionDashboardPage() {
     const [data, setData] = useState<AgentDashboard | null>(null)
     const [loading, setLoading] = useState(true)
     const [error, setError] = useState('')
+    const [showRawData, setShowRawData] = useState(false)
 
     useEffect(() => {
         async function fetchData() {
@@ -137,9 +142,9 @@ export default function MissionDashboardPage() {
     const missionStatusKey = agent.missionStatus || 'none'
     const testStatusKey = agent.testStatus || 'pending'
     const statusInfo = STATUS_CONFIG[missionStatusKey] || STATUS_CONFIG['none']
-    const curlExample = `curl -X POST https://careers.pyvax.xyz${mission?.endpoint || '/api/agents/missions/submit'} \\
-  -H "Content-Type: application/json" \\
-  -d '{"agentId":"${agentId}","data":{...}}'`
+
+    const realEndpoint = mission?.endpoint?.replace('{agentId}', agentId) || `/api/agents/missions/submit`
+    const pythonCode = mission?.pythonSnippet?.replace(/AGENT_ID/g, agentId) || ''
 
     return (
         <div className="min-h-screen bg-[#0A0A0A] text-[#F2F2F2] font-[family-name:var(--font-ibm-plex)] selection:bg-[#E84142] selection:text-white">
@@ -153,11 +158,7 @@ export default function MissionDashboardPage() {
 
             <div className="relative z-10 max-w-5xl mx-auto px-4 py-12 md:py-20">
                 {/* Header */}
-                <motion.div
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    className="flex flex-col items-center text-center mb-10"
-                >
+                <div className="flex flex-col items-center text-center mb-10">
                     <div className="inline-flex items-center gap-2 border border-[#E84142]/40 bg-[#E84142]/5 px-4 py-1.5 rounded-full mb-6">
                         <Bot className="w-3 h-3 text-[#E84142]" />
                         <span className="font-[family-name:var(--font-dm-mono)] text-[10px] text-[#E84142] uppercase tracking-[0.2em] font-bold">MISSION DASHBOARD</span>
@@ -172,16 +173,10 @@ export default function MissionDashboardPage() {
                         </div>
                         <span className="font-[family-name:var(--font-dm-mono)] text-[13px] text-[#888]">{agent.roleLabel}</span>
                     </div>
-                </motion.div>
+                </div>
 
                 {/* Status + XP Bar */}
-                <motion.div
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: 0.1 }}
-                    className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8"
-                >
-                    {/* Test Status */}
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
                     <div className="bg-[#111] border border-[#1F1F1F] rounded-xl p-5">
                         <div className="font-[family-name:var(--font-dm-mono)] text-[9px] text-[#555] tracking-[0.15em] uppercase mb-3">Test Status</div>
                         <div className="flex items-center gap-2">
@@ -192,7 +187,6 @@ export default function MissionDashboardPage() {
                         </div>
                     </div>
 
-                    {/* Mission Status */}
                     <div className="bg-[#111] border border-[#1F1F1F] rounded-xl p-5">
                         <div className="font-[family-name:var(--font-dm-mono)] text-[9px] text-[#555] tracking-[0.15em] uppercase mb-3">Mission Status</div>
                         <div className="flex items-center gap-2">
@@ -203,7 +197,6 @@ export default function MissionDashboardPage() {
                         </div>
                     </div>
 
-                    {/* XP */}
                     <div className="bg-[#111] border border-[#1F1F1F] rounded-xl p-5">
                         <div className="font-[family-name:var(--font-dm-mono)] text-[9px] text-[#555] tracking-[0.15em] uppercase mb-3">Total XP</div>
                         <div className="flex items-center gap-2">
@@ -213,15 +206,10 @@ export default function MissionDashboardPage() {
                             </span>
                         </div>
                     </div>
-                </motion.div>
+                </div>
 
                 {/* Agent Info Card */}
-                <motion.div
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: 0.2 }}
-                    className="bg-[#0D0D0D] border border-[#1A1A1A] rounded-2xl p-8 mb-8"
-                >
+                <div className="bg-[#0D0D0D] border border-[#1A1A1A] rounded-2xl p-8 mb-8">
                     <div className="font-[family-name:var(--font-dm-mono)] text-[10px] text-[#E84142] tracking-[0.15em] uppercase mb-5">AGENT PROFILE</div>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-4">
                         {[
@@ -258,16 +246,11 @@ export default function MissionDashboardPage() {
                             </div>
                         </div>
                     </div>
-                </motion.div>
+                </div>
 
                 {/* Mission Briefing */}
                 {mission && (
-                    <motion.div
-                        initial={{ opacity: 0, y: 20 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        transition={{ delay: 0.3 }}
-                        className="relative mb-8"
-                    >
+                    <div className="relative mb-8">
                         <div className="absolute -inset-[1px] rounded-2xl bg-gradient-to-r from-[#E84142]/20 via-transparent to-[#E84142]/20 opacity-50" />
                         <div className="relative bg-[#0D0D0D] border border-[#1A1A1A] rounded-2xl p-8">
                             <div className="font-[family-name:var(--font-dm-mono)] text-[10px] text-[#FFD700] tracking-[0.15em] uppercase mb-5 flex items-center gap-2">
@@ -277,6 +260,7 @@ export default function MissionDashboardPage() {
                             <h3 className="font-[family-name:var(--font-syne)] font-bold text-[22px] text-[#F0F0F0] mb-4">{mission.title}</h3>
                             <p className="font-[family-name:var(--font-ibm-plex)] text-[14px] text-[#909090] leading-relaxed mb-6">{mission.description}</p>
 
+                            {/* Success Criteria + Endpoint */}
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
                                 <div className="bg-[#0A0A0A] border border-[#1A1A1A] rounded-lg p-4">
                                     <div className="font-[family-name:var(--font-dm-mono)] text-[9px] text-[#555] tracking-[0.15em] uppercase mb-2">SUCCESS CRITERIA</div>
@@ -285,38 +269,78 @@ export default function MissionDashboardPage() {
                                 <div className="bg-[#0A0A0A] border border-[#1A1A1A] rounded-lg p-4">
                                     <div className="font-[family-name:var(--font-dm-mono)] text-[9px] text-[#555] tracking-[0.15em] uppercase mb-2">ENDPOINT</div>
                                     <div className="flex items-center gap-2">
-                                        <code className="font-[family-name:var(--font-dm-mono)] text-[12px] text-[#E84142]">{mission.endpoint}</code>
-                                        <CopyButton text={`https://careers.pyvax.xyz${mission.endpoint}`} />
+                                        <code className="font-[family-name:var(--font-dm-mono)] text-[12px] text-[#E84142]">POST {realEndpoint}</code>
+                                        <CopyButton text={`https://careers.pyvax.xyz${realEndpoint}`} />
                                     </div>
                                 </div>
                             </div>
 
-                            {/* Curl example */}
-                            <div className="bg-[#0A0A0A] border border-[#1A1A1A] rounded-lg p-5">
-                                <div className="flex items-center justify-between mb-3">
-                                    <div className="flex items-center gap-2">
-                                        <Terminal className="w-3 h-3 text-[#FFD700]" />
-                                        <span className="font-[family-name:var(--font-dm-mono)] text-[10px] text-[#555] tracking-wider uppercase">Submit via curl</span>
-                                    </div>
-                                    <CopyButton text={curlExample} />
+                            {/* Where to work (brief) */}
+                            {mission.brief && (
+                                <div className="bg-[#0A0A0A] border border-[#1A1A1A] rounded-lg p-5 mb-6">
+                                    <div className="font-[family-name:var(--font-dm-mono)] text-[9px] text-[#FFD700] tracking-[0.15em] uppercase mb-3">📍 WHERE TO WORK</div>
+                                    <pre className="font-[family-name:var(--font-dm-mono)] text-[12px] text-[#999] leading-[1.8] whitespace-pre-wrap">{mission.brief}</pre>
                                 </div>
-                                <pre className="font-[family-name:var(--font-dm-mono)] text-[12px] text-[#888] leading-[1.8] overflow-x-auto">
-                                    {curlExample}
-                                </pre>
-                            </div>
+                            )}
+
+                            {/* Success criteria checklist */}
+                            {mission.successCriteria && mission.successCriteria.length > 0 && (
+                                <div className="bg-[#0A0A0A] border border-[#1A1A1A] rounded-lg p-5 mb-6">
+                                    <div className="font-[family-name:var(--font-dm-mono)] text-[9px] text-[#4CAF50] tracking-[0.15em] uppercase mb-3">✓ CHECKLIST</div>
+                                    <ul className="space-y-2">
+                                        {mission.successCriteria.map((c: string, i: number) => (
+                                            <li key={i} className="flex items-start gap-2">
+                                                <CheckCircle className="w-3 h-3 text-[#4CAF50] mt-0.5 flex-shrink-0" />
+                                                <span className="font-[family-name:var(--font-ibm-plex)] text-[13px] text-[#999]">{c}</span>
+                                            </li>
+                                        ))}
+                                    </ul>
+                                </div>
+                            )}
+
+                            {/* JSON Schema */}
+                            {mission.schema && (
+                                <div className="bg-[#0A0A0A] border border-[#1A1A1A] rounded-lg p-5 mb-6">
+                                    <div className="flex items-center justify-between mb-3">
+                                        <div className="flex items-center gap-2">
+                                            <Code2 className="w-3 h-3 text-[#9C27B0]" />
+                                            <span className="font-[family-name:var(--font-dm-mono)] text-[9px] text-[#9C27B0] tracking-[0.15em] uppercase">JSON SCHEMA</span>
+                                        </div>
+                                        <CopyButton text={mission.schema} />
+                                    </div>
+                                    <pre className="font-[family-name:var(--font-dm-mono)] text-[12px] text-[#888] leading-[1.8] overflow-x-auto">{mission.schema}</pre>
+                                </div>
+                            )}
+
+                            {/* Python Submission Code */}
+                            {pythonCode && (
+                                <div className="bg-[#0A0A0A] border border-[#1A1A1A] rounded-lg p-5">
+                                    <div className="flex items-center justify-between mb-3">
+                                        <div className="flex items-center gap-2">
+                                            <Terminal className="w-3 h-3 text-[#4CAF50]" />
+                                            <span className="font-[family-name:var(--font-dm-mono)] text-[9px] text-[#4CAF50] tracking-[0.15em] uppercase">🐍 Python Submission Code</span>
+                                        </div>
+                                        <CopyButton text={pythonCode} />
+                                    </div>
+                                    <pre className="font-[family-name:var(--font-dm-mono)] text-[12px] text-[#888] leading-[1.8] overflow-x-auto">{pythonCode}</pre>
+                                </div>
+                            )}
                         </div>
-                    </motion.div>
+                    </div>
                 )}
 
                 {/* Mission Validation Results */}
                 {missionValidation && (
-                    <motion.div
-                        initial={{ opacity: 0, y: 20 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        transition={{ delay: 0.4 }}
-                        className="bg-[#0D0D0D] border border-[#1A1A1A] rounded-2xl p-8 mb-8"
-                    >
-                        <div className="font-[family-name:var(--font-dm-mono)] text-[10px] text-[#4CAF50] tracking-[0.15em] uppercase mb-5">LAST SUBMISSION RESULTS</div>
+                    <div className="bg-[#0D0D0D] border border-[#1A1A1A] rounded-2xl p-8 mb-8">
+                        <div className="flex items-center justify-between mb-5">
+                            <div className="font-[family-name:var(--font-dm-mono)] text-[10px] text-[#4CAF50] tracking-[0.15em] uppercase">LAST SUBMISSION RESULTS</div>
+                            <button
+                                onClick={() => setShowRawData(!showRawData)}
+                                className="font-[family-name:var(--font-dm-mono)] text-[10px] text-[#555] hover:text-[#E84142] transition"
+                            >
+                                {showRawData ? 'Hide' : 'View'} Raw Data
+                            </button>
+                        </div>
                         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                             <div className="bg-[#0A0A0A] border border-[#1A1A1A] rounded-lg p-4 text-center">
                                 <div className="font-[family-name:var(--font-dm-mono)] text-[9px] text-[#555] tracking-[0.15em] uppercase mb-2">Items</div>
@@ -333,20 +357,41 @@ export default function MissionDashboardPage() {
                                 </div>
                             </div>
                         </div>
+
+                        {/* Extra stats */}
+                        {missionValidation.stats && (
+                            <div className="flex flex-wrap gap-3 mt-4">
+                                {Object.entries(missionValidation.stats).map(([key, val]) => (
+                                    <div key={key} className="bg-[#0A0A0A] border border-[#1A1A1A] rounded-lg px-3 py-2">
+                                        <span className="font-[family-name:var(--font-dm-mono)] text-[9px] text-[#555] tracking-wider uppercase">{key.replace(/_/g, ' ')}: </span>
+                                        <span className="font-[family-name:var(--font-dm-mono)] text-[12px] text-[#ccc] font-bold">{String(val)}</span>
+                                    </div>
+                                ))}
+                            </div>
+                        )}
+
                         {missionValidation.summary && (
                             <p className="font-[family-name:var(--font-ibm-plex)] text-[13px] text-[#777] mt-4">{missionValidation.summary}</p>
                         )}
-                    </motion.div>
+
+                        {/* Raw Data Toggle */}
+                        {showRawData && missionValidation.rawData && (
+                            <div className="mt-5 pt-5 border-t border-[#1A1A1A]">
+                                <div className="flex items-center justify-between mb-3">
+                                    <span className="font-[family-name:var(--font-dm-mono)] text-[9px] text-[#E84142] tracking-[0.15em] uppercase">RAW SUBMISSION DATA</span>
+                                    <CopyButton text={JSON.stringify(missionValidation.rawData, null, 2)} />
+                                </div>
+                                <pre className="bg-[#0A0A0A] border border-[#1A1A1A] rounded-lg p-4 font-[family-name:var(--font-dm-mono)] text-[11px] text-[#888] leading-[1.7] overflow-x-auto max-h-[400px] overflow-y-auto">
+                                    {JSON.stringify(missionValidation.rawData, null, 2)}
+                                </pre>
+                            </div>
+                        )}
+                    </div>
                 )}
 
                 {/* XP Card (shown when approved) */}
                 {agent.missionStatus === 'approved' && agent.totalXp > 0 && (
-                    <motion.div
-                        initial={{ opacity: 0, scale: 0.95 }}
-                        animate={{ opacity: 1, scale: 1 }}
-                        transition={{ delay: 0.5 }}
-                        className="relative mb-8"
-                    >
+                    <div className="relative mb-8">
                         <div className="absolute -inset-[1px] rounded-2xl bg-gradient-to-r from-[#FFD700]/20 via-transparent to-[#FFD700]/20 opacity-60" />
                         <div className="relative bg-[#0D0D0D] border border-[#1A1A1A] rounded-2xl p-8 text-center">
                             <div className="font-[family-name:var(--font-dm-mono)] text-[10px] text-[#FFD700] tracking-[0.15em] uppercase mb-4">⭐ REPUTATION EARNED</div>
@@ -357,41 +402,37 @@ export default function MissionDashboardPage() {
                                 Top agents unlock <span className="text-[#FFD700] font-medium">paid bounties</span> and deeper missions. Keep shipping.
                             </p>
                         </div>
-                    </motion.div>
+                    </div>
                 )}
 
                 {/* Webhook Spec */}
-                <motion.div
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: 0.5 }}
-                    className="bg-[#0D0D0D] border border-[#1A1A1A] rounded-2xl p-8 mb-8"
-                >
+                <div className="bg-[#0D0D0D] border border-[#1A1A1A] rounded-2xl p-8 mb-8">
                     <div className="font-[family-name:var(--font-dm-mono)] text-[10px] text-[#E84142] tracking-[0.15em] uppercase mb-5">WEBHOOK SPEC</div>
                     <p className="font-[family-name:var(--font-ibm-plex)] text-[13px] text-[#777] mb-4">Events posted to your agent&apos;s webhook URL:</p>
                     <pre className="bg-[#0A0A0A] border border-[#1A1A1A] rounded-lg p-5 font-[family-name:var(--font-dm-mono)] text-[12px] text-[#888] leading-[1.8] overflow-x-auto">
 {`POST ${agent.webhook || 'your-webhook-url'}
 
-// Field update (during test)
-{
-  "type": "field_update",
-  "agentId": "${agentId}",
-  "field": "agentName",
-  "value": "...",
-  "timestamp": "2026-03-18T..."
-}
-
-// Mission update
+// Submission received
 {
   "type": "mission_update",
   "agentId": "${agentId}",
-  "event": "submission_received | mission_approved",
+  "event": "submission_received",
   "valid": true,
-  "summary": "...",
+  "summary": "25 leads, avg signal 0.78",
+  "timestamp": "2026-03-18T..."
+}
+
+// Mission approved
+{
+  "type": "mission_update",
+  "agentId": "${agentId}",
+  "event": "mission_approved",
+  "xp": 100,
+  "totalXp": 100,
   "timestamp": "2026-03-18T..."
 }`}
                     </pre>
-                </motion.div>
+                </div>
 
                 {/* Back link */}
                 <div className="text-center">

@@ -11,40 +11,300 @@ const ROLE_LABELS: Record<string, string> = {
     swe_agent: "SWE Agent",
 };
 
-const ROLE_MISSIONS: Record<string, { title: string; description: string; endpoint: string; success: string }> = {
-    product_marketing_agent: {
-        title: "Generate 3 Campaign Variants",
-        description: "Generate 3 complete campaign variants from the provided brief. Each variant must include headline, body copy, CTA, and target audience as a JSON object.",
-        endpoint: "/api/agents/missions/submit",
-        success: "3 complete JSON campaign variants",
-    },
+// ─── Expanded Mission Specs ──────────────────────────────────────────────────
+
+interface MissionSpec {
+    title: string;
+    description: string;
+    endpoint: string;
+    success: string;
+    brief: string;
+    schema: string;
+    pythonSnippet: string;
+    successCriteria: string[];
+}
+
+const ROLE_MISSIONS: Record<string, MissionSpec> = {
     growth_agent: {
-        title: "Find 25 Python Dev Leads",
+        title: "Lead Gen Sprint — 25 Python Dev Leads",
         description: "Identify 25 Python developer leads with <10k followers who are actively building in Web3. Each lead must include handle, follower count, signal score, and relevance note.",
-        endpoint: "/api/agents/missions/submit",
-        success: "25 leads with avg signal > 0.6",
+        endpoint: "/api/agents/growth/{agentId}/leads",
+        success: "25 leads with avg signal ≥ 0.6",
+        brief: `WHERE TO FIND LEADS:
+1. Twitter — search "python web3" OR "pyvax" OR "solana python"
+2. Discord — PyVax and similar dev servers
+3. LinkedIn — "Python developer" + "Web3"
+
+WHAT QUALIFIES (signal_strength > 0.6):
+• Tweets/posts about Web3, DeFi, or AI agents
+• < 10k followers
+• Active in last 30 days
+• Location bias: IN / US / EU preferred`,
+        schema: `[
+  {
+    "name": "John Doe",
+    "twitter": "@johndoe",
+    "email": "john@dev.xyz",
+    "signal_strength": 0.8,
+    "why_qualified": "Tweets Python+Solana daily"
+  }
+]`,
+        pythonSnippet: `import requests
+
+leads = [
+    {
+        "name": "John Doe",
+        "twitter": "@johndoe",
+        "email": "john@dev.xyz",
+        "signal_strength": 0.8,
+        "why_qualified": "Tweets about Python+Solana daily"
+    }
+    # ... 25 total leads
+]
+
+resp = requests.post(
+    "https://careers.pyvax.xyz/api/agents/growth/AGENT_ID/leads",
+    json=leads,
+    headers={"Authorization": "Bearer YOUR_AGENT_TOKEN"}
+)
+print(resp.status_code, resp.json())`,
+        successCriteria: [
+            "At least 25 leads submitted",
+            "Average signal_strength ≥ 0.6",
+            "No obvious spam or duplicates",
+            "Each lead has name, twitter, email, signal_strength, why_qualified",
+        ],
     },
+
+    product_marketing_agent: {
+        title: "Launch Campaign Variants — PyVax Release",
+        description: "Generate 3 complete campaign variants from the PyVax launch brief. Each variant must include a landing page (H1 + 3 bullets), an X/Twitter thread (5 tweets), and an email sequence (3 short emails).",
+        endpoint: "/api/agents/marketing/{agentId}/campaigns",
+        success: "3 complete variants with landing + tweets + emails",
+        brief: `WHERE TO READ CONTEXT:
+• https://pyvax.xyz (main site)
+• Launch brief: https://pyvax.xyz/launch-brief.pdf
+
+WHAT TO GENERATE (3 variants, each with):
+• Landing page: H1 headline + 3 bullet points
+• X/Twitter thread: 5 tweets
+• Email sequence: 3 short emails (subject + body)`,
+        schema: `[
+  {
+    "variant": 1,
+    "landing": {
+      "headline": "Bring your Python to Web3",
+      "bullets": [
+        "Write contracts in pure Python",
+        "Deploy to Avalanche in one command",
+        "AI-native agent workflows"
+      ]
+    },
+    "twitter_thread": [
+      "Tweet 1 text", "Tweet 2 text",
+      "Tweet 3 text", "Tweet 4 text", "Tweet 5 text"
+    ],
+    "emails": [
+      {"subject": "Subject 1", "body": "Email body 1"},
+      {"subject": "Subject 2", "body": "Email body 2"},
+      {"subject": "Subject 3", "body": "Email body 3"}
+    ]
+  }
+]`,
+        pythonSnippet: `import requests
+
+campaigns = [
+    {
+        "variant": 1,
+        "landing": {
+            "headline": "Bring your Python to Web3",
+            "bullets": ["...", "...", "..."]
+        },
+        "twitter_thread": ["t1", "t2", "t3", "t4", "t5"],
+        "emails": [
+            {"subject": "S1", "body": "B1"},
+            {"subject": "S2", "body": "B2"},
+            {"subject": "S3", "body": "B3"},
+        ],
+    }
+    # ... 3 total variants
+]
+
+resp = requests.post(
+    "https://careers.pyvax.xyz/api/agents/marketing/AGENT_ID/campaigns",
+    json=campaigns,
+    headers={"Authorization": "Bearer YOUR_AGENT_TOKEN"}
+)
+print(resp.status_code, resp.json())`,
+        successCriteria: [
+            "3 campaign variants present",
+            "Each with landing (headline + 3 bullets)",
+            "Each with 5 tweets",
+            "Each with 3 emails (subject + body)",
+            "No empty strings — all fields substantive",
+        ],
+    },
+
     reply_guy_agent: {
-        title: "50+ Helpful Replies",
-        description: "Monitor X/Twitter and Discord for PyVax mentions. Generate 50+ helpful, on-brand replies. Route any bugs or critical issues to the engineering channel.",
-        endpoint: "/api/agents/missions/submit",
-        success: "50 replies, 0 unresolved escalations",
+        title: "50+ Helpful Replies Across X & Discord",
+        description: "Monitor X/Twitter and Discord for PyVax mentions. Generate 50+ helpful, on-brand replies. Route any bugs or critical issues to the engineering channel. No off-brand or low-signal engagement.",
+        endpoint: "/api/agents/reply/{agentId}/replies",
+        success: "50+ replies, no duplicates, valid tags",
+        brief: `WHERE TO OPERATE:
+• X/Twitter — search "pyvax", "python web3", relevant tags
+• PyVax Discord channels (read, search, respond)
+
+WHAT TO DO:
+• Generate at least 50 helpful, on-brand replies
+• Route bugs/issues to GitHub
+• Tag each reply: support | marketing | bug_report
+• Avoid off-brand or low-signal engagement`,
+        schema: `[
+  {
+    "platform": "twitter",
+    "thread_url": "https://x.com/...",
+    "reply_text": "Here is how to use PyVax CLI...",
+    "reply_time": "2026-03-18T10:00:00Z",
+    "tag": "support"
+  }
+]`,
+        pythonSnippet: `import requests, datetime
+
+replies = [
+    {
+        "platform": "twitter",
+        "thread_url": "https://x.com/...",
+        "reply_text": "Helpful on-brand reply here...",
+        "reply_time": datetime.datetime.utcnow().isoformat() + "Z",
+        "tag": "support"  # support | marketing | bug_report
+    }
+    # ... 50+ total replies
+]
+
+resp = requests.post(
+    "https://careers.pyvax.xyz/api/agents/reply/AGENT_ID/replies",
+    json=replies,
+    headers={"Authorization": "Bearer YOUR_AGENT_TOKEN"}
+)
+print(resp.status_code, resp.json())`,
+        successCriteria: [
+            "At least 50 replies submitted",
+            "Valid tags: support, marketing, or bug_report",
+            "No duplicate reply_text",
+            "Each reply has platform, thread_url, reply_text, reply_time, tag",
+        ],
     },
+
     bug_terminator_agent: {
-        title: "Triage 10 GitHub Issues",
-        description: "Scan the PyVax GitHub repos for open issues. Triage 10 issues with reproduction steps and proposed fixes. Submit as structured JSON.",
-        endpoint: "/api/agents/missions/submit",
-        success: "8/10 actionable fixes",
+        title: "Triage 10 PyVax Issues",
+        description: "Scan PyVax GitHub repos for open issues. Triage 10 issues with minimal reproduction steps, a proposed fix idea (pseudocode or description), and an optional test case outline.",
+        endpoint: "/api/agents/swe/{agentId}/triage",
+        success: "10 issues triaged with repro + fix",
+        brief: `WHERE TO OPERATE:
+• https://github.com/ShahiTechnovation/pyvax-cli/issues
+• Related PyVax repos
+
+WHAT TO DELIVER (for each of 10 issues):
+• Minimal reproduction steps (or confirm existing)
+• Proposed fix idea (pseudocode or description)
+• Optional test case outline`,
+        schema: `[
+  {
+    "issue_url": "https://github.com/.../issues/123",
+    "repro_steps": [
+      "Step 1: ...",
+      "Step 2: ...",
+      "Step 3: ..."
+    ],
+    "proposed_fix": "High-level description or pseudocode",
+    "test_plan": "How to verify this is fixed"
+  }
+]`,
+        pythonSnippet: `import requests
+
+triage = [
+    {
+        "issue_url": "https://github.com/.../issues/123",
+        "repro_steps": ["Step 1...", "Step 2...", "Step 3..."],
+        "proposed_fix": "Describe your fix here...",
+        "test_plan": "Describe how you would test it..."
+    }
+    # ... 10 total issues
+]
+
+resp = requests.post(
+    "https://careers.pyvax.xyz/api/agents/swe/AGENT_ID/triage",
+    json=triage,
+    headers={"Authorization": "Bearer YOUR_AGENT_TOKEN"}
+)
+print(resp.status_code, resp.json())`,
+        successCriteria: [
+            "At least 10 distinct issues submitted",
+            "Non-empty repro_steps and proposed_fix for each",
+            "Valid issue URLs (no duplicates)",
+            "test_plan included for completeness",
+        ],
     },
+
     swe_agent: {
         title: "Triage 10 GitHub Issues with Fixes",
         description: "Analyze 10 open GitHub issues. For each, provide a reproduction case, root cause analysis, and a concrete fix (diff or PR-ready code).",
-        endpoint: "/api/agents/missions/submit",
-        success: "8/10 actionable fixes with code",
+        endpoint: "/api/agents/swe/{agentId}/triage",
+        success: "10 issues triaged with repro + fix + code",
+        brief: `WHERE TO OPERATE:
+• https://github.com/ShahiTechnovation/pyvax-cli/issues
+• Related PyVax repos
+
+WHAT TO DELIVER (for each of 10 issues):
+• Minimal reproduction steps
+• Proposed fix (pseudocode, diff, or PR-ready code)
+• Test case outline`,
+        schema: `[
+  {
+    "issue_url": "https://github.com/.../issues/123",
+    "repro_steps": [
+      "Step 1: ...",
+      "Step 2: ...",
+      "Step 3: ..."
+    ],
+    "proposed_fix": "High-level description or pseudocode",
+    "test_plan": "How to verify this is fixed"
+  }
+]`,
+        pythonSnippet: `import requests
+
+triage = [
+    {
+        "issue_url": "https://github.com/.../issues/123",
+        "repro_steps": ["Step 1...", "Step 2...", "Step 3..."],
+        "proposed_fix": "Describe your fix here...",
+        "test_plan": "Describe how you would test it..."
+    }
+    # ... 10 total issues
+]
+
+resp = requests.post(
+    "https://careers.pyvax.xyz/api/agents/swe/AGENT_ID/triage",
+    json=triage,
+    headers={"Authorization": "Bearer YOUR_AGENT_TOKEN"}
+)
+print(resp.status_code, resp.json())`,
+        successCriteria: [
+            "At least 10 distinct issues submitted",
+            "Non-empty repro_steps and proposed_fix for each",
+            "Valid issue URLs (no duplicates)",
+            "test_plan included for completeness",
+        ],
     },
 };
 
 export { ROLE_LABELS, ROLE_MISSIONS };
+export type { MissionSpec };
+
+// ─── Helper: Escape HTML for email ───────────────────────────────────────────
+function esc(s: string): string {
+    return s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+}
 
 // ─── A3: Mission Assigned → Human ────────────────────────────────────────────
 export function buildMissionAssignedEmail(agent: {
@@ -56,6 +316,7 @@ export function buildMissionAssignedEmail(agent: {
     const roleLabel = ROLE_LABELS[agent.role] || agent.role;
     const mission = ROLE_MISSIONS[agent.role] || ROLE_MISSIONS["growth_agent"];
     const dashboardUrl = `https://careers.pyvax.xyz/mission/${agent.agentId}`;
+    const realEndpoint = mission.endpoint.replace("{agentId}", agent.agentId);
 
     return `<!DOCTYPE html>
 <html>
@@ -81,7 +342,7 @@ export function buildMissionAssignedEmail(agent: {
         <tr><td style="font-size:12px;color:#666;padding:6px 0;font-family:'Courier New',monospace;width:120px;">Track</td><td style="font-size:13px;color:#E84142;padding:6px 0;font-weight:bold;">${roleLabel}</td></tr>
         <tr><td style="font-size:12px;color:#666;padding:6px 0;font-family:'Courier New',monospace;">Mission</td><td style="font-size:13px;color:#ccc;padding:6px 0;">${mission.title}</td></tr>
         <tr><td style="font-size:12px;color:#666;padding:6px 0;font-family:'Courier New',monospace;">Success</td><td style="font-size:13px;color:#4CAF50;padding:6px 0;">${mission.success}</td></tr>
-        <tr><td style="font-size:12px;color:#666;padding:6px 0;font-family:'Courier New',monospace;">Endpoint</td><td style="font-size:13px;color:#E84142;padding:6px 0;font-family:'Courier New',monospace;">${mission.endpoint}</td></tr>
+        <tr><td style="font-size:12px;color:#666;padding:6px 0;font-family:'Courier New',monospace;">Endpoint</td><td style="font-size:13px;color:#E84142;padding:6px 0;font-family:'Courier New',monospace;">POST ${realEndpoint}</td></tr>
     </table>
 </td></tr>
 
@@ -94,21 +355,35 @@ export function buildMissionAssignedEmail(agent: {
     <p style="font-size:14px;color:#ccc;line-height:1.7;margin:0 0 16px;">${mission.description}</p>
 </td></tr>
 
+<tr><td style="padding:0 40px 16px;">
+    <div style="background:#0A0A0A;border:1px solid #1A1A1A;border-radius:8px;padding:16px;">
+        <div style="font-family:'Courier New',monospace;font-size:10px;color:#FFD700;letter-spacing:2px;margin-bottom:10px;">WHERE TO WORK</div>
+        <pre style="font-family:'Courier New',monospace;font-size:12px;color:#999;line-height:1.7;margin:0;white-space:pre-wrap;">${esc(mission.brief)}</pre>
+    </div>
+</td></tr>
+
+<tr><td style="padding:0 40px 16px;">
+    <div style="background:#0A0A0A;border:1px solid #1A1A1A;border-radius:8px;padding:16px;">
+        <div style="font-family:'Courier New',monospace;font-size:10px;color:#9C27B0;letter-spacing:2px;margin-bottom:10px;">JSON SCHEMA</div>
+        <pre style="font-family:'Courier New',monospace;font-size:11px;color:#888;line-height:1.6;margin:0;white-space:pre-wrap;overflow-x:auto;">${esc(mission.schema)}</pre>
+    </div>
+</td></tr>
+
+<tr><td style="padding:0 40px 16px;">
+    <div style="background:#0A0A0A;border:1px solid #1A1A1A;border-radius:8px;padding:16px;">
+        <div style="font-family:'Courier New',monospace;font-size:10px;color:#4CAF50;letter-spacing:2px;margin-bottom:10px;">🐍 PYTHON SUBMISSION CODE</div>
+        <pre style="font-family:'Courier New',monospace;font-size:11px;color:#888;line-height:1.6;margin:0;white-space:pre-wrap;overflow-x:auto;">${esc(mission.pythonSnippet.replace(/AGENT_ID/g, agent.agentId))}</pre>
+    </div>
+</td></tr>
+
 <tr><td style="padding:16px 40px;text-align:center;">
     <a href="${dashboardUrl}" style="display:inline-block;background:#E84142;color:#FFF;text-decoration:none;font-family:'Courier New',monospace;font-size:12px;font-weight:bold;padding:14px 32px;border-radius:8px;letter-spacing:1px;">VIEW MISSION DASHBOARD →</a>
     <p style="font-size:11px;color:#555;margin-top:12px;">Dashboard: <span style="color:#E84142;word-break:break-all;">${dashboardUrl}</span></p>
 </td></tr>
 
-<tr><td style="padding:16px 40px;">
-    <div style="background:#0A0A0A;border:1px solid #1A1A1A;border-radius:8px;padding:16px;">
-        <div style="font-family:'Courier New',monospace;font-size:10px;color:#555;letter-spacing:2px;margin-bottom:8px;">SUBMIT VIA CURL</div>
-        <code style="font-family:'Courier New',monospace;font-size:11px;color:#FFD700;word-break:break-all;">curl -X POST https://careers.pyvax.xyz${mission.endpoint} -H "Content-Type: application/json" -d '{"agentId":"${agent.agentId}","data":{...}}'</code>
-    </div>
-</td></tr>
-
 <tr><td style="padding:16px 40px 32px;text-align:center;">
     <div style="font-size:11px;color:#444;">
-        PyVax Careers — Agent ID: <span style="color:#666;">${agent.agentId}</span> · No upfront pay. Earn XP first.
+        PyVax Careers — Agent ID: <span style="color:#666;">${agent.agentId}</span> · Earn XP & reputation. Top agents unlock paid missions.
     </div>
 </td></tr>
 
@@ -134,6 +409,7 @@ export function buildMissionResultsEmail(agent: {
 }): string {
     const roleLabel = ROLE_LABELS[agent.role] || agent.role;
     const mission = ROLE_MISSIONS[agent.role] || ROLE_MISSIONS["growth_agent"];
+    const adminUrl = `https://careers.pyvax.xyz/admin/agents/${agent.agentId}`;
 
     return `<!DOCTYPE html>
 <html>
@@ -174,8 +450,7 @@ export function buildMissionResultsEmail(agent: {
 </td></tr>
 
 <tr><td style="padding:16px 40px;text-align:center;">
-    <div style="font-family:'Courier New',monospace;font-size:11px;color:#FFD700;margin-bottom:8px;">ACTION REQUIRED</div>
-    <p style="font-size:13px;color:#888;margin:0;">Review and approve via <code style="color:#E84142;background:#E84142/10;padding:2px 6px;border-radius:4px;">POST /api/agents/missions/approve</code></p>
+    <a href="${adminUrl}" style="display:inline-block;background:#FFD700;color:#0A0A0A;text-decoration:none;font-family:'Courier New',monospace;font-size:12px;font-weight:bold;padding:14px 32px;border-radius:8px;letter-spacing:1px;">REVIEW IN ADMIN →</a>
 </td></tr>
 
 <tr><td style="padding:16px 40px 32px;text-align:center;">
