@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { Resend } from "resend";
+import { kv } from "@vercel/kv";
 
 const resend = process.env.RESEND_API_KEY ? new Resend(process.env.RESEND_API_KEY) : null;
 
@@ -63,8 +64,17 @@ function buildInternalEmail(data: {
 </html>`;
 }
 
-// ─── Confirmation email to applicant ─────────────────────────────────────────
-function buildConfirmationEmail(humanEmail: string, roleLabel: string): string {
+// ─── Test mission email to applicant ─────────────────────────────────────────
+function buildTestMissionEmail(data: {
+    agentRole: string;
+    humanEmail: string;
+    agentDescription: string;
+    githubUrl: string;
+    demoUrl: string;
+    successDefinition: string;
+    agentId: string;
+}, testUrl: string): string {
+    const roleLabel = ROLE_LABELS[data.agentRole] || data.agentRole;
     return `<!DOCTYPE html>
 <html>
 <head><meta charset="UTF-8"></head>
@@ -74,27 +84,38 @@ function buildConfirmationEmail(humanEmail: string, roleLabel: string): string {
 <table role="presentation" width="600" cellpadding="0" cellspacing="0" style="max-width:600px;width:100%;background:#111;border:1px solid #1F1F1F;border-radius:12px;overflow:hidden;">
 
 <tr><td style="padding:40px 40px 16px;text-align:center;">
-    <div style="font-family:'Courier New',monospace;font-size:10px;color:#E84142;letter-spacing:3px;text-transform:uppercase;margin-bottom:16px;">🔴 CLASSIFIED CONFIRMATION</div>
-    <h1 style="margin:0 0 8px;font-size:24px;font-weight:800;color:#FFF;">Agent Deployed.</h1>
-    <p style="margin:0;font-size:14px;color:#888;line-height:1.6;">Your agent application for <strong style="color:#E84142;">${roleLabel}</strong> has been received.</p>
+    <div style="font-family:'Courier New',monospace;font-size:10px;color:#E84142;letter-spacing:3px;text-transform:uppercase;margin-bottom:16px;">🔴 CLASSIFIED MISSION BRIEFING</div>
+    <h1 style="margin:0 0 8px;font-size:24px;font-weight:800;color:#FFF;">Agent Registered.</h1>
+    <p style="margin:0;font-size:14px;color:#888;">Your manual application for the <strong style="color:#FFF;">${roleLabel}</strong> track has been received.</p>
 </td></tr>
 
 <tr><td style="padding:16px 40px;">
     <div style="height:1px;background:linear-gradient(90deg,transparent,#E84142,transparent);"></div>
 </td></tr>
 
-<tr><td style="padding:16px 40px;text-align:center;">
-    <p style="font-size:14px;color:#ccc;line-height:1.7;margin:0 0 16px;">Our team will review your agent's mission briefing and get back to you at <strong style="color:#E84142;">${humanEmail}</strong>.</p>
-    <p style="font-size:13px;color:#777;line-height:1.6;margin:0;">In the meantime, keep building. The best agents don't wait — they ship.</p>
+<tr><td style="padding:16px 40px;">
+    <div style="font-family:'Courier New',monospace;font-size:10px;color:#E84142;letter-spacing:2px;margin-bottom:12px;">APPLICATION SUMMARY</div>
+    <table role="presentation" width="100%" cellpadding="0" cellspacing="0">
+        <tr><td style="font-size:12px;color:#666;padding:4px 0;font-family:'Courier New',monospace;vertical-align:top;width:120px;">Track</td><td style="font-size:13px;color:#ccc;padding:4px 0;">${roleLabel}</td></tr>
+        <tr><td style="font-size:12px;color:#666;padding:4px 0;font-family:'Courier New',monospace;vertical-align:top;">Description</td><td style="font-size:13px;color:#ccc;padding:4px 0;white-space:pre-wrap;">${data.agentDescription}</td></tr>
+        <tr><td style="font-size:12px;color:#666;padding:4px 0;font-family:'Courier New',monospace;vertical-align:top;">GitHub</td><td style="font-size:13px;color:#ccc;padding:4px 0;">${data.githubUrl || "—"}</td></tr>
+    </table>
 </td></tr>
 
-<tr><td style="padding:24px 40px;text-align:center;">
-    <a href="https://pyvax.xyz/careers" style="display:inline-block;background:#E84142;color:#FFF;text-decoration:none;font-family:'Courier New',monospace;font-size:12px;font-weight:bold;padding:12px 28px;border-radius:8px;letter-spacing:1px;">BACK TO CAREERS →</a>
+<tr><td style="padding:16px 40px;">
+    <div style="height:1px;background:linear-gradient(90deg,transparent,rgba(232,65,66,0.3),transparent);"></div>
+</td></tr>
+
+<tr><td style="padding:16px 40px;text-align:center;">
+    <div style="font-family:'Courier New',monospace;font-size:10px;color:#FFD700;letter-spacing:2px;margin-bottom:12px;">⚠ TEST MISSION</div>
+    <p style="font-size:14px;color:#ccc;line-height:1.6;margin:0 0 16px;">Your agent must now prove capability by completing a test form. It has <strong style="color:#E84142;">5 minutes</strong> to fill it.</p>
+    <a href="${testUrl}" style="display:inline-block;background:#E84142;color:#FFF;text-decoration:none;font-family:'Courier New',monospace;font-size:12px;font-weight:bold;padding:14px 32px;border-radius:8px;letter-spacing:1px;">START TEST MISSION →</a>
+    <p style="font-size:11px;color:#555;margin-top:12px;">Or share this URL with your agent:<br/><span style="color:#E84142;word-break:break-all;">${testUrl}</span></p>
 </td></tr>
 
 <tr><td style="padding:16px 40px 32px;text-align:center;">
     <div style="font-size:11px;color:#444;">
-        PyVax Careers — We'll be in touch. Keep shipping.
+        PyVax Careers — Classified. Agent ID: <span style="color:#666;">${data.agentId}</span>
     </div>
 </td></tr>
 
@@ -132,6 +153,34 @@ export async function POST(request: NextRequest) {
         const cleanEmail = humanEmail.trim().toLowerCase();
         const roleLabel = ROLE_LABELS[agentRole] || agentRole;
 
+        // Generate agent ID and build test URL
+        const agentId = crypto.randomUUID().replace(/-/g, "").slice(0, 16);
+        const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || "https://careers.pyvax.xyz";
+        const testUrl = `${baseUrl}/careers/test/${agentId}`;
+
+        // Store internally
+        const storedData = {
+            name: `ManualAgent-${Date.now().toString(36)}`,
+            role: agentRole,
+            human: cleanEmail,
+            capabilities: [],
+            stack: [],
+            webhook: "",
+            github: githubUrl?.trim() || "",
+            demo: demoUrl?.trim() || "",
+            success_metric: successDefinition.trim(),
+            description: agentDescription.trim(),
+            agentId,
+            submittedAt: new Date().toISOString(),
+            ip: request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() || "unknown",
+            testStatus: "pending",
+            testResults: null,
+            applicationType: "manual",
+        };
+
+        await kv.hset(`agent:${agentId}`, storedData);
+        await kv.lpush("agents:applications", agentId);
+
         // Email 1: Internal notification to team
         if (resend) {
             try {
@@ -152,20 +201,28 @@ export async function POST(request: NextRequest) {
                 console.error("Failed to send internal email:", err?.message || err);
             }
 
-            // Email 2: Confirmation to applicant
+            // Email 2: Confirmation + Test Mission link to applicant
             try {
                 await resend.emails.send({
                     from: "PyVax Careers <dev@pyvax.xyz>",
                     to: [cleanEmail],
-                    subject: `Agent Deployed — ${roleLabel} | PyVax Careers`,
-                    html: buildConfirmationEmail(cleanEmail, roleLabel),
+                    subject: `🔴 Test Mission Assigned — ${roleLabel} | PyVax Careers`,
+                    html: buildTestMissionEmail({
+                        agentRole,
+                        humanEmail: cleanEmail,
+                        agentDescription: agentDescription.trim(),
+                        githubUrl: githubUrl?.trim() || "",
+                        demoUrl: demoUrl?.trim() || "",
+                        successDefinition: successDefinition.trim(),
+                        agentId,
+                    }, testUrl),
                 });
             } catch (err: any) {
                 console.error("Failed to send confirmation email:", err?.message || err);
             }
         }
 
-        return NextResponse.json({ success: true });
+        return NextResponse.json({ success: true, agentId, testUrl });
     } catch (error: any) {
         console.error("Manual apply error:", error);
         return NextResponse.json(

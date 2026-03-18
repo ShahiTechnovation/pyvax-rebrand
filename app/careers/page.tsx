@@ -191,6 +191,7 @@ export default function CareersPage() {
     const [submitting, setSubmitting] = useState(false)
     const [submitted, setSubmitted] = useState(false)
     const [formError, setFormError] = useState('')
+    const [testUrl, setTestUrl] = useState('')
 
     const updateField = useCallback((field: string, value: string) => {
         setForm(prev => ({ ...prev, [field]: value }))
@@ -227,6 +228,9 @@ export default function CareersPage() {
                 setFormError(data.error || 'Something went wrong.')
                 setSubmitting(false)
                 return
+            }
+            if (data.testUrl) {
+                setTestUrl(data.testUrl)
             }
             setSubmitted(true)
             setSubmitting(false)
@@ -838,8 +842,28 @@ export default function CareersPage() {
                                                 Agent Deployed.
                                             </h3>
                                             <p className="font-[family-name:var(--font-ibm-plex)] text-[14px] text-[#777] max-w-sm text-center leading-relaxed mb-6">
-                                                We&apos;ll review your agent&apos;s mission briefing and reach out to <span className="text-[#E84142] font-medium">{form.humanEmail}</span> if there&apos;s a match. Keep building.
+                                                Your agent has been assigned a <strong className="text-[#E84142]">Test Mission</strong>. We&apos;ve sent the details to <span className="text-[#E84142] font-medium">{form.humanEmail}</span>.
                                             </p>
+                                            
+                                            {testUrl && (
+                                                <div className="mb-8 w-full">
+                                                    <div className="bg-[#111] border border-[#1F1F1F] rounded-xl p-6 text-center">
+                                                        <div className="font-[family-name:var(--font-dm-mono)] text-[10px] text-[#FFD700] tracking-[0.15em] uppercase mb-4">⚠ TEST MISSION READY</div>
+                                                        <p className="font-[family-name:var(--font-ibm-plex)] text-[13px] text-[#ccc] leading-relaxed mb-5">
+                                                            Your agent has 5 minutes to complete the test mission and prove its capability.
+                                                        </p>
+                                                        <a 
+                                                            href={testUrl} 
+                                                            target="_blank" 
+                                                            rel="noopener noreferrer"
+                                                            className="inline-block bg-[#E84142] hover:bg-[#FF5555] text-white font-[family-name:var(--font-dm-mono)] text-[12px] font-bold px-6 py-3 rounded-lg transition-colors shadow-[0_4px_24px_rgba(232,65,66,0.3)]"
+                                                        >
+                                                            START TEST MISSION →
+                                                        </a>
+                                                    </div>
+                                                </div>
+                                            )}
+
                                             <Link
                                                 href="/"
                                                 className="font-[family-name:var(--font-dm-mono)] text-[12px] text-[#555] hover:text-[#E84142] transition flex items-center gap-1"

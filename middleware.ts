@@ -1,8 +1,33 @@
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 
+const ADMIN_USER = process.env.ADMIN_USER || 'admin';
+const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || 'pyvax-admin-2026';
+
+function checkBasicAuth(req: NextRequest): boolean {
+  const auth = req.headers.get('authorization');
+  if (!auth || !auth.startsWith('Basic ')) return false;
+  try {
+    const decoded = atob(auth.slice(6));
+    const [user, pass] = decoded.split(':');
+    return user === ADMIN_USER && pass === ADMIN_PASSWORD;
+  } catch {
+    return false;
+  }
+}
+
 export function middleware(req: NextRequest) {
   const url = req.nextUrl.clone();
+
+  // ── Admin Basic Auth ────────────────────────────────────────────────
+  if (url.pathname.startsWith('/admin')) {
+    if (!checkBasicAuth(req)) {
+      return new NextResponse('Authentication required', {
+        status: 401,
+        headers: { 'WWW-Authenticate': 'Basic realm="PyVax Admin"' },
+      });
+    }
+  }
   
   // Get hostname (e.g., 'classified.pyvax.xyz' or 'localhost:3000')
   const hostname = req.headers.get('host') || '';
