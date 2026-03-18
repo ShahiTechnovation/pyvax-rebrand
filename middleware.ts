@@ -28,15 +28,15 @@ export function middleware(req: NextRequest) {
       });
     }
   }
-  
+
   // Get hostname (e.g., 'classified.pyvax.xyz' or 'localhost:3000')
   const hostname = req.headers.get('host') || '';
   const forwardedHost = req.headers.get('x-forwarded-host') || '';
-  
+
   // Check if the current hostname is the classified subdomain
   // Vercel often uses x-forwarded-host for the original request domain
   const isClassified = hostname.includes('classified.pyvax.xyz') || forwardedHost.includes('classified.pyvax.xyz');
-  const isCareers = hostname.includes('careers.pyvax.xyz') || forwardedHost.includes('careers.pyvax.xyz') || hostname.includes('career.pyvax.xyz') || forwardedHost.includes('career.pyvax.xyz');
+  const isCareers = hostname.includes('careers.pyvax.xyz') || forwardedHost.includes('careers.pyvax.xyz') || hostname.includes('careers.pyvax.xyz') || forwardedHost.includes('careers.pyvax.xyz');
   const isAgent = hostname.includes('agent.pyvax.xyz') || forwardedHost.includes('agent.pyvax.xyz');
 
   if (isClassified) {
