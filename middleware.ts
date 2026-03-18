@@ -11,11 +11,19 @@ export function middleware(req: NextRequest) {
   // Check if the current hostname is the classified subdomain
   // Vercel often uses x-forwarded-host for the original request domain
   const isClassified = hostname.includes('classified.pyvax.xyz') || forwardedHost.includes('classified.pyvax.xyz');
+  const isCareers = hostname.includes('careers.pyvax.xyz') || forwardedHost.includes('careers.pyvax.xyz');
 
   if (isClassified) {
     // If we're at the root of the subdomain
     if (url.pathname === '/') {
       url.pathname = '/classified';
+      return NextResponse.rewrite(url);
+    }
+  }
+
+  if (isCareers) {
+    if (url.pathname === '/') {
+      url.pathname = '/careers';
       return NextResponse.rewrite(url);
     }
   }

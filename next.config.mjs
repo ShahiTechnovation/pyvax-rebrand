@@ -14,6 +14,11 @@ const nextConfig = {
         permanent: false,
       },
       {
+        source: '/careers',
+        destination: 'https://careers.pyvax.xyz',
+        permanent: false,
+      },
+      {
         source: '/unstop',
         destination: 'https://unstop.com/o/nfj1CVW?lb=TUn3UTaD',
         permanent: false,
