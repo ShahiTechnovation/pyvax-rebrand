@@ -6,12 +6,20 @@ import { usePathname } from 'next/navigation'
 import { useState } from 'react'
 import { Menu, X } from 'lucide-react'
 
+const isDev = process.env.NODE_ENV === 'development'
+
+const getUrl = (path: string, subdomain?: string) => {
+    if (isDev) return path
+    if (subdomain) return `https://${subdomain}.pyvax.xyz`
+    return path === '/' ? 'https://pyvax.xyz' : `https://pyvax.xyz${path}`
+}
+
 const NAV_LINKS = [
-    { href: '/', label: 'HOME' },
-    { href: '/docs', label: 'DOCS' },
-    { href: '/pricing', label: 'PRICING' },
-    { href: '/agent', label: 'AGENT', badge: 'NEW' },
-    { href: '/careers', label: 'CAREERS', badge: 'HOT' },
+    { path: '/', label: 'HOME' },
+    { path: '/docs', label: 'DOCS' },
+    { path: '/pricing', label: 'PRICING' },
+    { path: '/agent', label: 'AGENT', badge: 'NEW', subdomain: 'agent' },
+    { path: '/careers', label: 'CAREERS', badge: 'HOT', subdomain: 'career' },
 ]
 
 export function Navbar() {
@@ -27,18 +35,20 @@ export function Navbar() {
         <nav className="border-b border-[#1F1F1F] bg-[#0A0A0A]/95 backdrop-blur-md sticky top-0 z-50">
             <div className="max-w-7xl mx-auto px-4 h-16 flex items-center justify-between">
                 {/* Logo */}
-                <Link href="/" className="flex items-center gap-2 font-bold text-xl hover:text-[#E84142] transition">
+                <Link href={isDev ? '/' : 'https://pyvax.xyz'} className="flex items-center gap-2 font-bold text-xl hover:text-[#E84142] transition">
                     <Image src="/icon.svg" alt="PyVax Logo" width={32} height={32} className="rounded-sm" />
                     <span className="text-[#F2F2F2]">PyVax</span>
                 </Link>
 
                 {/* Desktop Navigation */}
                 <div className="hidden md:flex items-center gap-8 font-[family-name:var(--font-dm-mono)] text-[11px] text-[#909090]">
-                    {NAV_LINKS.map((link) => (
+                    {NAV_LINKS.map((link) => {
+                        const href = getUrl(link.path, link.subdomain)
+                        return (
                         <Link
-                            key={link.href}
-                            href={link.href}
-                            className={`transition flex items-center gap-1.5 ${isActive(link.href)
+                            key={link.path}
+                            href={href}
+                            className={`transition flex items-center gap-1.5 ${isActive(link.path)
                                 ? 'text-[#F2F2F2]'
                                 : 'hover:text-[#E84142]'
                                 }`}
@@ -50,7 +60,8 @@ export function Navbar() {
                                 </span>
                             )}
                         </Link>
-                    ))}
+                        )
+                    })}
                 </div>
 
                 {/* Right side */}
@@ -79,11 +90,13 @@ export function Navbar() {
             {/* Mobile Navigation */}
             {mobileOpen && (
                 <div className="md:hidden pb-4 space-y-1 border-t border-[#1F1F1F] pt-4 px-4 bg-[#0A0A0A]">
-                    {NAV_LINKS.map((link) => (
+                    {NAV_LINKS.map((link) => {
+                        const href = getUrl(link.path, link.subdomain)
+                        return (
                         <Link
-                            key={link.href}
-                            href={link.href}
-                            className={`block px-4 py-2.5 font-[family-name:var(--font-dm-mono)] text-[12px] rounded-lg transition-colors ${isActive(link.href)
+                            key={link.path}
+                            href={href}
+                            className={`block px-4 py-2.5 font-[family-name:var(--font-dm-mono)] text-[12px] rounded-lg transition-colors ${isActive(link.path)
                                 ? 'text-[#F2F2F2] bg-[#1A1A1A]'
                                 : 'text-[#909090] hover:text-[#E84142] hover:bg-[#111]'
                                 }`}
@@ -98,7 +111,8 @@ export function Navbar() {
                                 )}
                             </span>
                         </Link>
-                    ))}
+                        )
+                    })}
                     <Link
                         href="/playground"
                         className="block px-4 py-2.5 mt-2 bg-[#E84142] text-white font-[family-name:var(--font-dm-mono)] text-[12px] font-bold rounded-lg text-center hover:bg-[#FF5555] transition"
