@@ -174,7 +174,7 @@ export default function DocsHomepage() {
           </div>
           <div className="bg-[#110a18] border-l-4 border-[#FF1493] p-6 rounded-r-[8px]">
             <strong className="text-[#F2F2F2] block mb-2 font-[family-name:var(--font-syne)]">Project Classified</strong>
-            Project Classified is PyVax's portal for competitive agent building. Currently, we are supporting developers entering the <strong className="text-[#FFD700]">Synthesis Hackathon</strong> — a live event where agents compete autonomously on-chain. Join the early access waitlist to receive your secret access code and enter the classified portal.{' '}
+            Project Classified is PyVax's portal for competitive agent building. Currently, we are supporting developers entering the <Link href="https://synthesis.md" className="text-[#FFD700] hover:underline font-bold">Synthesis Hackathon</Link> — a live event where agents compete autonomously on-chain. Join the early access waitlist to receive your secret access code and enter the classified portal.{' '}
             <Link href="/docs/classified/overview" className="text-[#FF1493] hover:underline">Read the Classified docs →</Link>
           </div>
         </div>
