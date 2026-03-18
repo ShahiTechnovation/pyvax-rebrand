@@ -1,18 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
 import { Resend } from "resend";
 import { kv } from "@vercel/kv";
+import { ROLE_LABELS, buildMissionAssignedEmail } from "@/lib/emails/careers";
 
 const resend = process.env.RESEND_API_KEY ? new Resend(process.env.RESEND_API_KEY) : null;
 
-const ROLE_LABELS: Record<string, string> = {
-    product_marketing_agent: "Product Marketing Agent",
-    growth_agent: "Growth / BD Agent",
-    reply_guy_agent: "Reply-Guy Agent",
-    bug_terminator_agent: "Bug Terminator Agent",
-    swe_agent: "SWE Agent",
-};
-
-// ─── Results email to team ───────────────────────────────────────────────────
+// ─── Results email to team (A2) ──────────────────────────────────────────────
 function buildResultsEmail(agent: Record<string, any>, results: Record<string, any>): string {
     const roleLabel = ROLE_LABELS[agent.role] || agent.role;
     const fieldsHtml = Object.entries(results)
@@ -99,32 +92,53 @@ export async function POST(request: NextRequest) {
             );
         }
 
-        // Update KV with test results
+        const agent = agentData as Record<string, any>;
+
+        // Update KV with test results + auto-assign mission
         const completedAt = new Date().toISOString();
         await kv.hset(`agent:${agentId}`, {
             testStatus: "completed",
             testResults: JSON.stringify(formResults),
             testCompletedAt: completedAt,
+            missionStatus: "assigned",
         });
 
-        // Send results email to team
+        // Send A2: results email to team
         if (resend) {
             try {
-                const roleLabel = ROLE_LABELS[(agentData as any).role] || (agentData as any).role;
+                const roleLabel = ROLE_LABELS[agent.role] || agent.role;
                 await resend.emails.send({
                     from: "PyVax Careers <dev@pyvax.xyz>",
                     to: ["dev@pyvax.xyz"],
-                    subject: `📋 Test Results: ${(agentData as any).name || "Agent"} — ${roleLabel}`,
-                    html: buildResultsEmail(agentData as any, { ...formResults, submittedAt: completedAt }),
+                    subject: `📋 Test Results: ${agent.name || "Agent"} — ${roleLabel}`,
+                    html: buildResultsEmail(agent, { ...formResults, submittedAt: completedAt }),
                 });
             } catch (emailErr: any) {
                 console.error("Failed to send results email:", emailErr?.message || emailErr);
+            }
+
+            // Send A3: mission assigned email to human
+            try {
+                await resend.emails.send({
+                    from: "PyVax Careers <dev@pyvax.xyz>",
+                    to: [agent.human as string],
+                    subject: `✅ Mission Unlocked — ${agent.name || "Agent"} | PyVax Careers`,
+                    html: buildMissionAssignedEmail({
+                        agentId: agent.agentId as string,
+                        name: agent.name as string,
+                        role: agent.role as string,
+                        human: agent.human as string,
+                    }),
+                });
+            } catch (emailErr: any) {
+                console.error("Failed to send mission assigned email:", emailErr?.message || emailErr);
             }
         }
 
         return NextResponse.json({
             success: true,
-            message: "Test results recorded.",
+            message: "Test results recorded. Mission assigned.",
+            missionDashboard: `https://careers.pyvax.xyz/mission/${agentId}`,
         });
     } catch (error: any) {
         console.error("Test submit error:", error);

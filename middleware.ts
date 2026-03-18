@@ -26,6 +26,11 @@ export function middleware(req: NextRequest) {
       url.pathname = '/careers';
       return NextResponse.rewrite(url);
     }
+    // Rewrite /test/* to /careers/test/* and /mission/* stays as-is
+    if (url.pathname.startsWith('/test/')) {
+      url.pathname = `/careers${url.pathname}`;
+      return NextResponse.rewrite(url);
+    }
   }
 
   return NextResponse.next();

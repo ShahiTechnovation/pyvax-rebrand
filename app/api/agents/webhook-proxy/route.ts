@@ -6,11 +6,18 @@ import { kv } from "@vercel/kv";
 export async function POST(request: NextRequest) {
     try {
         const body = await request.json();
-        const { agentId, field, value } = body;
+        const { agentId, field, value, type = "field_update", event, data } = body;
 
-        if (!agentId || !field) {
+        if (!agentId) {
             return NextResponse.json(
-                { success: false, error: "Missing agentId or field." },
+                { success: false, error: "Missing agentId." },
+                { status: 400 }
+            );
+        }
+
+        if (type === "field_update" && !field) {
+            return NextResponse.json(
+                { success: false, error: "Missing field for field_update type." },
                 { status: 400 }
             );
         }
