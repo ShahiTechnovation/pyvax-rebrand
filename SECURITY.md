@@ -13,7 +13,7 @@
 
 ### Responsible Disclosure
 
-1. **Email**: Send a detailed report to **security@pyvax.io**
+1. **Email**: Send a detailed report to **security@pyvax.xyz**
 2. **Include**:
    - Description of the vulnerability
    - Steps to reproduce
