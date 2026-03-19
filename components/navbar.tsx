@@ -19,7 +19,7 @@ const NAV_LINKS = [
     { path: '/docs', label: 'DOCS' },
     { path: '/pricing', label: 'PRICING' },
     { path: '/agent', label: 'AGENT', badge: 'NEW', subdomain: 'agent' },
-    { path: '/careers', label: 'CAREERS', badge: 'HOT', subdomain: 'career' },
+    { path: '/careers', label: 'CAREERS', badge: 'HOT', subdomain: 'careers' },
 ]
 
 export function Navbar() {
