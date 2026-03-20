@@ -5,7 +5,7 @@ import { motion, useInView } from 'framer-motion'
 import { Terminal } from 'lucide-react'
 
 const DEMO_LINES = [
-  { text: '$ pip install classified-agent', type: 'command', pause: 800 },
+  { text: '$ pip install classified-agent==1.2.0', type: 'command', pause: 800 },
   { text: 'Successfully installed classified-agent-1.1.0', type: 'output', pause: 600 },
   { text: '', type: 'blank', pause: 300 },
   { text: '$ classified-agent init DeFiBot', type: 'command', pause: 700 },

@@ -1,0 +1,224 @@
+============================= test session starts =============================
+platform win32 -- Python 3.13.12, pytest-8.4.2, pluggy-1.6.0 -- C:\Users\nothi\AppData\Local\Microsoft\WindowsApps\PythonSoftwareFoundation.Python.3.13_qbz5n2kfra8p0\python.exe
+cachedir: .pytest_cache
+rootdir: P:\pyvax-rebrand\classified-agent-pkg
+configfile: pyproject.toml
+plugins: anyio-4.9.0, asyncio-1.2.0, cov-7.0.0
+asyncio: mode=Mode.STRICT, debug=False, asyncio_default_fixture_loop_scope=None, asyncio_default_test_loop_scope=function
+collecting ... collected 53 items
+
+classified_agent/tests/test_templates.py::TestImportlibResources::test_templates_traversable PASSED [  1%]
+classified_agent/tests/test_templates.py::TestImportlibResources::test_templates_has_classified_toml PASSED [  3%]
+classified_agent/tests/test_templates.py::TestImportlibResources::test_templates_has_agent_yaml PASSED [  5%]
+classified_agent/tests/test_templates.py::TestImportlibResources::test_templates_has_skill_file PASSED [  7%]
+classified_agent/tests/test_templates.py::TestImportlibResources::test_templates_has_env_example PASSED [  9%]
+classified_agent/tests/test_templates.py::TestImportlibResources::test_templates_has_workspace_state PASSED [ 11%]
+classified_agent/tests/test_templates.py::TestImportlibResources::test_templates_has_quickstart PASSED [ 13%]
+classified_agent/tests/test_templates.py::TestImportlibResources::test_templates_has_prompts PASSED [ 15%]
+classified_agent/tests/test_templates.py::TestPackageVersion::test_version_exists PASSED [ 16%]
+classified_agent/tests/test_templates.py::TestPackageVersion::test_version_format PASSED [ 18%]
+classified_agent/tests/test_templates.py::TestPackageVersion::test_version_matches_expected PASSED [ 20%]
+classified_agent/tests/test_templates.py::TestTemplateCompleteness::test_template_file_exists[classified.toml] PASSED [ 22%]
+classified_agent/tests/test_templates.py::TestTemplateCompleteness::test_template_file_exists[agent.yaml] PASSED [ 24%]
+classified_agent/tests/test_templates.py::TestTemplateCompleteness::test_template_file_exists[.env.example] PASSED [ 26%]
+classified_agent/tests/test_templates.py::TestTemplateCompleteness::test_template_file_exists[README.md] PASSED [ 28%]
+classified_agent/tests/test_templates.py::TestTemplateCompleteness::test_template_file_exists[skills/PROJECT_CLASSIFIED_SKILL.md] PASSED [ 30%]
+classified_agent/tests/test_templates.py::TestTemplateCompleteness::test_template_file_exists[skills/README.md] PASSED [ 32%]
+classified_agent/tests/test_templates.py::TestTemplateCompleteness::test_template_file_exists[workspace/README.md] PASSED [ 33%]
+classified_agent/tests/test_templates.py::TestTemplateCompleteness::test_template_file_exists[workspace/state.json] PASSED [ 35%]
+classified_agent/tests/test_templates.py::TestTemplateCompleteness::test_template_file_exists[workspace/notes.md] PASSED [ 37%]
+classified_agent/tests/test_templates.py::TestTemplateCompleteness::test_template_file_exists[logs/.gitkeep] PASSED [ 39%]
+classified_agent/tests/test_templates.py::TestTemplateCompleteness::test_template_file_exists[examples/quickstart.py] PASSED [ 41%]
+classified_agent/tests/test_templates.py::TestTemplateCompleteness::test_template_file_exists[examples/mission.md] PASSED [ 43%]
+classified_agent/tests/test_templates.py::TestTemplateCompleteness::test_template_file_exists[examples/memory.md] PASSED [ 45%]
+classified_agent/tests/test_templates.py::TestTemplateCompleteness::test_template_file_exists[prompts/system.md] PASSED [ 47%]
+classified_agent/tests/test_templates.py::TestTemplateCompleteness::test_template_file_exists[prompts/tool-use.md] PASSED [ 49%]
+classified_agent/tests/test_cli_scaffold.py::TestGetTemplateDir::test_template_dir_exists PASSED [ 50%]
+classified_agent/tests/test_cli_scaffold.py::TestGetTemplateDir::test_template_dir_has_agent_yaml PASSED [ 52%]
+classified_agent/tests/test_cli_scaffold.py::TestGetTemplateDir::test_template_dir_has_skill_file PASSED [ 54%]
+classified_agent/tests/test_cli_scaffold.py::TestGetTemplateDir::test_template_dir_has_env_example PASSED [ 56%]
+classified_agent/tests/test_cli_scaffold.py::TestGetTemplateDir::test_template_dir_has_workspace_state PASSED [ 58%]
+classified_agent/tests/test_cli_scaffold.py::TestGetTemplateDir::test_template_dir_has_examples PASSED [ 60%]
+classified_agent/tests/test_cli_scaffold.py::TestGetTemplateDir::test_template_dir_has_prompts PASSED [ 62%]
+classified_agent/tests/test_cli_scaffold.py::TestCopyTemplateFile::test_copies_file PASSED [ 64%]
+classified_agent/tests/test_cli_scaffold.py::TestCopyTemplateFile::test_skips_existing PASSED [ 66%]
+classified_agent/tests/test_cli_scaffold.py::TestCopyTemplateFile::test_overwrites_when_requested PASSED [ 67%]
+classified_agent/tests/test_cli_scaffold.py::TestCopyTemplateFile::test_renames_file PASSED [ 69%]
+classified_agent/tests/test_cli_scaffold.py::TestCopyTemplateFile::test_returns_none_for_missing_source PASSED [ 71%]
+classified_agent/tests/test_cli_scaffold.py::TestInitCommand::test_init_creates_config FAILED [ 73%]
+classified_agent/tests/test_cli_scaffold.py::TestInitCommand::test_init_creates_workspace FAILED [ 75%]
+classified_agent/tests/test_cli_scaffold.py::TestInitCommand::test_init_creates_logs FAILED [ 77%]
+classified_agent/tests/test_cli_scaffold.py::TestInitCommand::test_init_creates_agent_yaml PASSED [ 79%]
+classified_agent/tests/test_cli_scaffold.py::TestInitCommand::test_init_creates_skill_file FAILED [ 81%]
+classified_agent/tests/test_cli_scaffold.py::TestInitCommand::test_init_creates_env_example FAILED [ 83%]
+classified_agent/tests/test_cli_scaffold.py::TestInitCommand::test_init_creates_readme FAILED [ 84%]
+classified_agent/tests/test_cli_scaffold.py::TestInitCommand::test_init_creates_examples FAILED [ 86%]
+classified_agent/tests/test_cli_scaffold.py::TestInitCommand::test_init_creates_workspace_files FAILED [ 88%]
+classified_agent/tests/test_cli_scaffold.py::TestInitCommand::test_init_creates_skills_dir FAILED [ 90%]
+classified_agent/tests/test_cli_scaffold.py::TestInitCommand::test_init_refuses_overwrite PASSED [ 92%]
+classified_agent/tests/test_cli_scaffold.py::TestInitCommand::test_init_custom_config_path FAILED [ 94%]
+classified_agent/tests/test_cli_scaffold.py::TestDoctorCommand::test_doctor_without_config_fails PASSED [ 96%]
+classified_agent/tests/test_cli_scaffold.py::TestDoctorCommand::test_doctor_with_init_partially_passes PASSED [ 98%]
+classified_agent/tests/test_cli_scaffold.py::TestDoctorCommand::test_doctor_shows_all_checks PASSED [100%]
+
+================================== FAILURES ===================================
+__________________ TestInitCommand.test_init_creates_config ___________________
+
+self = <classified_agent.tests.test_cli_scaffold.TestInitCommand object at 0x0000023920B165D0>
+tmp_path = WindowsPath('C:/Users/nothi/AppData/Local/Temp/pytest-of-nothi/pytest-13/test_init_creates_config0')
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x0000023920728FC0>
+
+    def test_init_creates_config(self, tmp_path: Path, monkeypatch):
+        monkeypatch.chdir(tmp_path)
+        result = runner.invoke(app, ["init"])
+>       assert result.exit_code == 0
+E       assert 1 == 0
+E        +  where 1 = <Result ValueError("'agent.yaml' is not in the subpath of 'C:\\\\Users\\\\nothi\\\\AppData\\\\Local\\\\Temp\\\\pytest-of-nothi\\\\pytest-13\\\\test_init_creates_config0'")>.exit_code
+
+P:\pyvax-rebrand\classified-agent-pkg\classified_agent\tests\test_cli_scaffold.py:98: AssertionError
+_________________ TestInitCommand.test_init_creates_workspace _________________
+
+self = <classified_agent.tests.test_cli_scaffold.TestInitCommand object at 0x0000023920B16710>
+tmp_path = WindowsPath('C:/Users/nothi/AppData/Local/Temp/pytest-of-nothi/pytest-13/test_init_creates_workspace0')
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x0000023920A9FA80>
+
+    def test_init_creates_workspace(self, tmp_path: Path, monkeypatch):
+        monkeypatch.chdir(tmp_path)
+        runner.invoke(app, ["init"])
+>       assert (tmp_path / "workspace").is_dir()
+E       AssertionError: assert False
+E        +  where False = is_dir()
+E        +    where is_dir = (WindowsPath('C:/Users/nothi/AppData/Local/Temp/pytest-of-nothi/pytest-13/test_init_creates_workspace0') / 'workspace').is_dir
+
+P:\pyvax-rebrand\classified-agent-pkg\classified_agent\tests\test_cli_scaffold.py:104: AssertionError
+___________________ TestInitCommand.test_init_creates_logs ____________________
+
+self = <classified_agent.tests.test_cli_scaffold.TestInitCommand object at 0x0000023920A9ED70>
+tmp_path = WindowsPath('C:/Users/nothi/AppData/Local/Temp/pytest-of-nothi/pytest-13/test_init_creates_logs0')
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x0000023920AC70B0>
+
+    def test_init_creates_logs(self, tmp_path: Path, monkeypatch):
+        monkeypatch.chdir(tmp_path)
+        runner.invoke(app, ["init"])
+>       assert (tmp_path / "logs").is_dir()
+E       AssertionError: assert False
+E        +  where False = is_dir()
+E        +    where is_dir = (WindowsPath('C:/Users/nothi/AppData/Local/Temp/pytest-of-nothi/pytest-13/test_init_creates_logs0') / 'logs').is_dir
+
+P:\pyvax-rebrand\classified-agent-pkg\classified_agent\tests\test_cli_scaffold.py:109: AssertionError
+________________ TestInitCommand.test_init_creates_skill_file _________________
+
+self = <classified_agent.tests.test_cli_scaffold.TestInitCommand object at 0x0000023920B855B0>
+tmp_path = WindowsPath('C:/Users/nothi/AppData/Local/Temp/pytest-of-nothi/pytest-13/test_init_creates_skill_file0')
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x0000023920C24F30>
+
+    def test_init_creates_skill_file(self, tmp_path: Path, monkeypatch):
+        monkeypatch.chdir(tmp_path)
+        runner.invoke(app, ["init"])
+>       assert (tmp_path / "SKILL.md").exists()
+E       AssertionError: assert False
+E        +  where False = exists()
+E        +    where exists = (WindowsPath('C:/Users/nothi/AppData/Local/Temp/pytest-of-nothi/pytest-13/test_init_creates_skill_file0') / 'SKILL.md').exists
+
+P:\pyvax-rebrand\classified-agent-pkg\classified_agent\tests\test_cli_scaffold.py:119: AssertionError
+________________ TestInitCommand.test_init_creates_env_example ________________
+
+self = <classified_agent.tests.test_cli_scaffold.TestInitCommand object at 0x0000023920ABAE00>
+tmp_path = WindowsPath('C:/Users/nothi/AppData/Local/Temp/pytest-of-nothi/pytest-13/test_init_creates_env_example0')
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x0000023920BC0B50>
+
+    def test_init_creates_env_example(self, tmp_path: Path, monkeypatch):
+        monkeypatch.chdir(tmp_path)
+        runner.invoke(app, ["init"])
+>       assert (tmp_path / ".env.example").exists()
+E       AssertionError: assert False
+E        +  where False = exists()
+E        +    where exists = (WindowsPath('C:/Users/nothi/AppData/Local/Temp/pytest-of-nothi/pytest-13/test_init_creates_env_example0') / '.env.example').exists
+
+P:\pyvax-rebrand\classified-agent-pkg\classified_agent\tests\test_cli_scaffold.py:124: AssertionError
+__________________ TestInitCommand.test_init_creates_readme ___________________
+
+self = <classified_agent.tests.test_cli_scaffold.TestInitCommand object at 0x0000023920ABAF10>
+tmp_path = WindowsPath('C:/Users/nothi/AppData/Local/Temp/pytest-of-nothi/pytest-13/test_init_creates_readme0')
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x0000023920BC1050>
+
+    def test_init_creates_readme(self, tmp_path: Path, monkeypatch):
+        monkeypatch.chdir(tmp_path)
+        runner.invoke(app, ["init"])
+>       assert (tmp_path / "README.md").exists()
+E       AssertionError: assert False
+E        +  where False = exists()
+E        +    where exists = (WindowsPath('C:/Users/nothi/AppData/Local/Temp/pytest-of-nothi/pytest-13/test_init_creates_readme0') / 'README.md').exists
+
+P:\pyvax-rebrand\classified-agent-pkg\classified_agent\tests\test_cli_scaffold.py:129: AssertionError
+_________________ TestInitCommand.test_init_creates_examples __________________
+
+self = <classified_agent.tests.test_cli_scaffold.TestInitCommand object at 0x0000023920875E50>
+tmp_path = WindowsPath('C:/Users/nothi/AppData/Local/Temp/pytest-of-nothi/pytest-13/test_init_creates_examples0')
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x0000023920C1A210>
+
+    def test_init_creates_examples(self, tmp_path: Path, monkeypatch):
+        monkeypatch.chdir(tmp_path)
+        runner.invoke(app, ["init"])
+>       assert (tmp_path / "examples" / "quickstart.py").exists()
+E       AssertionError: assert False
+E        +  where False = exists()
+E        +    where exists = ((WindowsPath('C:/Users/nothi/AppData/Local/Temp/pytest-of-nothi/pytest-13/test_init_creates_examples0') / 'examples') / 'quickstart.py').exists
+
+P:\pyvax-rebrand\classified-agent-pkg\classified_agent\tests\test_cli_scaffold.py:134: AssertionError
+______________ TestInitCommand.test_init_creates_workspace_files ______________
+
+self = <classified_agent.tests.test_cli_scaffold.TestInitCommand object at 0x0000023920A8F550>
+tmp_path = WindowsPath('C:/Users/nothi/AppData/Local/Temp/pytest-of-nothi/pytest-13/test_init_creates_workspace_fi0')
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x0000023920C1A8A0>
+
+    def test_init_creates_workspace_files(self, tmp_path: Path, monkeypatch):
+        monkeypatch.chdir(tmp_path)
+        runner.invoke(app, ["init"])
+>       assert (tmp_path / "workspace" / "state.json").exists()
+E       AssertionError: assert False
+E        +  where False = exists()
+E        +    where exists = ((WindowsPath('C:/Users/nothi/AppData/Local/Temp/pytest-of-nothi/pytest-13/test_init_creates_workspace_fi0') / 'workspace') / 'state.json').exists
+
+P:\pyvax-rebrand\classified-agent-pkg\classified_agent\tests\test_cli_scaffold.py:141: AssertionError
+________________ TestInitCommand.test_init_creates_skills_dir _________________
+
+self = <classified_agent.tests.test_cli_scaffold.TestInitCommand object at 0x0000023920AC9400>
+tmp_path = WindowsPath('C:/Users/nothi/AppData/Local/Temp/pytest-of-nothi/pytest-13/test_init_creates_skills_dir0')
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x0000023920BEF770>
+
+    def test_init_creates_skills_dir(self, tmp_path: Path, monkeypatch):
+        monkeypatch.chdir(tmp_path)
+        runner.invoke(app, ["init"])
+>       assert (tmp_path / "skills").is_dir()
+E       AssertionError: assert False
+E        +  where False = is_dir()
+E        +    where is_dir = (WindowsPath('C:/Users/nothi/AppData/Local/Temp/pytest-of-nothi/pytest-13/test_init_creates_skills_dir0') / 'skills').is_dir
+
+P:\pyvax-rebrand\classified-agent-pkg\classified_agent\tests\test_cli_scaffold.py:149: AssertionError
+________________ TestInitCommand.test_init_custom_config_path _________________
+
+self = <classified_agent.tests.test_cli_scaffold.TestInitCommand object at 0x0000023920B81EF0>
+tmp_path = WindowsPath('C:/Users/nothi/AppData/Local/Temp/pytest-of-nothi/pytest-13/test_init_custom_config_path0')
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x0000023920C39F30>
+
+    def test_init_custom_config_path(self, tmp_path: Path, monkeypatch):
+        monkeypatch.chdir(tmp_path)
+        result = runner.invoke(app, ["init", "--config", "custom.toml"])
+>       assert result.exit_code == 0
+E       assert 1 == 0
+E        +  where 1 = <Result ValueError("'agent.yaml' is not in the subpath of 'C:\\\\Users\\\\nothi\\\\AppData\\\\Local\\\\Temp\\\\pytest-of-nothi\\\\pytest-13\\\\test_init_custom_config_path0'")>.exit_code
+
+P:\pyvax-rebrand\classified-agent-pkg\classified_agent\tests\test_cli_scaffold.py:161: AssertionError
+=========================== short test summary info ===========================
+FAILED classified_agent/tests/test_cli_scaffold.py::TestInitCommand::test_init_creates_config
+FAILED classified_agent/tests/test_cli_scaffold.py::TestInitCommand::test_init_creates_workspace
+FAILED classified_agent/tests/test_cli_scaffold.py::TestInitCommand::test_init_creates_logs
+FAILED classified_agent/tests/test_cli_scaffold.py::TestInitCommand::test_init_creates_skill_file
+FAILED classified_agent/tests/test_cli_scaffold.py::TestInitCommand::test_init_creates_env_example
+FAILED classified_agent/tests/test_cli_scaffold.py::TestInitCommand::test_init_creates_readme
+FAILED classified_agent/tests/test_cli_scaffold.py::TestInitCommand::test_init_creates_examples
+FAILED classified_agent/tests/test_cli_scaffold.py::TestInitCommand::test_init_creates_workspace_files
+FAILED classified_agent/tests/test_cli_scaffold.py::TestInitCommand::test_init_creates_skills_dir
+FAILED classified_agent/tests/test_cli_scaffold.py::TestInitCommand::test_init_custom_config_path
+======================== 10 failed, 43 passed in 1.15s ========================

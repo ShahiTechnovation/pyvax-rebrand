@@ -140,7 +140,7 @@ function buildWelcomeEmail(email: string, position: number, spotsRemaining: numb
         </td>
         <td style="vertical-align:top;padding-left:16px;">
             <div style="font-family:'Segoe UI',Roboto,sans-serif;font-size:16px;font-weight:700;color:#F0F0F0;margin-bottom:4px;">Install the CLI</div>
-            <div style="font-family:'Courier New',monospace;font-size:12px;color:#FF1493;background:#0a0510;padding:8px 12px;border-radius:4px;border:1px solid rgba(255,20,147,0.2);margin-top:8px;">$ pip install classified-agent</div>
+            <div style="font-family:'Courier New',monospace;font-size:12px;color:#FF1493;background:#0a0510;padding:8px 12px;border-radius:4px;border:1px solid rgba(255,20,147,0.2);margin-top:8px;">$ pip install classified-agent==1.2.0</div>
         </td>
     </tr>
     </table>

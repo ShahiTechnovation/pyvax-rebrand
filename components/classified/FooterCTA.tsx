@@ -83,7 +83,7 @@ export function FooterCTA() {
               rel="noopener noreferrer"
               className="font-[family-name:var(--font-dm-mono)] text-[11px] text-[#888] hover:text-[#4CAF50] transition-colors tracking-wide"
             >
-              pip install classified-agent →
+              pip install classified-agent==1.2.0 →
             </a>
           </div>
         </motion.div>

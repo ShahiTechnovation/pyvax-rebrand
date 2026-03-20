@@ -31,7 +31,7 @@ const STEPS = [
     action: 'PyPI',
     link: 'https://pypi.org/project/classified-agent/',
     icon: '⚡',
-    command: 'pip install classified-agent',
+    command: 'pip install classified-agent==1.2.0',
   },
   {
     num: 4,

@@ -14,7 +14,7 @@ const SPONSORS = [
 
 // Terminal typewriter lines
 const TERMINAL_LINES = [
-  { text: '$ pip install classified-agent', delay: 0 },
+  { text: '$ pip install classified-agent==1.2.0', delay: 0 },
   { text: '✓ classified-agent v1.1.0 installed', delay: 0.6 },
   { text: '$ classified-agent init DeFiBot', delay: 1.2 },
   { text: '✓ agent.toml + workspace created', delay: 1.8 },

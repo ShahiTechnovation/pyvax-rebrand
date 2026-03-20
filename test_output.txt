@@ -1,0 +1,61 @@
+============================= test session starts =============================
+platform win32 -- Python 3.13.12, pytest-8.4.2, pluggy-1.6.0 -- C:\Users\nothi\AppData\Local\Microsoft\WindowsApps\PythonSoftwareFoundation.Python.3.13_qbz5n2kfra8p0\python.exe
+cachedir: .pytest_cache
+rootdir: P:\pyvax-rebrand\classified-agent-pkg
+configfile: pyproject.toml
+plugins: anyio-4.9.0, asyncio-1.2.0, cov-7.0.0
+asyncio: mode=Mode.STRICT, debug=False, asyncio_default_fixture_loop_scope=None, asyncio_default_test_loop_scope=function
+collecting ... collected 26 items
+
+classified_agent/tests/test_templates.py::TestImportlibResources::test_templates_traversable PASSED [  3%]
+classified_agent/tests/test_templates.py::TestImportlibResources::test_templates_has_classified_toml PASSED [  7%]
+classified_agent/tests/test_templates.py::TestImportlibResources::test_templates_has_agent_yaml PASSED [ 11%]
+classified_agent/tests/test_templates.py::TestImportlibResources::test_templates_has_skill_file PASSED [ 15%]
+classified_agent/tests/test_templates.py::TestImportlibResources::test_templates_has_env_example PASSED [ 19%]
+classified_agent/tests/test_templates.py::TestImportlibResources::test_templates_has_workspace_state PASSED [ 23%]
+classified_agent/tests/test_templates.py::TestImportlibResources::test_templates_has_quickstart PASSED [ 26%]
+classified_agent/tests/test_templates.py::TestImportlibResources::test_templates_has_prompts PASSED [ 30%]
+classified_agent/tests/test_templates.py::TestPackageVersion::test_version_exists PASSED [ 34%]
+classified_agent/tests/test_templates.py::TestPackageVersion::test_version_format PASSED [ 38%]
+classified_agent/tests/test_templates.py::TestPackageVersion::test_version_matches_expected PASSED [ 42%]
+classified_agent/tests/test_templates.py::TestTemplateCompleteness::test_template_file_exists[classified.toml] PASSED [ 46%]
+classified_agent/tests/test_templates.py::TestTemplateCompleteness::test_template_file_exists[agent.yaml] PASSED [ 50%]
+classified_agent/tests/test_templates.py::TestTemplateCompleteness::test_template_file_exists[.env.example] PASSED [ 53%]
+classified_agent/tests/test_templates.py::TestTemplateCompleteness::test_template_file_exists[README.md] PASSED [ 57%]
+classified_agent/tests/test_templates.py::TestTemplateCompleteness::test_template_file_exists[skills/PROJECT_CLASSIFIED_SKILL.md] PASSED [ 61%]
+classified_agent/tests/test_templates.py::TestTemplateCompleteness::test_template_file_exists[skills/README.md] PASSED [ 65%]
+classified_agent/tests/test_templates.py::TestTemplateCompleteness::test_template_file_exists[workspace/README.md] PASSED [ 69%]
+classified_agent/tests/test_templates.py::TestTemplateCompleteness::test_template_file_exists[workspace/state.json] PASSED [ 73%]
+classified_agent/tests/test_templates.py::TestTemplateCompleteness::test_template_file_exists[workspace/notes.md] PASSED [ 76%]
+classified_agent/tests/test_templates.py::TestTemplateCompleteness::test_template_file_exists[logs/.gitkeep] FAILED [ 80%]
+classified_agent/tests/test_templates.py::TestTemplateCompleteness::test_template_file_exists[examples/quickstart.py] PASSED [ 84%]
+classified_agent/tests/test_templates.py::TestTemplateCompleteness::test_template_file_exists[examples/mission.md] PASSED [ 88%]
+classified_agent/tests/test_templates.py::TestTemplateCompleteness::test_template_file_exists[examples/memory.md] PASSED [ 92%]
+classified_agent/tests/test_templates.py::TestTemplateCompleteness::test_template_file_exists[prompts/system.md] PASSED [ 96%]
+classified_agent/tests/test_templates.py::TestTemplateCompleteness::test_template_file_exists[prompts/tool-use.md] PASSED [100%]
+
+================================== FAILURES ===================================
+______ TestTemplateCompleteness.test_template_file_exists[logs/.gitkeep] ______
+
+self = <classified_agent.tests.test_templates.TestTemplateCompleteness object at 0x000001A5071F3F20>
+rel_path = 'logs/.gitkeep'
+
+    @pytest.mark.parametrize("rel_path", EXPECTED_FILES)
+    def test_template_file_exists(self, rel_path: str):
+        """Each template file must exist in the package."""
+        templates = pkg_files("classified_agent").joinpath("templates")
+        parts = rel_path.split("/")
+        resource = templates
+        for part in parts:
+            resource = resource.joinpath(part)
+        # Attempt to read it ù if it doesn't exist, this will fail
+        content = resource.read_text(encoding="utf-8")
+>       assert len(content) > 0, f"Template file is empty: {rel_path}"
+E       AssertionError: Template file is empty: logs/.gitkeep
+E       assert 0 > 0
+E        +  where 0 = len('')
+
+classified_agent\tests\test_templates.py:116: AssertionError
+=========================== short test summary info ===========================
+FAILED classified_agent/tests/test_templates.py::TestTemplateCompleteness::test_template_file_exists[logs/.gitkeep]
+======================== 1 failed, 25 passed in 0.14s =========================

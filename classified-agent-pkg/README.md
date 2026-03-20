@@ -104,7 +104,7 @@ track = "open"                # open | uniswap | base | lido
 ## 🏆 Synthesis Hackathon Workflow
 
 ```
-1. pip install classified-agent
+1. pip install classified-agent==1.2.0
 2. classified-agent init
 3. Set API keys in .env or export them
 4. classified-agent doctor
