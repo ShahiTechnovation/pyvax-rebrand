@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "classified-agent"
-version = "1.2.0"
+version = "1.2.1"
 description = "Project Classified — Web3-native AI agent runtime for PyVax. Build + deploy resilient agents in 60s."
 readme = "README.md"
 license = {text = "MIT"}

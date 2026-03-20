@@ -1,0 +1,57 @@
+Uploading distributions to https://upload.pypi.org/legacy/
+INFO     dist\classified_agent-1.2.0-py3-none-any.whl (83.9 KB)                
+INFO     dist\classified_agent-1.2.0.tar.gz (66.7 KB)                          
+INFO     username set by command options                                       
+INFO     password set by command options                                       
+INFO     username: __token__                                                   
+INFO     password: <hidden>                                                    
+Uploading classified_agent-1.2.0-py3-none-any.whl
+
+  0% ---------------------------------------- 0.0/97.8 kB ò --:-- ò ?
+  0% ---------------------------------------- 0.0/97.8 kB ò --:-- ò ?
+  0% ---------------------------------------- 0.0/97.8 kB ò --:-- ò ?
+  0% ---------------------------------------- 0.0/97.8 kB ò --:-- ò ?
+  0% ---------------------------------------- 0.0/97.8 kB ò --:-- ò ?
+  0% ---------------------------------------- 0.0/97.8 kB ò --:-- ò ?
+  0% ---------------------------------------- 0.0/97.8 kB ò --:-- ò ?
+  0% ---------------------------------------- 0.0/97.8 kB ò --:-- ò ?
+ 84% --------------------------------- ------ 81.9/97.8 kB ò 00:01 ò 108.1 MB/s
+ 84% --------------------------------- ------ 81.9/97.8 kB ò 00:01 ò 108.1 MB/s
+100% ---------------------------------------- 97.8/97.8 kB ò 00:01 ò 315.1 kB/s
+100% ---------------------------------------- 97.8/97.8 kB ò 00:01 ò 315.1 kB/s
+100% ---------------------------------------- 97.8/97.8 kB ò 00:01 ò 315.1 kB/s
+100% ---------------------------------------- 97.8/97.8 kB ò 00:01 ò 315.1 kB/s
+100% ---------------------------------------- 97.8/97.8 kB ò 00:01 ò 315.1 kB/s
+100% ---------------------------------------- 97.8/97.8 kB ò 00:01 ò 315.1 kB/s
+100% ---------------------------------------- 97.8/97.8 kB ò 00:01 ò 315.1 kB/s
+100% ---------------------------------------- 97.8/97.8 kB ò 00:01 ò 315.1 kB/s
+100% ---------------------------------------- 97.8/97.8 kB ò 00:01 ò 315.1 kB/s
+INFO     Response from https://upload.pypi.org/legacy/:                        
+         400 Bad Request                                                       
+INFO     <html>                                                                
+          <head>                                                               
+           <title>400 File already exists                                      
+         ('classified_agent-1.2.0-py3-none-any.whl', with blake2_256 hash      
+         'e8a98a0a744c40b4dee30eaadfa017e7b69b89efcf2fb5d3333625c2073d493a').  
+         See https://pypi.org/help/#file-name-reuse for more                   
+         information.</title>                                                  
+          </head>                                                              
+          <body>                                                               
+           <h1>400 File already exists                                         
+         ('classified_agent-1.2.0-py3-none-any.whl', with blake2_256 hash      
+         'e8a98a0a744c40b4dee30eaadfa017e7b69b89efcf2fb5d3333625c2073d493a').  
+         See https://pypi.org/help/#file-name-reuse for more information.</h1> 
+           The server could not comply with the request since it is either     
+         malformed or otherwise incorrect.<br/><br/>                           
+         File already exists                                                   
+         (&#x27;classified_agent-1.2.0-py3-none-any.whl&#x27;, with blake2_256 
+         hash                                                                  
+         &#x27;e8a98a0a744c40b4dee30eaadfa017e7b69b89efcf2fb5d3333625c2073d493a
+         &#x27;). See https://pypi.org/help/#file-name-reuse for more          
+         information.                                                          
+                                                                               
+                                                                               
+          </body>                                                              
+         </html>                                                               
+ERROR    HTTPError: 400 Bad Request from https://upload.pypi.org/legacy/       
+         Bad Request                                                           
