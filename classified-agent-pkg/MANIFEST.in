@@ -2,3 +2,4 @@ include LICENSE
 include README.md
 include classified_agent/py.typed
 recursive-include classified_agent/examples *.toml
+recursive-include classified_agent/templates *

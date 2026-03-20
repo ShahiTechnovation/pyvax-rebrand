@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "classified-agent"
-version = "1.1.0"
+version = "1.2.0"
 description = "Classified Agent CLI — Synthesis Hackathon ($75K Prizes). Build + submit AI agents in 60s. PyVax-powered Web3 scaffolding."
 readme = "README.md"
 license = {text = "MIT"}
@@ -73,7 +73,12 @@ include = ["classified_agent*"]
 exclude = ["tests*", "docs*"]
 
 [tool.setuptools.package-data]
-classified_agent = ["py.typed", "examples/*.toml"]
+classified_agent = [
+    "py.typed",
+    "examples/*.toml",
+    "templates/**/*",
+    "templates/**/.*",
+]
 
 [tool.pytest.ini_options]
 testpaths = ["classified_agent/tests"]

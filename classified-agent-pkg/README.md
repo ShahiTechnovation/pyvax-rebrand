@@ -16,33 +16,40 @@
 pip install classified-agent
 
 classified-agent init
-# → Edit classified.toml (set API keys)
+# → Creates classified.toml, agent.yaml, SKILL.md, workspace/, logs/, examples/
 
+# Edit classified.toml (set API keys)
 export ANTHROPIC_API_KEY='sk-ant-...'
 
+classified-agent doctor
+# → Verifies environment readiness (10 checks)
+
 classified-agent run
-# 🚀 Agent running — Synthesis Hackathon LIVE!
+# 🚀 Agent running!
 ```
 
 ## 🏗️ Architecture
 
 ```
 classified_agent/
-├── cli/             # Typer CLI: init, run, join-synthesis
+├── cli/             # Typer CLI: init, doctor, run, join-synthesis
 ├── config/          # Pydantic v2 models + TOML loader
 ├── core/            # Agent runtime (LLM, loop, context, memory)
 ├── tools/           # 14 built-in tools (fs, http, git, web3)
 ├── wallet/          # On-chain backends (PyVax local, mock, managed)
 ├── adapters/        # Synthesis.md hackathon integration
 ├── logging/         # Rich console + JSONL structured logs
-└── examples/        # Example classified.toml configurations
+├── templates/       # Scaffold assets for init (skills, examples, prompts)
+├── examples/        # Example classified.toml configurations
+└── tests/           # pytest test suite
 ```
 
 ## 🎯 CLI Commands
 
 | Command | Description |
 |---------|-------------|
-| `classified-agent init` | Scaffold `classified.toml` + workspace |
+| `classified-agent init` | Scaffold config + workspace + skills + examples |
+| `classified-agent doctor` | Verify environment readiness (10 checks) |
 | `classified-agent run` | Start the agent loop |
 | `classified-agent run --dry-run` | Simulate (no on-chain txs) |
 | `classified-agent run --verbose` | Debug-level logging |
@@ -99,11 +106,23 @@ track = "open"                # open | uniswap | base | lido
 ```
 1. pip install classified-agent
 2. classified-agent init
-3. Set API keys in classified.toml
-4. classified-agent join-synthesis --enable
-5. Agent fetches skill.md → registers → builds → submits
-6. 🎉 $75K prizes unlocked!
+3. Set API keys in .env or export them
+4. classified-agent doctor
+5. classified-agent run  (or  join-synthesis --enable)
+6. Agent reads SKILL.md → plans → acts → observes → done
 ```
+
+## 📖 Skill Files
+
+Project Classified bundles a `SKILL.md` that teaches agents how to operate:
+- Agent identity and capabilities
+- How to read classified.toml
+- How to use the wallet safely
+- Available tools and usage rules
+- How to log actions
+- How to execute missions
+
+Copied to your project root during `init`. Edit to customise agent behaviour.
 
 ## 📦 Development
 

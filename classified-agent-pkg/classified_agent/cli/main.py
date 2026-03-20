@@ -1,7 +1,8 @@
 """Typer CLI for Project Classified.
 
 Commands:
-    classified-agent init            — scaffold config + workspace
+    classified-agent init            — scaffold config + workspace + templates
+    classified-agent doctor          — verify environment readiness
     classified-agent run             — start the agent loop
     classified-agent join-synthesis   — fetch skill.md, register, and run in Synthesis mode
 """
@@ -9,13 +10,17 @@ Commands:
 from __future__ import annotations
 
 import asyncio
+import json
+import shutil
 import sys
+from importlib.resources import files as pkg_files
 from pathlib import Path
 from typing import Optional
 
 import typer
 from rich.console import Console
 from rich.panel import Panel
+from rich.table import Table
 
 from classified_agent.config.loader import create_default_config, load_config, resolve_api_key
 from classified_agent.config.models import ClassifiedConfig
@@ -26,7 +31,7 @@ app = typer.Typer(
     help=(
         "[bold cyan]Project Classified[/bold cyan] — "
         "web3-native AI agent runtime powered by PyVax.\n\n"
-        "Quickstart:  init → edit classified.toml → run"
+        "Quickstart:  init → doctor → edit classified.toml → run"
     ),
     rich_markup_mode="rich",
     add_completion=True,
@@ -34,6 +39,82 @@ app = typer.Typer(
 )
 
 console = Console(highlight=False)
+
+# ──────────────────────────────────────────────────────────────────────────────
+# Template copy helpers
+# ──────────────────────────────────────────────────────────────────────────────
+
+
+def _get_template_dir() -> Path:
+    """Return the filesystem path to the bundled templates directory."""
+    templates = pkg_files("classified_agent").joinpath("templates")
+    # importlib.resources may return a Traversable; for file copying,
+    # we need a real Path.  On installed packages this is the actual path.
+    if hasattr(templates, "_path"):
+        return Path(templates._path)
+    return Path(str(templates))
+
+
+def _copy_template_file(
+    template_dir: Path,
+    rel_path: str,
+    dest_dir: Path,
+    *,
+    dest_name: str | None = None,
+    overwrite: bool = False,
+) -> Path | None:
+    """Copy one file from the template directory into dest_dir.
+
+    Args:
+        template_dir: Root of the templates directory.
+        rel_path:     Path relative to template_dir (e.g. "agent.yaml").
+        dest_dir:     Destination root directory.
+        dest_name:    Optional rename for the destination file.
+        overwrite:    If False, skip if dest already exists.
+
+    Returns:
+        The destination path if copied, or None if skipped.
+    """
+    src = template_dir / rel_path
+    if not src.exists():
+        return None
+
+    dest = dest_dir / (dest_name or rel_path)
+    if dest.exists() and not overwrite:
+        return None
+
+    dest.parent.mkdir(parents=True, exist_ok=True)
+    shutil.copy2(src, dest)
+    return dest
+
+
+def _copy_template_tree(
+    template_dir: Path,
+    rel_dir: str,
+    dest_dir: Path,
+    *,
+    overwrite: bool = False,
+) -> list[Path]:
+    """Recursively copy a subdirectory from templates into dest_dir.
+
+    Returns:
+        List of destination paths that were copied.
+    """
+    src_dir = template_dir / rel_dir
+    if not src_dir.exists() or not src_dir.is_dir():
+        return []
+
+    copied: list[Path] = []
+    for src_file in src_dir.rglob("*"):
+        if src_file.is_file():
+            rel = src_file.relative_to(template_dir)
+            result = _copy_template_file(
+                template_dir, str(rel), dest_dir, overwrite=overwrite
+            )
+            if result:
+                copied.append(result)
+    return copied
+
 
 # ──────────────────────────────────────────────────────────────────────────────
 # Runtime bootstrap
@@ -127,6 +208,13 @@ async def _start_agent_loop(config: ClassifiedConfig, *, dry_run: bool = False) 
     wallet = _create_wallet_backend(config, workspace)
     tools = _register_default_tools()
     memory = MemoryStore(workspace)
+
+    # Load skill file if present
+    skill_path = Path("SKILL.md")
+    if skill_path.exists():
+        skill_text = skill_path.read_text(encoding="utf-8")
+        memory.save_to_long_term("agent_skill", skill_text)
+        log.info("Loaded skill file: %s (%d bytes)", skill_path, len(skill_text))
 
     ctx = AgentContext(
         config=config, llm=llm, wallet=wallet,
@@ -267,8 +355,13 @@ def init(
 
     Creates:
       • classified.toml with sane defaults
-      • workspace/ directory
-      • workspace/NOTES.md starter file
+      • agent.yaml — agent identity & mission
+      • SKILL.md — agent operating skill
+      • workspace/ with starter files
+      • logs/ directory
+      • examples/ with quickstart and mission templates
+      • skills/ with bundled skill files
+      • .env.example, README.md
     """
     cfg_path = Path(config_path)
 
@@ -282,12 +375,50 @@ def init(
         )
         raise typer.Exit(1)
 
-    # 2. Create workspace directory
+    # 2. Get the template directory from the package
+    try:
+        template_dir = _get_template_dir()
+    except Exception as exc:
+        console.print(f"[yellow]⚠  Could not locate template directory:[/yellow] {exc}")
+        console.print("[dim]Templates will be skipped. The config file was still created.[/dim]")
+        template_dir = None
+
+    dest = Path(".").resolve()
+    copied_files: list[str] = []
+
+    if template_dir and template_dir.exists():
+        # 3. Copy individual template files
+        template_files = [
+            ("agent.yaml", None),
+            (".env.example", None),
+            ("README.md", None),
+            # Copy the skill file to the project root as SKILL.md
+            ("skills/PROJECT_CLASSIFIED_SKILL.md", "SKILL.md"),
+        ]
+
+        for rel_path, dest_name in template_files:
+            result = _copy_template_file(template_dir, rel_path, dest, dest_name=dest_name)
+            if result:
+                try:
+                    copied_files.append(str(result.resolve().relative_to(dest)))
+                except ValueError:
+                    copied_files.append(result.name)
+
+        # 4. Copy directory trees
+        for subdir in ["workspace", "skills", "examples", "prompts"]:
+            results = _copy_template_tree(template_dir, subdir, dest)
+            for r in results:
+                try:
+                    copied_files.append(str(r.resolve().relative_to(dest)))
+                except ValueError:
+                    copied_files.append(str(r))
+
+    # 5. Ensure workspace exists (even if templates weren't available)
     workspace = Path(config.agent.workspace_dir)
     workspace.mkdir(parents=True, exist_ok=True)
 
-    # 3. Seed NOTES.md
-    notes_file = workspace / "NOTES.md"
+    # 6. Seed notes.md if not already created by templates
+    notes_file = workspace / "notes.md"
     if not notes_file.exists():
         notes_file.write_text(
             "# Agent Workspace Notes\n\n"
@@ -298,26 +429,263 @@ def init(
             encoding="utf-8",
         )
 
-    # 4. Create logs directory
+    # 7. Create logs directory
     log_dir = Path(config.logging.log_dir)
     log_dir.mkdir(parents=True, exist_ok=True)
 
-    # 5. Print next steps
+    # 8. Build summary of created files
+    all_created = [str(cfg_path)]
+    all_created.extend(copied_files)
+    all_created.extend([
+        str(workspace),
+        str(log_dir),
+    ])
+
+    file_list = "\n".join(f"  • {f}" for f in sorted(set(all_created)))
+
+    # 9. Print next steps
     console.print(
         Panel(
             f"[green]✓ Project Classified initialised![/green]\n\n"
             f"[cyan]Config:[/cyan]     {cfg_path.resolve()}\n"
             f"[cyan]Workspace:[/cyan]  {workspace.resolve()}\n"
             f"[cyan]Logs:[/cyan]       {log_dir.resolve()}\n\n"
+            f"[dim]Created files:[/dim]\n{file_list}\n\n"
             "[yellow]Next steps:[/yellow]\n"
             f"  1. Edit [bold]{cfg_path}[/bold] — set your LLM API key env var, wallet, etc.\n"
-            "  2. Export your API key:  [dim]export ANTHROPIC_API_KEY='sk-ant-...'[/dim]\n"
-            "  3. Run the agent:        [bold]classified-agent run[/bold]\n"
-            "  4. Or join Synthesis:     [bold]classified-agent join-synthesis[/bold]\n",
+            "  2. Copy .env.example to .env and fill in your keys\n"
+            "  3. Verify setup:            [bold]classified-agent doctor[/bold]\n"
+            "  4. Run the agent:           [bold]classified-agent run[/bold]\n"
+            "  5. Or join Synthesis:        [bold]classified-agent join-synthesis[/bold]\n",
             title="🚀 Project Classified",
             border_style="green",
         )
     )
+
+
+# ──────────────────────────────────────────────────────────────────────────────
+# classified-agent doctor
+# ──────────────────────────────────────────────────────────────────────────────
+
+
+def _check(label: str, passed: bool, detail: str = "") -> bool:
+    """Print a single check result and return whether it passed."""
+    icon = "[green]✅[/green]" if passed else "[red]❌[/red]"
+    msg = f"  {icon}  {label}"
+    if detail:
+        msg += f"  [dim]({detail})[/dim]"
+    console.print(msg)
+    return passed
+
+
+@app.command()
+def doctor(
+    config_path: str = typer.Option(
+        "classified.toml",
+        "--config",
+        "-c",
+        help="Path to classified.toml to check.",
+    ),
+) -> None:
+    """Check environment readiness for Project Classified.
+
+    Verifies:
+      • Python version
+      • CLI version
+      • Config file parse
+      • Environment variables
+      • Wallet backend availability
+      • RPC connectivity
+      • Template installation
+      • Skill file presence
+      • Workspace & log directories
+    """
+    import classified_agent
+
+    console.print(
+        Panel(
+            "[cyan]Running environment checks...[/cyan]",
+            title="🩺 Project Classified Doctor",
+            border_style="cyan",
+        )
+    )
+
+    passed = 0
+    failed = 0
+    total = 0
+
+    # ── 1. Python version ────────────────────────────────────────
+    total += 1
+    py_ver = f"{sys.version_info.major}.{sys.version_info.minor}.{sys.version_info.micro}"
+    py_ok = sys.version_info >= (3, 10)
+    if _check("Python version ≥ 3.10", py_ok, py_ver):
+        passed += 1
+    else:
+        failed += 1
+
+    # ── 2. CLI version ───────────────────────────────────────────
+    total += 1
+    cli_ver = getattr(classified_agent, "__version__", "unknown")
+    if _check("CLI version", cli_ver != "unknown", f"v{cli_ver}"):
+        passed += 1
+    else:
+        failed += 1
+
+    # ── 3. Config file parse ─────────────────────────────────────
+    total += 1
+    config = None
+    try:
+        config = load_config(Path(config_path))
+        if _check("Config file", True, str(Path(config_path).resolve())):
+            passed += 1
+    except FileNotFoundError:
+        _check("Config file", False, f"{config_path} not found — run 'classified-agent init'")
+        failed += 1
+    except ValueError as exc:
+        _check("Config file", False, f"parse error: {exc}")
+        failed += 1
+
+    # ── 4. Environment variables ─────────────────────────────────
+    total += 1
+    if config:
+        import os
+        env_var = config.llm.api_key_env
+        has_key = bool(os.environ.get(env_var, "").strip())
+        if _check(f"LLM API key (${env_var})", has_key, "set" if has_key else "not set"):
+            passed += 1
+        else:
+            failed += 1
+    else:
+        _check("LLM API key", False, "skipped — no config loaded")
+        failed += 1
+
+    # ── 5. Wallet backend availability ───────────────────────────
+    total += 1
+    if config:
+        backend = config.wallet.backend
+        try:
+            if backend == "pyvax_local":
+                from classified_agent.wallet.pyvax_wallet import PyVaxWalletBackend  # noqa: F401
+            elif backend == "mock":
+                from classified_agent.wallet.managed_wallets import MockWalletBackend  # noqa: F401
+            elif backend == "managed_vincent":
+                from classified_agent.wallet.managed_wallets import VincentWalletBackend  # noqa: F401
+            elif backend == "managed_sequence":
+                from classified_agent.wallet.managed_wallets import SequenceWalletBackend  # noqa: F401
+            if _check(f"Wallet backend ({backend})", True, "importable"):
+                passed += 1
+        except ImportError as exc:
+            _check(f"Wallet backend ({backend})", False, str(exc))
+            failed += 1
+    else:
+        _check("Wallet backend", False, "skipped — no config loaded")
+        failed += 1
+
+    # ── 6. RPC connectivity ──────────────────────────────────────
+    total += 1
+    if config:
+        import httpx
+        rpc_url = config.wallet.rpc_url
+        try:
+            # JSON-RPC health check
+            resp = httpx.post(
+                rpc_url,
+                json={"jsonrpc": "2.0", "method": "eth_chainId", "params": [], "id": 1},
+                timeout=10,
+            )
+            rpc_ok = resp.status_code == 200
+            detail = f"{rpc_url} → {resp.status_code}"
+            if rpc_ok:
+                try:
+                    chain_id = int(resp.json().get("result", "0x0"), 16)
+                    detail += f", chain={chain_id}"
+                except (ValueError, TypeError):
+                    pass
+            if _check("RPC connectivity", rpc_ok, detail):
+                passed += 1
+            else:
+                failed += 1
+        except Exception as exc:
+            _check("RPC connectivity", False, f"{rpc_url} → {exc}")
+            failed += 1
+    else:
+        _check("RPC connectivity", False, "skipped — no config loaded")
+        failed += 1
+
+    # ── 7. Template installation ─────────────────────────────────
+    total += 1
+    try:
+        tpl_dir = _get_template_dir()
+        tpl_exists = tpl_dir.exists() and (tpl_dir / "agent.yaml").exists()
+        if _check("Package templates", tpl_exists, str(tpl_dir)):
+            passed += 1
+        else:
+            _check("Package templates", False, "templates directory missing from package")
+            failed += 1
+    except Exception as exc:
+        _check("Package templates", False, str(exc))
+        failed += 1
+
+    # ── 8. Skill file presence ───────────────────────────────────
+    total += 1
+    skill_path = Path("SKILL.md")
+    skill_exists = skill_path.exists()
+    if not skill_exists:
+        # Also check skills/ directory
+        skill_dir = Path("skills")
+        skill_exists = skill_dir.exists() and any(skill_dir.glob("*.md"))
+    if _check("Skill file", skill_exists, str(skill_path) if skill_path.exists() else "not found"):
+        passed += 1
+    else:
+        failed += 1
+
+    # ── 9. Workspace directory ───────────────────────────────────
+    total += 1
+    if config:
+        ws = Path(config.agent.workspace_dir)
+        ws_ok = ws.exists() and ws.is_dir()
+        if _check("Workspace directory", ws_ok, str(ws.resolve())):
+            passed += 1
+        else:
+            failed += 1
+    else:
+        _check("Workspace directory", False, "skipped — no config loaded")
+        failed += 1
+
+    # ── 10. Logs directory ───────────────────────────────────────
+    total += 1
+    if config:
+        log_d = Path(config.logging.log_dir)
+        log_ok = log_d.exists() and log_d.is_dir()
+        if _check("Logs directory", log_ok, str(log_d.resolve())):
+            passed += 1
+        else:
+            failed += 1
+    else:
+        _check("Logs directory", False, "skipped — no config loaded")
+        failed += 1
+
+    # ── Summary ──────────────────────────────────────────────────
+    console.print()
+    if failed == 0:
+        console.print(
+            Panel(
+                f"[green]All {passed}/{total} checks passed![/green]\n"
+                "Your environment is ready. Run [bold]classified-agent run[/bold] to start.",
+                title="✅ All Clear",
+                border_style="green",
+            )
+        )
+    else:
+        console.print(
+            Panel(
+                f"[yellow]{passed}/{total} checks passed, {failed} failed.[/yellow]\n"
+                "Fix the issues above and run [bold]classified-agent doctor[/bold] again.",
+                title="⚠️  Issues Found",
+                border_style="yellow",
+            )
+        )
+        raise typer.Exit(1)
 
 
 # ──────────────────────────────────────────────────────────────────────────────
