@@ -4,8 +4,8 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "pyvax-cli"
-version = "1.0.0"
-description = "PyVax — Python to EVM transpiler for Avalanche smart contracts"
+version = "1.2.0"
+description = "PyVax — Python to EVM transpiler and Project Classified Web3 AI Agent framework"
 readme = "README.md"
 license = {text = "MIT"}
 requires-python = ">=3.9"

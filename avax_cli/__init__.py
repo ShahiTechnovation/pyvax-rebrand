@@ -10,7 +10,7 @@ Usage:
     pyvax call Token get     → interact with deployed contract
 """
 
-__version__ = "1.0.0"
+__version__ = "1.2.0"
 __author__ = "PyVax Team"
 __email__ = "team@pyvax.io"
 

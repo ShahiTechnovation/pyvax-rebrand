@@ -1,8 +1,8 @@
 FROM python:3.11-slim
 
 LABEL maintainer="PyVax Team <team@pyvax.io>"
-LABEL description="PyVax CLI — Python to EVM transpiler for Avalanche smart contracts"
-LABEL version="1.0.0"
+LABEL description="PyVax CLI — Python to EVM transpiler and Project Classified Web3 AI Agent framework"
+LABEL version="1.2.0"
 
 # Set working directory
 WORKDIR /app

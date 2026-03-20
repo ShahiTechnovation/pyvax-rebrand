@@ -4,8 +4,8 @@ from setuptools import setup, find_packages
 
 setup(
     name="pyvax-cli",
-    version="1.0.0",
-    description="PyVax — Python to EVM transpiler for Avalanche smart contracts",
+    version="1.2.0",
+    description="PyVax — Python to EVM transpiler and Project Classified Web3 AI Agent framework",
     long_description=open("README.md", encoding="utf-8").read(),
     long_description_content_type="text/markdown",
     author="PyVax Team",
