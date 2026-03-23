@@ -21,7 +21,7 @@ const TERMINAL_LINES = [
   { text: '$ classified-agent run', delay: 2.3 },
   { text: '✓ Skill.md fetched → Claude building...', delay: 2.9 },
   { text: '✓ PyVax compiled → 12kb WASM', delay: 3.4 },
-  { text: '🎉 SUBMITTED → $75K unlocked!', delay: 4.0 },
+  { text: '🎉 SUBMITTED → $100K+ unlocked!', delay: 4.0 },
 ]
 
 export function Hero() {
@@ -97,7 +97,7 @@ export function Hero() {
           <div className="inline-flex items-center gap-2 glass-pink px-5 py-2 rounded-full">
             <div className="w-2 h-2 rounded-full bg-[#FF1493] animate-pulse" />
             <span className="font-[family-name:var(--font-dm-mono)] text-[10px] text-[#FF1493] uppercase tracking-[0.25em] font-bold">
-              SYNTHESIS HACKATHON · $75K IN PRIZES
+              SYNTHESIS HACKATHON · $100K+ IN PRIZES
             </span>
           </div>
         </motion.div>
@@ -146,7 +146,7 @@ export function Hero() {
           transition={{ delay: 0.8, duration: 0.6 }}
           className="font-[family-name:var(--font-ibm-plex)] text-[16px] sm:text-[20px] md:text-[24px] text-[#999] mb-10 max-w-2xl leading-relaxed"
         >
-          <span className="text-[#FFD700] font-bold">$75K</span> Synthesis × Classified Hackathon —{' '}
+          <span className="text-[#FFD700] font-bold">$100K+</span> Synthesis × Classified Hackathon —{' '}
           <span className="text-[#FF1493]">pip install → run → submit</span>
         </motion.p>
 

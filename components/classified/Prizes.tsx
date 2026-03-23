@@ -1,40 +1,51 @@
 'use client'
 
-import { useRef, useState, useEffect } from 'react'
+import { useRef } from 'react'
 import { motion, useInView } from 'framer-motion'
-import { Trophy, Award, Star } from 'lucide-react'
+import { Trophy } from 'lucide-react'
 
-const PRIZES = [
-  { sponsor: 'Uniswap', amount: 25000, color: '#FF007A', icon: '🦄' },
-  { sponsor: 'Base', amount: 15000, color: '#0052FF', icon: '🔵' },
-  { sponsor: 'Lido', amount: 12000, color: '#00A3FF', icon: '💧' },
-  { sponsor: 'Synthesis', amount: 10000, color: '#FFD700', icon: '⚡' },
-  { sponsor: 'Community', amount: 8000, color: '#FF1493', icon: '🌐' },
-  { sponsor: 'Innovation', amount: 5000, color: '#8B008B', icon: '🧪' },
+const TRACKS = [
+  {
+    title: 'AGENTS WITH RECEIPTS — ERC-8004',
+    icon: '🧾',
+    sponsor: 'Protocol Labs',
+    prizes: '$2,000 · $1,500 · $500',
+    desc: 'Our core stack — ERC-8004 identity on Base Mainnet',
+    color: '#FF1493', // pink
+  },
+  {
+    title: 'LET THE AGENT COOK — NO HUMANS REQUIRED',
+    icon: '🤖',
+    sponsor: 'Protocol Labs',
+    prizes: '$2,000 · $1,500 · $500',
+    desc: 'pip install classified-agent. Zero EVM knowledge needed.',
+    color: '#FF8C00', // orange
+  },
+  {
+    title: 'AGENT SERVICES ON BASE',
+    icon: '⬡',
+    sponsor: 'Base',
+    prizes: '$1,666 · $1,666 · $1,666',
+    desc: 'On-chain agent identity lives on Base Mainnet',
+    color: '#0052FF', // blue
+  },
+  {
+    title: 'BEST OPENSERV BUILD STORY',
+    icon: '📖',
+    sponsor: 'OpenServ',
+    prizes: '$250 · $250',
+    desc: '434 tried. 165 finished. We shipped the fix.',
+    color: '#4CAF50', // green
+  },
+  {
+    title: 'STUDENT FOUNDER\'S BET',
+    icon: '🎓',
+    sponsor: 'College.xyz',
+    prizes: '5× $500',
+    desc: 'Team MECH X4 · Avalanche Kolkata Hackathon 2025',
+    color: '#FFD700', // yellow
+  },
 ]
-
-function AnimatedCounter({ target, duration = 2 }: { target: number; duration?: number }) {
-  const [count, setCount] = useState(0)
-  const ref = useRef(null)
-  const isInView = useInView(ref, { once: true })
-
-  useEffect(() => {
-    if (!isInView) return
-
-    const start = Date.now()
-    const tick = () => {
-      const elapsed = Date.now() - start
-      const pct = Math.min(1, elapsed / (duration * 1000))
-      // Ease out quad
-      const eased = 1 - (1 - pct) * (1 - pct)
-      setCount(Math.floor(eased * target))
-      if (pct < 1) requestAnimationFrame(tick)
-    }
-    requestAnimationFrame(tick)
-  }, [isInView, target, duration])
-
-  return <span ref={ref}>${count.toLocaleString()}</span>
-}
 
 export function Prizes() {
   const sectionRef = useRef(null)
@@ -58,91 +69,80 @@ export function Prizes() {
           <div className="inline-flex items-center gap-2 glass-pink px-4 py-2 rounded-full mb-5">
             <Trophy className="w-3.5 h-3.5 text-[#FFD700]" />
             <span className="font-[family-name:var(--font-dm-mono)] text-[10px] text-[#FFD700] tracking-[0.2em] font-bold">
-              PRIZE POOL
+              TRACKS WE ENTERED
             </span>
           </div>
 
-          {/* Big counter */}
-          <div
-            className="font-[family-name:var(--font-press-start)] text-[40px] sm:text-[56px] md:text-[72px] leading-none mb-4"
-            style={{
-              background: 'linear-gradient(135deg, #FFD700, #FF1493, #FFD700)',
-              WebkitBackgroundClip: 'text',
-              WebkitTextFillColor: 'transparent',
-              filter: 'drop-shadow(0 0 20px rgba(255, 215, 0, 0.3))',
-            }}
-          >
-            <AnimatedCounter target={75000} duration={2.5} />
-          </div>
-          <p className="font-[family-name:var(--font-ibm-plex)] text-[16px] text-[#777]">
-            In total prizes across all tracks
-          </p>
+          {/* Big title */}
+          <h2 className="font-[family-name:var(--font-syne)] font-bold text-[28px] sm:text-[36px] md:text-[48px] text-white leading-tight max-w-4xl mx-auto mb-4">
+            Out of <span className="text-[#FFD700] drop-shadow-[0_0_15px_rgba(255,215,0,0.4)]">$100K+</span> total Synthesis prize pool
+          </h2>
         </motion.div>
 
         {/* Prize cards grid */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mb-12">
-          {PRIZES.map((prize, i) => (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-16">
+          {TRACKS.map((track, i) => (
             <motion.div
-              key={prize.sponsor}
+              key={track.title}
               initial={{ opacity: 0, y: 30 }}
               animate={isInView ? { opacity: 1, y: 0 } : {}}
               transition={{ delay: 0.2 + i * 0.1, duration: 0.5 }}
               className="group relative overflow-hidden rounded-xl"
             >
-              {/* Gold border glow */}
+              {/* Dynamic border glow */}
               <div
-                className="absolute -inset-[1px] rounded-xl opacity-0 group-hover:opacity-100 transition-opacity duration-500"
+                className="absolute inset-[0px] rounded-xl transition-all duration-500 z-0"
                 style={{
-                  background: `linear-gradient(135deg, ${prize.color}40, transparent, ${prize.color}40)`,
+                  border: `2px solid ${track.color}40`,
+                  boxShadow: `0 0 20px ${track.color}15 inset`,
+                }}
+              />
+              
+              <div
+                className="absolute inset-[0px] rounded-xl opacity-0 group-hover:opacity-100 transition-opacity duration-500 z-0"
+                style={{
+                  boxShadow: `0 0 30px ${track.color}30 inset, 0 0 30px ${track.color}20`,
+                  border: `2px solid ${track.color}80`,
                 }}
               />
 
-              <div className="relative glass-pink-hover rounded-xl p-6">
-                <div className="flex items-start justify-between mb-3">
-                  <span className="text-3xl">{prize.icon}</span>
-                  <div
-                    className="font-[family-name:var(--font-press-start)] text-[20px] sm:text-[24px]"
-                    style={{ color: prize.color }}
-                  >
-                    <AnimatedCounter target={prize.amount} duration={2 + i * 0.2} />
+              <div className="relative z-10 bg-[#10101a]/80 backdrop-blur-md rounded-xl p-6 h-full flex flex-col">
+                <div className="flex items-start gap-3 mb-4">
+                  <span className="text-3xl">{track.icon}</span>
+                  <div className="flex-1 pt-0.5">
+                    <h3 
+                      className="font-[family-name:var(--font-press-start)] text-[11px] sm:text-[13px] leading-relaxed mb-1"
+                      style={{ color: track.color, textShadow: `0 0 15px ${track.color}50` }}
+                    >
+                      {track.title}
+                    </h3>
                   </div>
                 </div>
-                <h3 className="font-[family-name:var(--font-syne)] font-bold text-[16px] text-white mb-1">
-                  {prize.sponsor} Track
-                </h3>
-                <p className="font-[family-name:var(--font-dm-mono)] text-[11px] text-[#666] tracking-wide">
-                  BUILD · DEPLOY · WIN
-                </p>
+                
+                <div className="mt-auto pt-4 border-t border-[#333]/30">
+                  <div className="font-[family-name:var(--font-syne)] font-bold text-[16px] text-white flex items-center justify-between flex-wrap gap-2">
+                    <span className="text-gray-300">{track.sponsor}</span>
+                    <span className="text-[#FFD700]">{track.prizes}</span>
+                  </div>
+                  <p className="font-[family-name:var(--font-dm-mono)] text-[11px] text-[#888] tracking-wide mt-3 leading-relaxed">
+                    {track.desc}
+                  </p>
+                </div>
               </div>
             </motion.div>
           ))}
         </div>
 
-        {/* Badges row */}
+        {/* Footnote */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={isInView ? { opacity: 1, y: 0 } : {}}
           transition={{ delay: 0.8, duration: 0.5 }}
-          className="flex flex-wrap justify-center gap-4"
+          className="text-center"
         >
-          <div className="flex items-center gap-2 glass-pink px-5 py-3 rounded-full">
-            <Award className="w-4 h-4 text-[#FFD700]" />
-            <span className="font-[family-name:var(--font-dm-mono)] text-[11px] text-[#FFD700] font-bold tracking-wide">
-              100% GET CERTIFICATES
-            </span>
-          </div>
-          <div className="flex items-center gap-2 glass-pink px-5 py-3 rounded-full">
-            <Star className="w-4 h-4 text-[#FF1493]" />
-            <span className="font-[family-name:var(--font-dm-mono)] text-[11px] text-[#FF1493] font-bold tracking-wide">
-              TWITTER SHOUTOUTS
-            </span>
-          </div>
-          <div className="flex items-center gap-2 glass-pink px-5 py-3 rounded-full">
-            <Trophy className="w-4 h-4 text-[#4CAF50]" />
-            <span className="font-[family-name:var(--font-dm-mono)] text-[11px] text-[#4CAF50] font-bold tracking-wide">
-              EXCLUSIVE MERCH
-            </span>
-          </div>
+          <p className="font-[family-name:var(--font-dm-mono)] text-[10px] sm:text-[11px] text-[#555] tracking-widest uppercase">
+            Submitted March 23 2026 · ERC-8004 on Base · classified-agent × PyVax
+          </p>
         </motion.div>
       </div>
     </section>

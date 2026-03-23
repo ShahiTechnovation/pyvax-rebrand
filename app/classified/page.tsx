@@ -11,6 +11,8 @@ import { Prizes } from '@/components/classified/Prizes'
 import { WhyPyVax } from '@/components/classified/WhyPyVax'
 import { TerminalDemo } from '@/components/classified/TerminalDemo'
 import { FooterCTA } from '@/components/classified/FooterCTA'
+import { TractionBar } from '@/components/classified/TractionBar'
+import { SponsorsMarquee } from '@/components/classified/SponsorsMarquee'
 
 type PageState = 'loading' | 'gate' | 'unlocked'
 
@@ -103,6 +105,8 @@ export default function ClassifiedPage() {
             <main className="relative z-10 pt-14">
               <Hero />
 
+              <TractionBar />
+
               <div className="relative">
                 {/* Pink divider */}
                 <div className="h-px bg-gradient-to-r from-transparent via-[#FF1493]/30 to-transparent" />
@@ -115,6 +119,8 @@ export default function ClassifiedPage() {
               <div id="prizes-section">
                 <Prizes />
               </div>
+
+              <SponsorsMarquee />
 
               <div className="h-px bg-gradient-to-r from-transparent via-[#FF1493]/20 to-transparent" />
 

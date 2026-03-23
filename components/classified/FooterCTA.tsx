@@ -61,7 +61,7 @@ export function FooterCTA() {
           transition={{ delay: 0.2, duration: 0.6 }}
         >
           <h2 className="font-[family-name:var(--font-press-start)] text-[18px] sm:text-[24px] md:text-[32px] text-white mb-4 leading-relaxed">
-            DON&apos;T MISS $75K
+            DON&apos;T MISS $100K+
           </h2>
           <p className="font-[family-name:var(--font-ibm-plex)] text-[15px] text-[#777] mb-8 max-w-md mx-auto">
             Join the Classified Hackathon. Build with PyVax. Win Synthesis prizes.

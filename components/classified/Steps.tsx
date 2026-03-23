@@ -55,7 +55,7 @@ const STEPS = [
   },
   {
     num: 6,
-    title: 'Win $75K 🏆',
+    title: 'Win $100K+ 🏆',
     desc: 'GitHub repo live + Twitter proof → leaderboard domination!',
     time: '1 MIN',
     action: 'TWEET PROOF',
@@ -92,7 +92,7 @@ export function Steps() {
             START TO SUBMIT
           </h2>
           <p className="font-[family-name:var(--font-ibm-plex)] text-[15px] text-[#777] max-w-lg mx-auto">
-            From zero to $75K submission in under 15 minutes. Every step designed for speed.
+            From zero to $100K+ submission in under 15 minutes. Every step designed for speed.
           </p>
         </motion.div>
 

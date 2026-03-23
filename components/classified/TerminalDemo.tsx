@@ -24,7 +24,7 @@ const DEMO_LINES = [
   { text: '✓ GitHub: github.com/user/DeFiBot-synthesis', type: 'success', pause: 500 },
   { text: '✓ Twitter proof posted!', type: 'success', pause: 400 },
   { text: '', type: 'blank', pause: 300 },
-  { text: '🎉 CLASSIFIED HACKATHON SUBMITTED → $75K!', type: 'final', pause: 0 },
+  { text: '🎉 CLASSIFIED HACKATHON SUBMITTED → $100K+!', type: 'final', pause: 0 },
 ]
 
 const LINE_COLORS: Record<string, string> = {
