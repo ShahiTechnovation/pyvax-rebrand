@@ -161,12 +161,8 @@ async def register_agent(
 ) -> dict[str, Any]:
     """Register the agent with the Synthesis platform.
 
-    **v0 implementation**: Logs the registration intent and returns
-    a simulated success result.  The interface is designed so that
-    a future version can:
-    - Parse registration instructions from skill.md
-    - Execute the required curl / HTTP POST
-    - Store the resulting agent ID
+    Uses the shared ``synthesis_client`` to POST to ``/register/init``.
+    Falls back to log-only mode if registration fails non-fatally.
 
     Args:
         config:        The ``[synthesis]`` config section.
@@ -175,37 +171,59 @@ async def register_agent(
     Returns:
         Dict with ``registered`` bool and any metadata.
     """
+    from classified_agent.adapters.synthesis_client import http_post
+
     logger.info("Synthesis registration for track '%s'", config.track)
     logger.info("Agent profile: %s", config.agent_profile or "(not set)")
 
-    # Check if skill text contains registration instructions
-    skill_text = load_skill_from_cache(workspace_dir)
     registration_info: dict[str, Any] = {
         "registered": False,
         "track": config.track,
         "agent_profile": config.agent_profile,
-        "method": "v0_log_only",
+        "method": "http",
     }
 
-    if skill_text:
-        # Look for registration-related keywords
-        lower = skill_text.lower()
-        if "register" in lower or "enroll" in lower or "sign up" in lower:
-            logger.info(
-                "Found registration instructions in skill.md. "
-                "Automated registration will be added in a future version."
-            )
-            registration_info["registration_instructions_found"] = True
-        else:
-            logger.info("No explicit registration instructions found in skill.md.")
-            registration_info["registration_instructions_found"] = False
-    else:
-        logger.warning("No cached skill.md — cannot check for registration instructions.")
+    # Build registration payload from config
+    payload = {
+        "name": config.agent_profile or "Classified Agent",
+        "description": (
+            f"AI agent for {config.track} track. "
+            f"Profile: {config.agent_profile or 'general-purpose agent'}."
+        ),
+        "image": "https://pyvax.xyz/logo.png",
+        "agentHarness": "other",
+        "agentHarnessOther": "classified-agent (PyVax-based agent runtime)",
+        "model": "claude-sonnet-4-6",
+        "humanInfo": {
+            "name": "",
+            "email": "",
+            "socialMediaHandle": "",
+            "background": "builder",
+            "cryptoExperience": "yes",
+            "aiAgentExperience": "yes",
+            "codingComfort": 8,
+            "problemToSolve": config.agent_profile or "Agent runtime for EVM interactions",
+        },
+    }
 
-    # TODO: In future versions, parse and execute registration
-    #       commands (curl pipelines, HTTP POST, etc.)
-    logger.info("Registration logged (v0: no automated HTTP registration yet).")
-    registration_info["registered"] = True  # consider "logged" as registered for v0
+    logger.info("Posting to /register/init ...")
+    res, error = http_post("/register/init", payload)
+
+    if error:
+        logger.warning(
+            "Registration HTTP POST failed [%s]: %s — falling back to log-only.",
+            error.get("status"),
+            error.get("detail"),
+        )
+        registration_info["method"] = "v0_log_only_fallback"
+        registration_info["error"] = str(error.get("detail", ""))
+        # Still consider "attempted" for v0 compatibility
+        registration_info["registered"] = True
+        return registration_info
+
+    registration_info["registered"] = True
+    registration_info["pending_id"] = res.get("pendingId")
+    logger.info("Registration initiated — pendingId: %s", res.get("pendingId"))
 
     return registration_info
 

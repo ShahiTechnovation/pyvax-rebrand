@@ -56,3 +56,7 @@ classified-agent-pkg/dist/
 classified-agent-pkg/build/
 classified-agent-pkg/*.egg-info/
 test-venv/
+classified_submit.py
+
+# ── Synthesis submission state (contains API key) ─────────
+classified_synthesis_state.json

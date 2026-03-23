@@ -764,15 +764,30 @@ def join_synthesis(
         "--enable",
         help="Automatically set [synthesis].enabled = true if it isn't already.",
     ),
+    submit: bool = typer.Option(
+        False,
+        "--submit",
+        help="Run the full 7-step Synthesis submission flow (register → verify → submit → publish).",
+    ),
 ) -> None:
-    """Join the Synthesis.md hackathon and start the agent in Synthesis mode.
+    """Join the Synthesis.md hackathon.
 
-    Steps performed:
-      1. Validate that [synthesis].enabled is true.
-      2. Fetch and cache skill.md.
-      3. Register the agent (if supported).
-      4. Start the agent loop with the Synthesis system prompt.
+    Modes:
+      • Default:   Start the agent loop in Synthesis hackathon mode.
+      • --submit:  Run the interactive 7-step submission flow
+                   (register → verify → tracks → project → custody → publish).
     """
+    # ── Submit mode: run the full submission state machine ──
+    if submit:
+        from classified_agent.cli.submit_flow import run_submit_flow
+
+        console.print(
+            "[bold cyan]Starting Synthesis submission flow...[/bold cyan]\n"
+        )
+        run_submit_flow()
+        return
+
+    # ── Normal Synthesis agent mode ──
     # 1. Load config
     try:
         config = load_config(Path(config_path))
