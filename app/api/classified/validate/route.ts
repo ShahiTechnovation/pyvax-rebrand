@@ -33,6 +33,14 @@ export async function POST(request: NextRequest) {
             // Continue anyway — don't block users due to rate-limit errors
         }
 
+        // Check for DEMO code bypass
+        if (code === "DEMO") {
+            return NextResponse.json({
+                valid: true,
+                message: "Access granted",
+            });
+        }
+
         // Look up the code in KV
         const codeKey = `classified:${code}`;
         const storedValue = await kv.get(codeKey);

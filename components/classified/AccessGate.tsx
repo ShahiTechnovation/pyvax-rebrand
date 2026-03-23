@@ -113,7 +113,7 @@ export function AccessGate({ onUnlock }: AccessGateProps) {
                   type="text"
                   value={code}
                   onChange={(e) => { setCode(e.target.value.toUpperCase()); setError(''); }}
-                  placeholder="XXXXXXXX"
+                  placeholder="DEMO"
                   maxLength={12}
                   disabled={validating}
                   autoFocus
@@ -168,9 +168,9 @@ export function AccessGate({ onUnlock }: AccessGateProps) {
             </form>
 
             {/* Waitlist fallback */}
-            <div className="mt-6 pt-5 border-t border-[#FF1493]/10 text-center">
-              <p className="font-[family-name:var(--font-dm-mono)] text-[10px] text-[#555] mb-2">
-                Don&apos;t have a code?
+            <div className="mt-6 pt-5 border-t border-[#FF1493]/10 text-center flex flex-col items-center gap-2">
+              <p className="font-[family-name:var(--font-dm-mono)] text-[10px] text-[#555]">
+                Don&apos;t have a code? Use <span className="text-[#FFD700] font-bold">DEMO</span>
               </p>
               <a
                 href="https://pyvax.xyz/agent"

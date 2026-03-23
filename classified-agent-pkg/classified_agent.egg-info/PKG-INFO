@@ -1,6 +1,6 @@
 Metadata-Version: 2.4
 Name: classified-agent
-Version: 1.2.0
+Version: 1.2.1
 Summary: Project Classified — Web3-native AI agent runtime for PyVax. Build + deploy resilient agents in 60s.
 Author-email: PyVax Team <team@pyvax.io>
 License: MIT
@@ -153,7 +153,7 @@ track = "open"                # open | uniswap | base | lido
 ## 🏆 Synthesis Hackathon Workflow
 
 ```
-1. pip install classified-agent==1.2.0
+1. pip install classified-agent==1.2.1
 2. classified-agent init
 3. Set API keys in .env or export them
 4. classified-agent doctor
