@@ -8,7 +8,7 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { ChevronDown, Twitter, Github, MessageCircle, Zap, Shield, Brain, Wallet, ArrowRight, Lock, Mail, CheckCircle, Loader2, Users, Sparkles } from 'lucide-react'
 import { Navbar } from '@/components/navbar'
 
-// ─── LAZY-LOAD SPLINE (biggest perf fix: don't block initial render) ─────────
+// ─── LAZY-LOAD SPLINE ────────────────────────────────────────────────────────
 const Spline = dynamic(() => import('@splinetool/react-spline'), {
     ssr: false,
     loading: () => (
@@ -166,9 +166,6 @@ export default function AgentPage() {
         return () => observer.disconnect()
     }, [])
 
-    // ── Spline loaded state ──────────────────────────────────────────────────
-    const [splineLoaded, setSplineLoaded] = useState(false)
-    const handleSplineLoad = useCallback(() => setSplineLoaded(true), [])
 
     // ── Waitlist state ──────────────────────────────────────────────────────
     const TOTAL_SPOTS = 1000
@@ -266,11 +263,10 @@ export default function AgentPage() {
                     backgroundSize: '80px 80px'
                 }} />
 
-                {/* Spline 3D Robot — lazy loaded */}
+                {/* Spline 3D Robot */}
                 <div className="relative w-full h-[50vh] md:h-[65vh] z-[1]">
                     <Spline
-                        scene="https://prod.spline.design/slaEhA9QPh-oSDit/scene.splinecode"
-                        onLoad={handleSplineLoad}
+                        scene="https://prod.spline.design/E2PWoWCqcbjetk52/scene.splinecode"
                         style={{ width: '100%', height: '100%' }}
                     />
                     {/* Bottom gradient for text readability */}
