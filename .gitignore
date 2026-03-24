@@ -51,6 +51,9 @@ waitlist.json
 /classified_agent/
 workspace/
 
+# ── TypeScript build cache (leaks local paths) ───────────────────────
+*.tsbuildinfo
+
 # ── PyPI package build artifacts ──────────────────────
 classified-agent-pkg/dist/
 classified-agent-pkg/build/

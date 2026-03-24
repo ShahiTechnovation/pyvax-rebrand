@@ -17,6 +17,10 @@ RUN pip install --no-cache-dir -r railway-requirements.txt
 # Copy the FastAPI server
 COPY railway-backend/main.py .
 
+# Run as non-root user for security
+RUN useradd -m appuser
+USER appuser
+
 EXPOSE 8000
 
 CMD ["sh", "-c", "uvicorn main:app --host 0.0.0.0 --port ${PORT:-8000}"]

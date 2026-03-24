@@ -2,7 +2,7 @@
 # ─── PyVax v2.1 Production Deploy ────────────────────────────────────
 # Railway (backend) → Vercel (frontend) → pyvax.xyz
 # ─────────────────────────────────────────────────────────────────────
-set -e
+set -euo pipefail
 
 RED='\033[0;31m'
 GREEN='\033[0;32m'

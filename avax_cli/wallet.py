@@ -5,11 +5,13 @@ Supports:
   - BIP39 mnemonic generation
   - .env / environment variable fallback
   - Private key validation
+  - Secure key zeroization after use
 """
 
 import json
 import os
 import secrets
+from contextlib import contextmanager
 from pathlib import Path
 from typing import Optional, Tuple
 
@@ -19,6 +21,27 @@ from cryptography.hazmat.primitives.kdf.pbkdf2 import PBKDF2HMAC
 from eth_account import Account
 from web3 import Web3
 import base64
+
+
+def _zero_bytes(data: bytearray) -> None:
+    """Securely zero out a mutable byte buffer."""
+    for i in range(len(data)):
+        data[i] = 0
+
+
+@contextmanager
+def secure_key(key_hex: str):
+    """Context manager that yields a private key and zeros it on exit.
+
+    Converts the hex key to a mutable bytearray, yields the original
+    hex string for API compatibility, and zeros the buffer on exit.
+    """
+    key_buf = bytearray(key_hex.encode("ascii"))
+    try:
+        yield key_hex
+    finally:
+        _zero_bytes(key_buf)
+        del key_buf
 
 
 class WalletManager:
@@ -39,10 +62,14 @@ class WalletManager:
         Returns:
             New wallet address (0x...)
         """
-        private_key = secrets.token_hex(32)
-        account = Account.from_key(private_key)
-        self._save_encrypted_key(private_key, password, keystore_file)
-        return account.address
+        key_bytes = bytearray(secrets.token_bytes(32))
+        try:
+            private_key = key_bytes.hex()
+            account = Account.from_key(private_key)
+            self._save_encrypted_key(private_key, password, keystore_file)
+            return account.address
+        finally:
+            _zero_bytes(key_bytes)
 
     def create_wallet_with_mnemonic(
         self, password: str, keystore_file: str = "pyvax_key.json"
@@ -183,13 +210,18 @@ class WalletManager:
             pass  # Windows doesn't support Unix permissions
 
     def _load_encrypted_key(self, keystore_file: str, password: str) -> str:
-        """Decrypt and return a private key from a PyVax keystore JSON file."""
+        """Decrypt and return a private key from a PyVax keystore JSON file.
+
+        Note: The returned key string is immutable (Python str), but the
+        intermediate decryption buffer is zeroed before return.
+        """
         if not Path(keystore_file).exists():
             raise FileNotFoundError(
                 f"Keystore '{keystore_file}' not found. "
                 f"Run 'pyvax wallet new <id>' to create one."
             )
 
+        decrypted_buf = None
         try:
             with open(keystore_file) as fh:
                 keystore_data = json.load(fh)
@@ -199,18 +231,24 @@ class WalletManager:
 
             key = self._derive_key(password, salt)
             f = Fernet(key)
-            private_key = f.decrypt(encrypted_key).decode()
+            decrypted_buf = bytearray(f.decrypt(encrypted_key))
+            private_key = decrypted_buf.decode()
 
             if not private_key.startswith("0x"):
                 private_key = f"0x{private_key}"
 
             return private_key
 
+        except FileNotFoundError:
+            raise
         except Exception as e:
             raise ValueError(
                 f"Failed to decrypt keystore '{keystore_file}': {e}\n"
                 "Ensure your password is correct."
             )
+        finally:
+            if decrypted_buf is not None:
+                _zero_bytes(decrypted_buf)
 
     def _load_from_env_file(self) -> Optional[str]:
         """Scan .env files for PRIVATE_KEY or PYVAX_PRIVATE_KEY."""

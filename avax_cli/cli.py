@@ -25,7 +25,7 @@ from .compiler import compile_contracts
 from .deployer import deploy_contract, estimate_gas, verify_contract
 from .wallet import WalletManager
 from .interactor import interact_with_contract, show_contract_info
-from .utils import get_network_info, validate_contract_name, load_config
+from .utils import get_network_info, validate_contract_name, validate_network, validate_address, load_config
 from .templates import TEMPLATES
 
 app = typer.Typer(
@@ -457,6 +457,11 @@ def deploy(
         config = json.load(f)
 
     if chain:
+        try:
+            chain = validate_network(chain)
+        except ValueError as e:
+            console.print(f"[red]Error:[/red] {e}")
+            raise typer.Exit(1)
         network_key = "cchain" if chain in ("cchain", "mainnet") else chain
         net = get_network_info(network_key)
         config.update({
@@ -561,6 +566,13 @@ def call(
         pyvax call Token transfer --args "0xABC...,100"
     """
     try:
+        # Validate address format before use
+        try:
+            contract_address = validate_address(contract_address)
+        except ValueError as e:
+            console.print(f"[red]Error:[/red] {e}")
+            raise typer.Exit(1)
+
         config_path = Path(config_file)
         if not config_path.exists():
             console.print("[red]Error:[/red] pyvax_config.json not found. Run 'pyvax new' first.")

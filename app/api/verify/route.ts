@@ -150,7 +150,10 @@ async function proxyToRailway(
     try {
         const res = await fetch(verifyUrl, {
             method: "POST",
-            headers: { "Content-Type": "application/json" },
+            headers: {
+                "Content-Type": "application/json",
+                "X-API-Key": process.env.PYVAX_API_KEY || "",
+            },
             body: JSON.stringify({ address, payload, chain }),
             signal: controller.signal,
             cache: "no-store",

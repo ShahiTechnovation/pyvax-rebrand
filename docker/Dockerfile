@@ -22,6 +22,10 @@ RUN pip install --no-cache-dir -e ".[dev]"
 # Verify installation
 RUN pyvax version
 
+# Run as non-root user for security
+RUN useradd -m appuser
+USER appuser
+
 # Default working directory for user projects
 WORKDIR /workspace
 

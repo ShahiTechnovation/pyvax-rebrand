@@ -17,6 +17,7 @@ from typing import Dict, Any, Optional
 from rich.console import Console
 from rich.table import Table
 from rich.panel import Panel
+from web3 import Web3
 
 console = Console()
 
@@ -261,3 +262,56 @@ def validate_contract_name(name: str) -> bool:
 def get_network_info(network: str) -> Dict[str, Any]:
     """Return RPC and explorer metadata for a named network."""
     return NETWORKS.get(network, NETWORKS["fuji"])
+
+
+# ─── Input validation ────────────────────────────────────────────────────────
+
+ALLOWED_NETWORKS = frozenset(NETWORKS.keys())  # {"fuji", "cchain", "mainnet"}
+
+
+def validate_network(network: str) -> str:
+    """Validate that a network name is in the allowlist.
+
+    Args:
+        network: User-provided network name
+
+    Returns:
+        Validated network name (lowercase)
+
+    Raises:
+        ValueError: If network is not in the allowlist
+    """
+    network = network.strip().lower()
+    if network not in ALLOWED_NETWORKS:
+        raise ValueError(
+            f"Invalid network '{network}'. "
+            f"Allowed networks: {', '.join(sorted(ALLOWED_NETWORKS))}"
+        )
+    return network
+
+
+def validate_address(address: str) -> str:
+    """Validate that an address is a well-formed Ethereum/Avalanche address.
+
+    Args:
+        address: User-provided address string
+
+    Returns:
+        Checksum-validated address
+
+    Raises:
+        ValueError: If address is malformed
+    """
+    if not address or not isinstance(address, str):
+        raise ValueError("Address must be a non-empty string.")
+
+    address = address.strip()
+
+    if not Web3.is_address(address):
+        raise ValueError(
+            f"Invalid address: '{address}'. "
+            "Must be a valid 0x-prefixed Ethereum address (42 chars)."
+        )
+
+    return Web3.to_checksum_address(address)
+

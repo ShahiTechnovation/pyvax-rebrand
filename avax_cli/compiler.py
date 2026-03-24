@@ -1,5 +1,6 @@
 """Python contract compilation and transpilation pipeline for PyVax v1.0.0."""
 
+import hashlib
 import json
 import time
 from pathlib import Path
@@ -73,6 +74,7 @@ def compile_contracts(
             contract_output_dir.mkdir(exist_ok=True)
 
             # Main artifact JSON (Hardhat/Foundry compatible)
+            source_hash = hashlib.sha256(py_source.encode("utf-8")).hexdigest()
             artifact_file = contract_output_dir / f"{contract_name}.json"
             with open(artifact_file, "w") as f:
                 json.dump(
@@ -82,6 +84,7 @@ def compile_contracts(
                         "abi": result["abi"],
                         "bytecode": result["bytecode"],
                         "metadata": result["metadata"],
+                        "source_hash": source_hash,
                         "compiler": {
                             "type": "pyvax-transpiler",
                             "version": "1.0.0",

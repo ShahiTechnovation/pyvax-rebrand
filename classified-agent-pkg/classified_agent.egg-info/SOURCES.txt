@@ -12,8 +12,10 @@ classified_agent.egg-info/requires.txt
 classified_agent.egg-info/top_level.txt
 classified_agent/adapters/__init__.py
 classified_agent/adapters/synthesis.py
+classified_agent/adapters/synthesis_client.py
 classified_agent/cli/__init__.py
 classified_agent/cli/main.py
+classified_agent/cli/submit_flow.py
 classified_agent/config/__init__.py
 classified_agent/config/loader.py
 classified_agent/config/models.py

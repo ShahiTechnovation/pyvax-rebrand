@@ -65,7 +65,10 @@ async function executeRemote(
     try {
         const res = await fetch(BACKEND_URL, {
             method,
-            headers: { "Content-Type": "application/json" },
+            headers: { 
+                "Content-Type": "application/json",
+                "X-API-Key": process.env.PYVAX_API_KEY || "",
+            },
             body: method === "POST" ? JSON.stringify(body) : undefined,
             signal: controller.signal,
             cache: "no-store",

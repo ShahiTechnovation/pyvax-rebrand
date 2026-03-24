@@ -49,7 +49,10 @@ export async function POST(request: NextRequest) {
     try {
       const res = await fetch(transformUrl, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: { 
+          "Content-Type": "application/json",
+          "X-API-Key": process.env.PYVAX_API_KEY || "",
+        },
         body: JSON.stringify({
           source,
           contract_name: contract_name || "Contract",
@@ -112,7 +115,10 @@ async function proxyVerify(data: any): Promise<NextResponse> {
   try {
     const res = await fetch(verifyUrl, {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: { 
+        "Content-Type": "application/json",
+        "X-API-Key": process.env.PYVAX_API_KEY || "",
+      },
       body: JSON.stringify({
         address: data.address,
         payload: data.payload,

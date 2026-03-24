@@ -8,9 +8,16 @@ Routes:
     POST /api/cli        → Execute pyvax commands (compile, test, deploy, new, help, etc.)
     POST /api/transform  → Python → Verified Solidity + Snowtrace payload
     POST /api/verify     → Submit Snowtrace verification for deployed contract
+
+Security:
+    - X-API-Key header required on all POST endpoints
+    - Per-IP rate limiting (10 req/min)
+    - Source code input size limit (50KB)
 """
 
-from fastapi import FastAPI
+import time
+from collections import defaultdict
+from fastapi import FastAPI, Header, HTTPException, Request, Depends
 from fastapi.responses import JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
 from typing import Optional
@@ -33,7 +40,22 @@ from avax_cli.api_wrapper import (
     TEMPLATES,
 )
 
-app = FastAPI(title="PyVax CLI API", version="2.1.0")
+app = FastAPI(title="PyVax CLI API", version="2.2.0")
+
+# ─── Security Configuration ─────────────────────────────────────────────────
+
+# API key for POST endpoint authentication
+API_KEY = os.environ.get("PYVAX_API_KEY", "")
+
+# Maximum source code size in bytes (50KB)
+MAX_SOURCE_SIZE = 50 * 1024
+
+# Rate limiting: max requests per IP per window
+RATE_LIMIT_MAX = 10
+RATE_LIMIT_WINDOW = 60  # seconds
+
+# In-memory rate limit store (per-IP)
+_rate_limit_store: dict[str, list[float]] = defaultdict(list)
 
 # In production, restrict CORS to your Vercel deployment domain
 ALLOWED_ORIGINS = os.environ.get(
@@ -46,8 +68,47 @@ app.add_middleware(
     allow_origins=ALLOWED_ORIGINS,
     allow_credentials=True,
     allow_methods=["GET", "POST", "OPTIONS"],
-    allow_headers=["Content-Type"],
+    allow_headers=["Content-Type", "X-API-Key"],
 )
+
+
+# ─── Security Dependencies ──────────────────────────────────────────────────
+
+async def verify_api_key(x_api_key: Optional[str] = Header(None)):
+    """Verify X-API-Key header on all POST endpoints."""
+    if API_KEY and x_api_key != API_KEY:
+        raise HTTPException(
+            status_code=401,
+            detail="Invalid or missing API key. Set X-API-Key header.",
+        )
+
+
+async def rate_limit(request: Request):
+    """Simple in-memory per-IP rate limiter."""
+    client_ip = request.client.host if request.client else "unknown"
+    now = time.time()
+
+    # Clean old entries outside the window
+    _rate_limit_store[client_ip] = [
+        t for t in _rate_limit_store[client_ip] if now - t < RATE_LIMIT_WINDOW
+    ]
+
+    if len(_rate_limit_store[client_ip]) >= RATE_LIMIT_MAX:
+        raise HTTPException(
+            status_code=429,
+            detail=f"Rate limit exceeded. Max {RATE_LIMIT_MAX} requests per {RATE_LIMIT_WINDOW}s.",
+        )
+
+    _rate_limit_store[client_ip].append(now)
+
+
+def validate_source_size(source: Optional[str]) -> None:
+    """Reject source code inputs exceeding the size limit."""
+    if source and len(source.encode("utf-8")) > MAX_SOURCE_SIZE:
+        raise HTTPException(
+            status_code=413,
+            detail=f"Source code exceeds maximum size of {MAX_SOURCE_SIZE // 1024}KB.",
+        )
 
 
 class CommandRequest(BaseModel):
@@ -86,18 +147,21 @@ async def health_check():
     return {
         "status": "ok",
         "service": "pyvax-backend",
-        "version": "2.1.0",
+        "version": "2.2.0",
         "commands": ["new", "compile", "test", "deploy", "transform", "verify", "help", "version", "templates"],
     }
 
 
 # ─── CLI Command Execution ───────────────────────────────────────────────────
 
-@app.post("/api/cli")
+@app.post("/api/cli", dependencies=[Depends(verify_api_key), Depends(rate_limit)])
 async def execute_cli(req: CommandRequest):
     raw_command = req.command.strip()
     source_code = req.source
     contract_name = req.contract_name
+
+    # Validate source size
+    validate_source_size(source_code)
 
     if not raw_command:
         return JSONResponse(
@@ -186,7 +250,7 @@ async def execute_cli(req: CommandRequest):
 
 # ─── Dedicated Transform Endpoint ───────────────────────────────────────────
 
-@app.post("/api/transform")
+@app.post("/api/transform", dependencies=[Depends(verify_api_key), Depends(rate_limit)])
 async def transform_python(req: TransformRequest):
     """Python → Verified Solidity + Snowtrace payload.
 
@@ -198,6 +262,9 @@ async def transform_python(req: TransformRequest):
             status_code=400,
             content={"success": False, "error": "No source code provided"},
         )
+
+    # Validate source size
+    validate_source_size(req.source)
 
     try:
         result = execute_transform(req.source, req.contract_name)
@@ -215,7 +282,7 @@ async def transform_python(req: TransformRequest):
 
 # ─── Dedicated Verify Endpoint ──────────────────────────────────────────────
 
-@app.post("/api/verify")
+@app.post("/api/verify", dependencies=[Depends(verify_api_key), Depends(rate_limit)])
 async def verify_contract(req: VerifyRequest):
     """Submit Snowtrace verification for a deployed contract.
 

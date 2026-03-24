@@ -1,2 +1,0 @@
-[console_scripts]
-pyvax = avax_cli.cli:main
