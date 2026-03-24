@@ -294,7 +294,7 @@ def execute_test(source_code, contract_name="Contract"):
     return result
 
 
-def execute_deploy_dry_run(source_code, contract_name="Contract", chain="fuji"):
+def execute_deploy_dry_run(source_code, contract_name="Contract", chain="fuji", wallet_address=None):
     """Simulate a dry-run deploy (gas estimation only, no real deployment)."""
     compile_result = execute_compile(source_code, contract_name, optimizer_level=1)
 
@@ -305,6 +305,17 @@ def execute_deploy_dry_run(source_code, contract_name="Contract", chain="fuji"):
     bytecode_size = compile_result["size_bytes"]
     estimated_gas = 21000 + (bytecode_size * 200) + 32000  # base + deployment + overhead
 
+    if wallet_address:
+        wallet_line = (
+            f"✓ Wallet ready: {wallet_address}\n"
+            f"  Click \"Deploy to Fuji Testnet\" in the right panel to sign & broadcast.\n"
+        )
+    else:
+        wallet_line = (
+            f"⚠ Dry run mode — no transaction was sent.\n"
+            f"  Connect a MetaMask wallet with AVAX to deploy on-chain.\n"
+        )
+
     return {
         "success": True,
         "command": "deploy",
@@ -314,13 +325,13 @@ def execute_deploy_dry_run(source_code, contract_name="Contract", chain="fuji"):
         "estimated_gas": estimated_gas,
         "bytecode": compile_result["bytecode"],
         "abi": compile_result["abi"],
+        "wallet": wallet_address,
         "stdout": (
             f"Gas Simulation for {contract_name}\n\n"
             f"  Estimated gas: {estimated_gas:,}\n"
             f"  Network: {chain} (Chain ID: {'43113' if chain == 'fuji' else '43114'})\n"
             f"  Bytecode size: {bytecode_size} bytes\n\n"
-            f"⚠ Dry run mode — no transaction was sent.\n"
-            f"To deploy for real, connect a wallet with AVAX.\n"
+            + wallet_line
         ),
     }
 
@@ -413,6 +424,7 @@ class handler(BaseHTTPRequestHandler):
         command = request.get("command", "").strip()
         source_code = request.get("source", "")
         contract_name = request.get("contract_name", "Contract")
+        wallet_address = request.get("wallet_address", None)
 
         if not command:
             self._send_json(400, {"success": False, "error": "No command provided"})
@@ -458,7 +470,7 @@ class handler(BaseHTTPRequestHandler):
                     return
                 name = positional[0] if positional else contract_name
                 chain = kwargs.get("chain", kwargs.get("n", "fuji"))
-                result = execute_deploy_dry_run(source_code, name, chain)
+                result = execute_deploy_dry_run(source_code, name, chain, wallet_address)
 
             elif action == "version":
                 result = {

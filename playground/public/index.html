@@ -936,6 +936,7 @@
             contractName: 'Token',
             history: [],
             historyIndex: -1,
+            connectedWallet: null,  // MetaMask wallet address
         };
 
         // ─── Default Contract ──────────────────────────────────────────────
@@ -1130,12 +1131,34 @@ class Token(Contract):
             label.textContent = text;
         }
 
+        // ─── Wallet Detection ──────────────────────────────────────────────
+        async function getConnectedWallet() {
+            if (typeof window.ethereum === 'undefined') return null;
+            try {
+                const accounts = await window.ethereum.request({ method: 'eth_accounts' });
+                return accounts && accounts.length > 0 ? accounts[0] : null;
+            } catch {
+                return null;
+            }
+        }
+
+        async function refreshWallet() {
+            state.connectedWallet = await getConnectedWallet();
+        }
+
         // ─── API Call ──────────────────────────────────────────────────────
         async function callAPI(command, source = null) {
+            const action = command.replace(/^pyvax\s+/i, '').split(/\s+/)[0]?.toLowerCase();
+            // Refresh wallet state before every deploy so the message is accurate
+            if (action === 'deploy') await refreshWallet();
+
             const body = { command };
             if (source !== null) {
                 body.source = source;
                 body.contract_name = state.contractName;
+            }
+            if (state.connectedWallet) {
+                body.wallet_address = state.connectedWallet;
             }
 
             const response = await fetch('/api/cli', {
@@ -1344,6 +1367,14 @@ class Token(Contract):
 
             // Terminal resize
             setupTerminalResize();
+
+            // Detect already-connected MetaMask wallet on load
+            refreshWallet();
+            if (typeof window.ethereum !== 'undefined') {
+                window.ethereum.on('accountsChanged', (accounts) => {
+                    state.connectedWallet = accounts && accounts.length > 0 ? accounts[0] : null;
+                });
+            }
         });
 
         // ─── Artifacts Modal ───────────────────────────────────────────────

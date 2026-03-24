@@ -22,6 +22,7 @@ class CommandRequest(BaseModel):
     command: str
     source: Optional[str] = ""
     contract_name: Optional[str] = "Contract"
+    wallet_address: Optional[str] = None
 
 @app.get("/api/cli")
 async def health_check():
@@ -71,7 +72,7 @@ async def execute_cli(req: CommandRequest):
                 return JSONResponse(status_code=400, content={"success": False, "error": "No source code provided for deployment simulation"})
             name = positional[0] if positional else contract_name
             chain = kwargs.get("chain", kwargs.get("n", "fuji"))
-            result = execute_deploy_dry_run(source_code, name, chain)
+            result = execute_deploy_dry_run(source_code, name, chain, req.wallet_address)
             return result
 
         elif action == "version":
