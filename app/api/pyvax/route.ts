@@ -7,7 +7,7 @@ import path from "path";
 // Otherwise, spawn local Python transpiler (local dev).
 //
 // RAILWAY_BACKEND_URL should be the FULL URL including path, e.g.:
-//   https://pyvax-backend.up.railway.app/api/cli
+//   https://pyvax-rebrand-production.up.railway.app/api/cli
 const BACKEND_URL = process.env.RAILWAY_BACKEND_URL || "";
 
 // ─── Parse "pyvax compile --optimizer=2" style commands ─────────────────────

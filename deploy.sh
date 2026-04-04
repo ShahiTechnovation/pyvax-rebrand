@@ -46,7 +46,7 @@ echo ""
 
 # ─── 4. Post-Deploy Verification ────────────────────────────────────
 echo -e "${CYAN}4/4 → Post-deploy verification...${NC}"
-BACKEND="https://pyvax-backend.up.railway.app"
+BACKEND="https://pyvax-rebrand-production.up.railway.app"
 
 echo -e "  ${YELLOW}Testing /api/cli health...${NC}"
 curl -s "${BACKEND}/api/cli" | python -m json.tool 2>/dev/null || echo "  (health check pending)"

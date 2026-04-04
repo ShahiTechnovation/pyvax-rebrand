@@ -21,7 +21,7 @@ const nextConfig = {
               "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://cdn.jsdelivr.net",
               "font-src 'self' https://fonts.gstatic.com https://cdn.jsdelivr.net",
               "img-src 'self' data: https: blob:",
-              "connect-src 'self' https://pyvax-backend.up.railway.app https://api.avax-test.network https://api.avax.network https://prod.spline.design https://*.spline.design https://*.amazonaws.com https://unpkg.com https://fonts.gstatic.com https://va.vercel-scripts.com https://vitals.vercel-insights.com",
+              "connect-src 'self' https://pyvax-rebrand-production.up.railway.app https://api.avax-test.network https://api.avax.network https://prod.spline.design https://*.spline.design https://*.amazonaws.com https://unpkg.com https://fonts.gstatic.com https://va.vercel-scripts.com https://vitals.vercel-insights.com",
               "media-src 'self' data: blob:",
               "frame-ancestors 'none'",
             ].join('; '),

@@ -26,7 +26,7 @@ User → pyvax.xyz/playground → Vercel (Next.js)
 ### Vercel
 | Variable | Required | Description |
 |----------|----------|-------------|
-| `RAILWAY_BACKEND_URL` | Yes | Full URL: `https://pyvax-backend.up.railway.app/api/cli` |
+| `RAILWAY_BACKEND_URL` | Yes | Full URL: `https://pyvax-rebrand-production.up.railway.app/api/cli` |
 
 ## Deploy
 
@@ -44,13 +44,13 @@ vercel --prod                 # Vercel only
 
 ### 1. Backend Health
 ```bash
-curl https://pyvax-backend.up.railway.app/api/cli
+curl https://pyvax-rebrand-production.up.railway.app/api/cli
 # → {"status":"ok","commands":["new","compile","test","deploy","transform",...]}
 ```
 
 ### 2. Transform API
 ```bash
-curl -X POST https://pyvax-backend.up.railway.app/api/cli \
+curl -X POST https://pyvax-rebrand-production.up.railway.app/api/cli \
   -H 'Content-Type: application/json' \
   -d '{"command":"transform","source":"from pyvax import Contract, action, view_function\nclass Counter(Contract):\n    count: int = 0\n    @action\n    def increment(self):\n        self.count = self.count + 1\n    @view_function\n    def get_count(self) -> int:\n        return self.count"}'
 # → {"success":true,"solidity":"// SPDX-License-Identifier: MIT\n...","abi":[...]}
